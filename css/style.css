@@ -1,0 +1,133 @@
+@font-face {
+	font-family: 'Regular';
+	src: url('../fonts/Graphik-Regular.eot');
+	src: url('../fonts/Graphik-Regular.eot?#iefix') format('embedded-opentype'),
+		url('../fonts/Graphik-Regular.woff') format('woff'),
+		url('../fonts/Graphik-Regular.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'Semibold';
+	src: url('../fonts/Graphik-Semibold.eot');
+	src: url('../fonts/Graphik-Semibold.eot?#iefix') format('embedded-opentype'),
+		url('../fonts/Graphik-Semibold.woff') format('woff'),
+		url('../fonts/Graphik-Semibold.ttf') format('truetype');
+	font-weight: 600;
+	font-style: normal;
+}
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+html, body {
+	font-smoothing: antialiased;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-tap-highlight-color: transparent!important;
+	cursor: url("../img/cursor1x.png") 6 6, default;
+	cursor: -webkit-image-set(url("../img/cursor1x.png") 1x, url("../img/cursor2x.png") 2x) 6 6, default;
+	height: 100%;
+	overflow: hidden;
+	background: #000;
+}
+a {
+	background-color: transparent;
+	cursor: url("../img/cursor-fill1x.png") 6 6, auto;
+	cursor: -webkit-image-set(url("../img/cursor-fill1x.png") 1x, url("../img/cursor-fill2x.png") 2x) 6 6, auto;
+	text-decoration: none;
+}
+/* Scrollbar */
+::-webkit-scrollbar {
+	display: none;
+}
+.wrapper {
+	position: absolute;
+	top: 50%;
+	left: 10%;
+	width: 80%;
+}
+h1 {
+	font-size: 32px;
+	font-family:'Semibold';
+	color: #ffffff;
+	float: left; 
+	margin-right: 5%;
+	-webkit-animation:fadeInUp 1.2s cubic-bezier(.5, .6, .6, 1);
+	-moz-animation:fadeInUp 1.2s cubic-bezier(.5, .6, .6, 1);
+	animation:fadeInUp 1.2s cubic-bezier(.5, .6, .6, 1);
+	-webkit-animation-fill-mode:backwards;
+	-moz-animation-fill-mode:backwards;
+	animation-fill-mode:backwards;
+}
+h2 {
+	font-size: 32px;
+	font-family:'Regular';
+	color: #ffffff; 
+	-webkit-animation:fadeInUp 1.2s cubic-bezier(.5, .6, .6, 1);
+	-moz-animation:fadeInUp 1.2s cubic-bezier(.5, .6, .6, 1);
+	animation:fadeInUp 1.2s cubic-bezier(.5, .6, .6, 1);
+	-webkit-animation-fill-mode:backwards;
+	-moz-animation-fill-mode:backwards;
+	animation-fill-mode:backwards;
+	-webkit-animation-delay: 1s;
+	animation-delay: 1s;
+}
+@-webkit-keyframes fadeInUp { 
+    0% { 
+        opacity: 0; 
+        -webkit-transform: translateY(30px); 
+    } 
+    100% { 
+        opacity: 1; 
+        -webkit-transform: translateY(0); 
+    } 
+} 
+@keyframes fadeInUp { 
+    0% { 
+        opacity: 0; 
+        transform: translateY(30px); 
+    } 
+    100% { 
+        opacity: 1; 
+        transform: translateY(0); 
+    } 
+} 
+.fadeInUp { 
+    -webkit-animation-name: fadeInUp; 
+    animation-name: fadeInUp; 
+}
+
+
+
+
+/* MOBILE PHONE */
+@media screen and (max-width: 667px) {
+	.wrapper {
+		top: 45%;
+	}
+	h1 { 
+		margin-bottom: 5%;
+	}
+}
+
+
+
+
+
