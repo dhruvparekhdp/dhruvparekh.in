@@ -1,0 +1,255 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,300;1,400&display=swap');
+
+body{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+.header-flex {
+    display: flex;
+    align-items: center;
+    padding: 0 25px;
+}
+
+.logo h2 {
+    font-weight: 500;
+}
+
+.menus ul li {
+    display: inline-block;
+    list-style: none;
+}
+
+.menus ul li a {
+    text-decoration: none;
+    color: #000;
+    margin: 0 9px;
+    font-size: 16px;
+    font-weight: normal;
+    padding: 4px 9px;
+}
+
+.logo {
+    width: 50%;
+}
+
+.menus {
+    width: 50%;
+    text-align: right;
+}
+
+section.breadcrumb img {
+    width: 100%;
+    height: 50vh;
+    object-fit: cover;
+    position: relative;
+}
+
+section.breadcrumb .bannerup{
+    position: absolute;
+    left: 50%;
+    top: 37%;
+    transform: translate(-50%,-50%);
+}
+
+section.breadcrumb .bannerup h1{
+    background:#FF5733;
+    position: relative;
+    padding: 2%;
+    font-size: 50px;
+    color: #fff;
+    width: max-content;
+}
+li.active a {
+    border: 1px solid #ff5733;
+    color: #ff5733 !important;
+}
+
+section.overview{
+  
+    padding: 4% 0;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+}
+
+section.overview h1 {
+    margin: 0;
+    padding-bottom: 2%;
+    line-height: normal;
+    font-weight: 500;
+    font-size: 34px;
+    line-height: normal;
+    letter-spacing: 1px;
+    position: relative;
+}
+
+section.overview h2 {
+    margin: 0;
+    letter-spacing: 1px;
+    font-weight: 400;
+}
+
+section.overview h3 {
+    margin: 0;
+    font-size: 20px;
+    padding: 10px 0 7px;
+}
+
+section.overview p {
+    margin: 0;
+    line-height: normal;
+    font-size: 16px;
+    font-weight: normal;
+}
+
+section.overview ul li {
+    list-style: none;
+    position: relative;
+    line-height: normal;
+    padding: 0 0 1%;
+    font-size: 18px;
+}
+
+section.overview ul li:before {
+    position: absolute;
+    content: "";
+    height: 6px;
+    width: 6px;
+    background: #ff5733;
+    left: -14px;
+    top: 8px;
+}
+
+section.overview h1:before {
+    width: 100px;
+    background: #ff5733;
+    position: absolute;
+    content: "";
+    height: 3px;
+    bottom: 19%;
+}
+
+.nobg{
+    background: url('./bg.png');
+}
+
+.accordion {
+    margin: 0 auto;
+    max-width: 100%;
+}
+.toggle {
+    display: none;
+}
+.option {
+    position: relative;
+    margin-bottom: 1em;
+    /* background: red; */
+}
+.title, .content {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    transition: all 0.2s;
+}
+.title {
+    background: #ff5733;
+    padding: 1em;
+    display: block;
+    color: #fff;
+    font-weight: normal;
+}
+.title:after, .title:before {
+    content: '';
+    position: absolute;
+    right: 1.25em;
+    top: 1.25em;
+    width: 2px;
+    height: 0.75em;
+    background-color: #fff;
+    transition: all 0.2s;
+}
+.title:after {
+    transform: rotate(90deg);
+}
+.content {
+    max-height: 0;
+    overflow: hidden;
+    background-color: #fff;
+}
+.content p {
+    margin: 0;
+    padding: 0.5em 1em 1em;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+.toggle:checked + .title, .toggle:checked + .title + .content {
+    box-shadow: 3px 3px 6px #ddd, -3px 3px 6px #ddd;
+}
+.toggle:checked + .title + .content {
+    max-height: 500px;
+}
+.toggle:checked + .title:before {
+    transform: rotate(90deg) !important;
+}
+
+
+.about {
+    display: flex;
+    padding: 2% 0;
+}
+
+.text-side {
+    width: 70%;
+    padding-right: 8%;
+}
+
+.side-img {
+    width: 30%;
+}
+
+.side-img img {
+    width: 100%;
+}
+
+.about h3 {
+    margin: 0;
+    line-height: normal;
+    font-size: 34px;
+    font-weight: 400;
+    text-transform: uppercase;
+    position: relative;
+    padding-bottom: 2%;
+}
+
+.about h3:before {
+    position: absolute;
+    content: "";
+    height: 3px;
+    width: 100px;
+    background: #ff5733;
+    bottom: 0;
+}
+
+.text-side p {
+    line-height: 24px;
+}
+
+.img-boxx {
+    position: relative;
+}
+
+.img-boxx:before {
+    position: absolute;
+    content: "";
+    border: 2px solid #ff5733;
+    height: 100%;
+    width: 100%;
+    left: -7%;
+    top: 4%;
+    z-index: -1;
+}
