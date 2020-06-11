@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <header class="header">
+        <a href="" class="logo"><img src="logo1.png" alt=""></a>
+        <input class="menu-btn" type="checkbox" id="menu-btn" />
+        <label class="menu-icon" for="menu-btn"><span class="navicon"></span></label>
+        <ul class="menu">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#service">Service</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </header>
+      <section class="home" id="home">
+          <div class="bannerimg">
+              <img src="bg.jpg" alt="">
+              <div class="upper-text">
+                  <h2>Clean & Professional Multipurpose Landing Page</h2>
+                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed feugiat arcu ut orci porta, <br> eget porttitor felis suscipit. Sed a nisl ullamcorper</p>
+
+                  <div class="btns">
+                      <a href="#about">About Us</a>
+                      <a href="#contact">Contact Us</a>
+                  </div>
+              </div>
+            </div>
+      </section>
+
+      <section class="about" id="about">
+          <div class="container">
+              <div class="about-box">
+                  <h3>A Digital web studio creating stunning & <br> Engaging online Experiences</h3>
+                  <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget <br> dolor. Aenean massa. Cum sociis natoqu Provide contextual feedback messages for <br> typical user actions with.</p>
+
+                  <div class="about-man">
+                      <div class="man-box">
+                          <img src="man1.png" alt="">
+                          <h3>Spanrk Andrew</h3>
+                          <p>CEO/FOUNDER</p>
+                      </div>
+                      <div class="man-box">
+                        <img src="man2.png" alt="">
+                        <h3>Hubert Brandt</h3>
+                        <p>CTO/CO-FOUNDER</p>
+                    </div>
+                    <div class="man-box">
+                        <img src="man3.png" alt="">
+                        <h3>David Downs</h3>
+                        <p>WEB DESIGNER</p>
+                    </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+      <section class="services" id="service">
+          <div class="container">
+              <h2>BEST SERVICES</h2>
+              <p>Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod <br> tempor incididunt ut labore et dolore.</p>
+
+              <div class="service-flex">
+                  <div class="ser-box">
+                     <i class="fa fa-desktop" aria-hidden="true"></i>
+                      <h4>Mobile and Web Development</h4>
+                      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. </p>
+                  </div>
+                  <div class="ser-box">
+                    <i class="fa fa-gamepad" aria-hidden="true"></i>
+                    <h4>Game Development</h4>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. </p>
+                </div>
+                <div class="ser-box">
+                    <i class="fa fa-leanpub" aria-hidden="true"></i>
+                    <h4>Machine Learning and AI</h4>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. </p>
+                </div>
+                <div class="ser-box">
+                    <i class="fa fa-street-view" aria-hidden="true"></i>
+                    <h4>Argument and Virtual Reality Development</h4>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. </p>
+                </div>
+              </div>
+          </div>
+      </section>
+
+      <section class="services nobg" id="contact">
+        <div class="container">
+            <h2>HAVE ANY QUESTIONS?</h2>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod <br> tempor incididunt ut labore et dolore.</p>
+            <div class="contact">
+                <form action="">
+                    <div class="fle-form">
+                        <div class="form-control">
+                            <label for="">Name</label>
+                            <input type="text">
+                        </div>
+                        <div class="form-control">
+                            <label for="">Email</label>
+                            <input type="text">
+                        </div>
+                     
+                        <div class="form-control">
+                            <label for="">Mobile</label>
+                            <input type="text">
+                        </div>
+                        <div class="form-control">
+                            <label for="">Subject</label>
+                            <input type="text">
+                        </div>
+                    </div>
+                    <div class="textare">
+                        <label for="">Message</label>
+                        <textarea name="" id="" cols="" rows="6"></textarea>
+                    </div>
+                    <button>Send</button>
+                </form>
+            </div>
+         
+        </div>
+    </section>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(window).scroll(function(){
+        if ($(window).scrollTop() >= 150) {
+        $('.header').addClass('sticky');
+        }
+        else {
+        $('.header').removeClass('sticky');
+        }
+        });
+    </script>
+</body>
+</html>
