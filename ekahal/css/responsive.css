@@ -1,0 +1,214 @@
+/* ==== Media Queries ===== */
+@media (max-width:1280px) {
+}
+
+@media (max-width:1024px) {
+
+    .container{
+        width: 90%;
+    }
+    .report-box1 {
+        width: 35%;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .header li a {
+        padding: 10px 10px;
+    }
+    .banner-text {
+       
+        top: 36%;
+    }
+    .abt-part{
+        flex-wrap: wrap;
+    }
+    .why-flex {
+        flex-wrap: wrap;
+    }
+    .why-box {
+        width: 43%;
+    }
+
+    .report-box3 {
+        width: 28%;
+        background: #fff;
+    }
+
+    .report-box2 {
+        width: 28%;
+        background: #fff;
+        margin: 0 2%;
+    }
+
+  
+}
+
+@media (max-width:767px) {
+    .banner-text {
+       
+        top: 36%;
+    }
+    .abt-part{
+        flex-wrap: wrap;
+    }
+    .why-flex {
+        flex-wrap: wrap;
+    }
+    .why-box {
+        width:100%;
+    }
+
+    .foot-flex{
+        flex-wrap: wrap;
+    }
+
+    .logo,.address,.cntcts {
+        width: 100%;
+    }
+    body.dash .header .menu-icon .navicon:before, .header .menu-icon .navicon:after{
+        background: #000 !important;
+    }
+    body.dash .header .menu-icon .navicon {
+        background: #000;
+    }
+    .header .logo {
+        display: inline;
+        float: none;
+    }
+    body.dash header.header{
+        padding: 9px 0 0;
+    }
+    body.dash .header .menu-icon
+    {
+        padding: 17px 20px 0;
+    }
+}
+
+
+@media (max-width:480px) {
+
+    .banner-text h2{
+        font-size: 30px;
+    }
+    .banner-text h3{
+        font-size: 35px;
+    }
+    .header .logo {
+        display: inline;
+        float: none;
+        font-size: 2em;
+        padding: 0 20px;
+        text-decoration: none;
+        color: #fff;
+    }
+
+    .header .menu-icon {
+        cursor: pointer;
+        display: inline-block;
+        float: right;
+        padding: 20px 20px;
+    }
+    .titll h2 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 200;
+    }
+    .titll h3 {
+        margin: 0;
+        font-size: 35px;
+    }
+
+    .abt-text h2 {
+        margin: 0;
+        font-size: 30px;
+    }
+
+    .abt-text h3 {
+        margin: 0;
+        font-size: 30px;
+    }
+    .abt-img img {
+        width: 100%;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+    ul#tabs-nav {
+        background: #f1f5f8;
+        width: 100%;
+    }
+    div#tabs-content {
+        width: 100%;
+    }
+    ul#tabs-nav {
+        display: flex;
+        margin-bottom: 14px;
+    }
+    .report-box1,  .report-box2,  .report-box3 {
+        width: 100%;
+    }
+
+    .report-box2{
+        margin: 15px 0;
+    }
+    .dttable{
+        overflow-x: auto;
+    }
+}
+
+
+
+
+@media (max-width:400px) {
+    .banner-text h2{
+        font-size: 25px;
+    }
+    .banner-text h3{
+        font-size: 25px;
+    }
+
+    .titll h2 {
+        font-size: 25px;
+    }
+    .titll h3 {
+        font-size: 25px;
+    }
+
+    .abt-text h2 {
+        font-size: 25px;
+    }
+
+    .abt-text h3 {
+        font-size: 25px;
+    }
+    .logo h1 {
+        margin: 0;
+        font-size: 26px;
+        margin-bottom: 7px;
+    }
+
+    .why-box h2 {
+        margin: 5px 0;
+        font-size: 22px;
+        font-weight: 400;
+    }
+}
+
+@media (max-width:320px) {
+    .header .logo{
+        padding: 0 15px;
+        font-size: 28px;
+    }
+    .abt-img {
+        margin: 13px 0;
+    }
+    .why-box i {
+        font-size: 30px;
+    }
+}
+
+@media (max-width:320px) {
+    
+}
