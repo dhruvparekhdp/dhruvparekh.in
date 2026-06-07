@@ -1,65 +1,306 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-    <title>Dhruv Parekh</title>
-    <meta name="author" content="Dhruv Parekh" />
-    <meta name="description" content="Dhruv Parekh - UI/ UX Developer" />
-    <meta name="keywords" content="Dhruv Parekh" />
-    <meta name="Resource-type" content="Document" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta property="og:site_name" content="Dhruv Parekh" />
-    <meta property="og:title" content="Dhruv Parekh" />
-    <meta property="og:description" content="Dhruv Parekh - Product designer" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dhruv Parekh | Senior Software Engineer</title>
 
-    <meta property="og:type" content="website" />
+  <!-- Primary SEO -->
+  <meta name="description" content="Dhruv Parekh — Senior Software Engineer specialising in the MEAN stack. Building scalable, high-performance web applications with MongoDB, Express.js, Angular, and Node.js." />
+  <meta name="keywords" content="Dhruv Parekh, Senior Software Engineer, MEAN Stack Developer, Angular Developer, Node.js Developer, Full Stack Developer, TypeScript, MongoDB, Express.js" />
+  <meta name="author" content="Dhruv Parekh" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://dhruvparekh.in/" />
 
-    <link href="img/favicon.ico" rel="shortcut icon" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://dhruvparekh.in/" />
+  <meta property="og:title" content="Dhruv Parekh | Senior Software Engineer" />
+  <meta property="og:description" content="Senior Software Engineer specialising in the MEAN stack — building scalable, high-performance web applications." />
+  <meta property="og:site_name" content="Dhruv Parekh" />
+  <meta property="og:locale" content="en_US" />
 
-    <link href="img/touch-icon-iphone.png" rel="apple-touch-icon" />
-    <link href="img/touch-icon-ipad.png" rel="apple-touch-icon" sizes="76x76" />
-    <link
-      href="img/touch-icon-iphone-retina.png"
-      rel="apple-touch-icon"
-      sizes="120x120"
-    />
-    <link
-      href="img/touch-icon-ipad-retina.png"
-      rel="apple-touch-icon"
-      sizes="152x152"
-    />
-    <link href="css/style.css" rel="stylesheet" type="text/css" />
-  </head>
-  <html>
-    <body>
-      <div class="wrapper">
-        <h1>Dhruv Parekh</h1>
-        <h2>Full Stack Developer</h2>
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Dhruv Parekh | Senior Software Engineer" />
+  <meta name="twitter:description" content="Senior Software Engineer specialising in the MEAN stack — building scalable web applications." />
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in",
+    "email": "dhruvparekh.dp@gmail.com",
+    "jobTitle": "Senior Software Engineer",
+    "knowsAbout": ["Angular", "Node.js", "MongoDB", "Express.js", "TypeScript", "JavaScript", "NestJS", "GraphQL", "Docker", "AWS"]
+  }
+  </script>
+
+  <!-- Favicons -->
+  <link rel="icon" href="img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="img/touch-icon-iphone.png" />
+  <link rel="apple-touch-icon" sizes="76x76" href="img/touch-icon-ipad.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="img/touch-icon-iphone-retina.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="img/touch-icon-ipad-retina.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="nav" role="navigation" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="Dhruv Parekh — home">DP</a>
+      <a href="mailto:dhruvparekh.dp@gmail.com" class="btn-ghost" aria-label="Send email to Dhruv Parekh">Get in touch</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ── Hero ── -->
+    <section class="hero" aria-labelledby="hero-name">
+      <div class="hero-content">
+
+        <div class="availability-badge" role="status" aria-live="polite">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Available for opportunities
+        </div>
+
+        <h1 id="hero-name" class="hero-name">Dhruv<br />Parekh</h1>
+
+        <p class="hero-role" aria-label="Role: Senior Software Engineer">
+          <span class="role-static">Senior Software Engineer</span>
+          <span class="role-typed" aria-hidden="true">
+            <span id="typed"></span><span class="cursor">|</span>
+          </span>
+        </p>
+
+        <p class="hero-desc">
+          Building robust, scalable web applications with the MEAN stack.
+          Passionate about clean architecture, performance engineering,
+          and turning complex problems into elegant, maintainable solutions.
+        </p>
+
+        <div class="hero-cta">
+          <a href="mailto:dhruvparekh.dp@gmail.com" class="btn-primary">Say Hello</a>
+          <div class="social-row" aria-label="Social links">
+            <a href="https://linkedin.com/in/dhruvparekh" target="_blank" rel="noopener noreferrer" class="icon-btn" aria-label="LinkedIn profile">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+            <a href="https://github.com/dhruvparekhdp" target="_blank" rel="noopener noreferrer" class="icon-btn" aria-label="GitHub profile">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            </a>
+          </div>
+        </div>
+
       </div>
-      <!-- <script>
-        (function(i, s, o, g, r, a, m) {
-          i["GoogleAnalyticsObject"] = r;
-          (i[r] =
-            i[r] ||
-            function() {
-              (i[r].q = i[r].q || []).push(arguments);
-            }),
-            (i[r].l = 1 * new Date());
-          (a = s.createElement(o)), (m = s.getElementsByTagName(o)[0]);
-          a.async = 1;
-          a.src = g;
-          m.parentNode.insertBefore(a, m);
-        })(
-          window,
-          document,
-          "script",
-          "//www.google-analytics.com/analytics.js",
-          "ga"
-        );
 
-        ga("create", "UA-42242964-1", "auto");
-        ga("send", "pageview");
-      </script> -->
-    </body>
-  </html>
+      <!-- Code card -->
+      <div class="hero-visual" aria-hidden="true">
+        <div class="code-card">
+          <div class="code-card-bar">
+            <span class="traffic-dot td-red"></span>
+            <span class="traffic-dot td-yellow"></span>
+            <span class="traffic-dot td-green"></span>
+            <span class="code-filename">dhruv.ts</span>
+          </div>
+          <div class="code-card-body">
+<pre><code><span class="t-kw">const</span> <span class="t-id">dhruv</span><span class="t-punct">:</span> <span class="t-type">Engineer</span> <span class="t-punct">=</span> <span class="t-punct">{</span>
+  <span class="t-key">name</span><span class="t-punct">:</span>       <span class="t-str">"Dhruv Parekh"</span><span class="t-punct">,</span>
+  <span class="t-key">level</span><span class="t-punct">:</span>      <span class="t-str">"Senior"</span><span class="t-punct">,</span>
+  <span class="t-key">stack</span><span class="t-punct">:</span>      <span class="t-punct">[</span>
+    <span class="t-str">"MongoDB"</span><span class="t-punct">,</span>
+    <span class="t-str">"Express.js"</span><span class="t-punct">,</span>
+    <span class="t-str">"Angular"</span><span class="t-punct">,</span>
+    <span class="t-str">"Node.js"</span><span class="t-punct">,</span>
+  <span class="t-punct">],</span>
+  <span class="t-key">yearsExp</span><span class="t-punct">:</span>   <span class="t-num">5</span><span class="t-punct">+,</span>
+  <span class="t-key">focus</span><span class="t-punct">:</span>      <span class="t-str">"scalability"</span><span class="t-punct">,</span>
+  <span class="t-key">available</span><span class="t-punct">:</span>  <span class="t-bool">true</span><span class="t-punct">,</span>
+<span class="t-punct">};</span>
+</code></pre>
+          </div>
+        </div>
+        <div class="card-glow" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- ── Skills ── -->
+    <section class="skills" aria-labelledby="skills-heading">
+      <div class="section-wrap">
+
+        <header class="section-header">
+          <p class="section-eyebrow" aria-hidden="true">// tech stack</p>
+          <h2 id="skills-heading" class="section-title">What I work with</h2>
+          <p class="section-sub">Core technologies I've used across production-grade applications. The MEAN stack is my home turf.</p>
+        </header>
+
+        <div class="skill-groups">
+
+          <div class="skill-group">
+            <h3 class="sg-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M8 8h8M8 16h4"/></svg>
+              Frontend
+            </h3>
+            <ul class="skill-list" role="list">
+              <li><span class="tag tag-core" title="Core MEAN Stack">Angular</span></li>
+              <li><span class="tag tag-core">TypeScript</span></li>
+              <li><span class="tag">JavaScript ES6+</span></li>
+              <li><span class="tag">RxJS</span></li>
+              <li><span class="tag">NgRx</span></li>
+              <li><span class="tag">HTML5</span></li>
+              <li><span class="tag">CSS3 / SCSS</span></li>
+              <li><span class="tag">Bootstrap</span></li>
+              <li><span class="tag">Tailwind CSS</span></li>
+              <li><span class="tag">Angular Material</span></li>
+              <li><span class="tag">React</span></li>
+              <li><span class="tag">Vue.js</span></li>
+            </ul>
+          </div>
+
+          <div class="skill-group">
+            <h3 class="sg-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0-1.5 2.5M4 16l1.5 2.5M12 16v3"/></svg>
+              Backend
+            </h3>
+            <ul class="skill-list" role="list">
+              <li><span class="tag tag-core">Node.js</span></li>
+              <li><span class="tag tag-core">Express.js</span></li>
+              <li><span class="tag">NestJS</span></li>
+              <li><span class="tag">REST APIs</span></li>
+              <li><span class="tag">GraphQL</span></li>
+              <li><span class="tag">WebSockets</span></li>
+              <li><span class="tag">Socket.io</span></li>
+              <li><span class="tag">Microservices</span></li>
+              <li><span class="tag">JWT / OAuth 2.0</span></li>
+              <li><span class="tag">API Gateway</span></li>
+            </ul>
+          </div>
+
+          <div class="skill-group">
+            <h3 class="sg-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+              Database
+            </h3>
+            <ul class="skill-list" role="list">
+              <li><span class="tag tag-core">MongoDB</span></li>
+              <li><span class="tag tag-core">Mongoose</span></li>
+              <li><span class="tag">PostgreSQL</span></li>
+              <li><span class="tag">MySQL</span></li>
+              <li><span class="tag">Redis</span></li>
+              <li><span class="tag">Firebase / Firestore</span></li>
+              <li><span class="tag">Elasticsearch</span></li>
+            </ul>
+          </div>
+
+          <div class="skill-group">
+            <h3 class="sg-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              DevOps &amp; Cloud
+            </h3>
+            <ul class="skill-list" role="list">
+              <li><span class="tag">Git / GitHub</span></li>
+              <li><span class="tag">Docker</span></li>
+              <li><span class="tag">Kubernetes</span></li>
+              <li><span class="tag">AWS</span></li>
+              <li><span class="tag">Azure</span></li>
+              <li><span class="tag">CI/CD</span></li>
+              <li><span class="tag">GitHub Actions</span></li>
+              <li><span class="tag">Jenkins</span></li>
+              <li><span class="tag">Nginx</span></li>
+              <li><span class="tag">Linux / Bash</span></li>
+            </ul>
+          </div>
+
+          <div class="skill-group">
+            <h3 class="sg-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              Testing &amp; Quality
+            </h3>
+            <ul class="skill-list" role="list">
+              <li><span class="tag">Jest</span></li>
+              <li><span class="tag">Jasmine / Karma</span></li>
+              <li><span class="tag">Mocha / Chai</span></li>
+              <li><span class="tag">Cypress</span></li>
+              <li><span class="tag">TDD / BDD</span></li>
+              <li><span class="tag">Code Review</span></li>
+            </ul>
+          </div>
+
+          <div class="skill-group">
+            <h3 class="sg-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Architecture
+            </h3>
+            <ul class="skill-list" role="list">
+              <li><span class="tag">System Design</span></li>
+              <li><span class="tag">SOLID Principles</span></li>
+              <li><span class="tag">Design Patterns</span></li>
+              <li><span class="tag">Agile / Scrum</span></li>
+              <li><span class="tag">Event-Driven</span></li>
+              <li><span class="tag">Webpack / Vite</span></li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <p class="footer-copy">&copy; <span id="year"></span> Dhruv Parekh. Built with care.</p>
+      <a href="mailto:dhruvparekh.dp@gmail.com" class="footer-email" aria-label="Email Dhruv Parekh">dhruvparekh.dp@gmail.com</a>
+    </div>
+  </footer>
+
+  <script>
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Typing animation
+    const phrases = [
+      ' · MEAN Stack Expert',
+      ' · Angular Specialist',
+      ' · Node.js Architect',
+      ' · Full Stack Engineer',
+    ];
+    let pi = 0, ci = 0, deleting = false;
+    const el = document.getElementById('typed');
+
+    function tick() {
+      const phrase = phrases[pi];
+      el.textContent = deleting
+        ? phrase.slice(0, ci - 1)
+        : phrase.slice(0, ci + 1);
+      deleting ? ci-- : ci++;
+
+      if (!deleting && ci === phrase.length) {
+        setTimeout(() => { deleting = true; tick(); }, 2200);
+        return;
+      }
+      if (deleting && ci === 0) {
+        deleting = false;
+        pi = (pi + 1) % phrases.length;
+      }
+      setTimeout(tick, deleting ? 45 : 75);
+    }
+    tick();
+
+    // Nav scroll effect
+    const nav = document.querySelector('.nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('nav-scrolled', window.scrollY > 10);
+    }, { passive: true });
+  </script>
+</body>
 </html>
