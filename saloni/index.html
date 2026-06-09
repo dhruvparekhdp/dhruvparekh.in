@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saloni Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header" id="header">
+    <div class="header-inner">
+      <nav class="nav-left">
+        <a href="#collections">Collections</a>
+        <a href="#about">About</a>
+      </nav>
+      <a href="index.html" class="logo">Saloni</a>
+      <nav class="nav-right">
+        <a href="#contact">Contact</a>
+        <a href="admin.html" class="nav-admin">Admin ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="hero-gradient"></div>
+    </div>
+    <div class="hero-content">
+      <span class="hero-tag">New Collection · 2025</span>
+      <h1 class="hero-title">Where Every<br/><em>Thread Tells</em><br/>a Story</h1>
+      <p class="hero-subtitle">Curated fashion for the modern woman — timeless elegance meets contemporary design.</p>
+      <div class="hero-actions">
+        <a href="#collections" class="btn btn-primary">Explore Collection</a>
+        <a href="#featured" class="btn btn-ghost">View Lookbook</a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>Scroll</span>
+      <div class="hero-scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- MARQUEE STRIP -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span>New Arrivals</span><span class="dot">·</span>
+      <span>Summer 2025</span><span class="dot">·</span>
+      <span>Handcrafted Fabrics</span><span class="dot">·</span>
+      <span>Sustainable Fashion</span><span class="dot">·</span>
+      <span>Made with Love</span><span class="dot">·</span>
+      <span>New Arrivals</span><span class="dot">·</span>
+      <span>Summer 2025</span><span class="dot">·</span>
+      <span>Handcrafted Fabrics</span><span class="dot">·</span>
+      <span>Sustainable Fashion</span><span class="dot">·</span>
+      <span>Made with Love</span><span class="dot">·</span>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <section class="categories" id="collections">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Browse by Category</span>
+        <h2 class="section-title">Our Collections</h2>
+      </div>
+      <div class="category-grid" id="categoryGrid">
+        <!-- dynamically built from product tags -->
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PRODUCTS -->
+  <section class="products-section" id="featured">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Hand-picked for you</span>
+        <h2 class="section-title">Featured Pieces</h2>
+        <div class="filter-bar" id="filterBar">
+          <button class="filter-btn active" data-filter="all">All</button>
+        </div>
+      </div>
+      <div class="products-grid" id="productsGrid">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">✦</div>
+          <h3>Collection Coming Soon</h3>
+          <p>Our curators are handpicking the finest pieces for you.</p>
+          <a href="admin.html" class="btn btn-primary">Add Products</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT STRIP -->
+  <section class="about-strip" id="about">
+    <div class="about-inner">
+      <div class="about-text">
+        <span class="section-tag">Our Story</span>
+        <h2>Crafted with Intention,<br/><em>Worn with Grace</em></h2>
+        <p>Saloni Collection was born from a love of textiles and the belief that fashion should feel as beautiful as it looks. Each piece is thoughtfully curated to blend heritage craft with modern sensibility.</p>
+        <a href="#featured" class="btn btn-outline-dark">Explore Now</a>
+      </div>
+      <div class="about-stats">
+        <div class="stat">
+          <span class="stat-number">200+</span>
+          <span class="stat-label">Pieces Curated</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">15+</span>
+          <span class="stat-label">Fabric Origins</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">Handcrafted</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact-section" id="contact">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Get in Touch</span>
+        <h2 class="section-title">We'd Love to Hear from You</h2>
+      </div>
+      <form class="contact-form" onsubmit="handleContact(event)">
+        <div class="form-row">
+          <input type="text" placeholder="Your Name" required />
+          <input type="email" placeholder="Email Address" required />
+        </div>
+        <textarea placeholder="Your Message" rows="4" required></textarea>
+        <button type="submit" class="btn btn-primary">Send Message</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo">Saloni</span>
+        <p>Timeless fashion for the<br/>modern woman.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Shop</h4>
+          <a href="#collections">Collections</a>
+          <a href="#featured">New Arrivals</a>
+        </div>
+        <div class="footer-col">
+          <h4>Info</h4>
+          <a href="#about">About</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 Saloni Collection. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <!-- PRODUCT MODAL -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div class="modal-img-wrap">
+        <img id="modalImg" src="" alt="" />
+        <span class="modal-badge" id="modalBadge"></span>
+      </div>
+      <div class="modal-info">
+        <span class="modal-category" id="modalCategory"></span>
+        <h2 class="modal-title" id="modalTitle"></h2>
+        <p class="modal-desc" id="modalDesc"></p>
+        <div class="modal-price-row">
+          <span class="modal-price" id="modalPrice"></span>
+        </div>
+        <button class="btn btn-primary modal-cta">Add to Wishlist</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    function handleContact(e) {
+      e.preventDefault();
+      showToast('Message sent! We\'ll get back to you soon.');
+      e.target.reset();
+    }
+  </script>
+</body>
+</html>
