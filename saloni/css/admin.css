@@ -306,6 +306,63 @@
 }
 .btn-danger:hover { background: #A93226; }
 
+/* ─── AUTH OVERLAY ───────────────────────────────────────────── */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--cream);
+  display: none; align-items: center; justify-content: center; padding: 2rem;
+}
+.auth-overlay.visible { display: flex; }
+.auth-card {
+  background: #fff; border-radius: var(--radius-lg);
+  padding: 3rem 2.5rem; max-width: 420px; width: 100%;
+  box-shadow: var(--shadow-lg); text-align: center;
+}
+.auth-logo {
+  font-family: var(--font-serif); font-size: 2rem; font-weight: 300;
+  letter-spacing: .12em; color: var(--dark); margin-bottom: 1.5rem;
+}
+.auth-card h2 { font-size: 1.4rem; margin-bottom: .4rem; }
+.auth-sub { color: var(--mid); font-size: .875rem; margin-bottom: 2rem; }
+.auth-form { text-align: left; display: flex; flex-direction: column; gap: 1rem; }
+.auth-error {
+  font-size: .8rem; color: #C0392B; min-height: 1.2em;
+  text-align: center;
+}
+.auth-hint {
+  margin-top: 1.25rem; font-size: .75rem; color: var(--light-text);
+  text-align: center; line-height: 1.6;
+}
+
+/* ─── SETUP BANNER ───────────────────────────────────────────── */
+.setup-banner {
+  background: #1e3a5f; color: rgba(255,255,255,.9);
+  padding: .75rem 1.5rem;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  font-size: .8rem; line-height: 1.6;
+}
+.setup-banner-inner { display: flex; flex-direction: column; gap: .25rem; }
+.setup-banner code {
+  background: rgba(255,255,255,.15); padding: .1rem .4rem;
+  border-radius: 4px; font-size: .75rem; font-family: monospace;
+}
+.setup-banner button {
+  color: rgba(255,255,255,.6); font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem;
+  transition: var(--transition);
+}
+.setup-banner button:hover { color: #fff; }
+
+/* ─── SIDEBAR LOGOUT ─────────────────────────────────────────── */
+.sidebar-logout {
+  display: block; width: 100%; text-align: left;
+  font-size: .8rem; color: rgba(255,255,255,.4);
+  padding: .5rem 0; margin-top: .75rem;
+  transition: var(--transition);
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: .75rem;
+}
+.sidebar-logout:hover { color: #C0392B; }
+
 /* ─── ADMIN RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 1024px) {
   .form-grid { grid-template-columns: 1fr; }

@@ -11,6 +11,12 @@
 </head>
 <body>
 
+  <!-- SETUP BANNER (hidden once Supabase is configured) -->
+  <div class="setup-banner" id="setupBanner" style="display:none;">
+    <span>⚙ Running in demo mode — <a href="admin.html">configure Supabase</a> to connect your database.</span>
+    <button onclick="this.parentElement.style.display='none'">×</button>
+  </div>
+
   <!-- HEADER -->
   <header class="header" id="header">
     <div class="header-inner">
@@ -69,9 +75,7 @@
         <span class="section-tag">Browse by Category</span>
         <h2 class="section-title">Our Collections</h2>
       </div>
-      <div class="category-grid" id="categoryGrid">
-        <!-- dynamically built from product tags -->
-      </div>
+      <div class="category-grid" id="categoryGrid"></div>
     </div>
   </section>
 
@@ -188,6 +192,8 @@
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
   <script src="js/app.js"></script>
   <script>
     function handleContact(e) {
