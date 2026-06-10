@@ -59,10 +59,5 @@ create policy "auth_delete_images"
   on storage.objects for delete
   using (bucket_id = 'product-images' and auth.role() = 'authenticated');
 
--- 4. SEED DEMO PRODUCTS (optional — delete if not needed)
-insert into products (name, category, price, original_price, description, badge, featured, sizes, colors, tags)
-values
-  ('Ivory Silk Kurta',     'Kurtas',   2800, 3500, 'A whisper-soft ivory silk kurta with delicate hand-embroidered neckline. Flows effortlessly from desk to dinner.',     'New',     true,  array['XS','S','M','L','XL'], array['Ivory','Blush','Sage'],        array['summer','handcrafted','bestseller']),
-  ('Rosewood Anarkali Set','Anarkali',  5400, 6800, 'A floor-length rosewood Anarkali adorned with subtle zari work and a flared silhouette. Comes with matching churidar and dupatta.', 'Sale', true,  array['S','M','L','XL'],      array['Rosewood','Burgundy'],        array['festive','premium']),
-  ('Midnight Linen Co-ord','Co-ords',   3200, null, 'Washed midnight-navy linen co-ord set featuring wide-leg trousers and a relaxed boxy blazer. Minimal, modern, effortlessly cool.', '',   true,  array['XS','S','M','L'],      array['Midnight Navy','Sand'],       array['contemporary','everyday']),
-  ('Blush Organza Saree',  'Sarees',    7200, null, 'Pure organza saree in the softest blush with a scattered floral hand-block print. Lightweight and luminous — perfect for celebrations.', 'Limited', false, array['Free'], array['Blush','Champagne'], array['bridal','festive','handblock']);
+-- 4. SEED DEMO PRODUCTS
+-- Run seed.sql separately for 10 demo products with images.
