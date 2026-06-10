@@ -59,6 +59,17 @@ h3 { font-size: clamp(1.2rem,2vw,1.6rem); }
 }
 .btn-outline-dark:hover { border-color: #fff; background: rgba(255,255,255,.1); }
 
+/* ─── SETUP BANNER ───────────────────────────────────────────── */
+.setup-banner {
+  background: #1e3a5f; color: rgba(255,255,255,.9);
+  padding: .7rem 1.5rem; display: flex; align-items: center;
+  justify-content: space-between; gap: 1rem;
+  font-size: .8rem; position: relative; z-index: 99;
+}
+.setup-banner a { color: #7eb3ff; border-bottom: 1px solid rgba(126,179,255,.4); }
+.setup-banner button { color: rgba(255,255,255,.5); font-size: 1.1rem; transition: var(--transition); }
+.setup-banner button:hover { color: #fff; }
+
 /* ─── HEADER ─────────────────────────────────────────────────── */
 .header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
