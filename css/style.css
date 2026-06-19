@@ -472,6 +472,46 @@ body::before {
   color: #ddd6fe;
 }
 
+/* AI tags — teal/cyan accent */
+.tag.tag-ai {
+  border-color: rgba(6, 182, 212, 0.3);
+  background: rgba(6, 182, 212, 0.07);
+  color: #67e8f9;
+}
+
+.tag.tag-ai:hover {
+  border-color: rgba(6, 182, 212, 0.6);
+  background: rgba(6, 182, 212, 0.15);
+  color: #a5f3fc;
+}
+
+/* AI group spans full width */
+.skill-group--ai {
+  grid-column: 1 / -1;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.sg-title--ai {
+  color: #22d3ee;
+}
+
+.sg-title--ai svg { color: #22d3ee; }
+
+.sg-new-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 100px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #67e8f9;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 /* ─────────────────────────────────────────────
    Footer
 ───────────────────────────────────────────── */
