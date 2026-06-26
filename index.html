@@ -84,7 +84,31 @@
   <nav class="nav" role="navigation" aria-label="Primary navigation">
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="Dhruv Parekh — home">DP</a>
-      <a href="mailto:dhruvparekh.dp@gmail.com" class="btn-ghost" aria-label="Send email to Dhruv Parekh">Get in touch</a>
+      <div class="nav-right">
+        <!-- Theme Switcher -->
+        <div class="theme-switcher">
+          <button class="theme-toggle" id="themeToggle" aria-label="Switch color theme" aria-expanded="false">
+            <span class="theme-swatch-preview"></span>
+            Theme
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="theme-menu" id="themeMenu" role="menu">
+            <button class="theme-item active" data-t="d" role="menuitem">
+              <span class="swatch" style="background:linear-gradient(135deg,#14b8a6,#6366f1)"></span>Teal
+            </button>
+            <button class="theme-item" data-t="a" role="menuitem">
+              <span class="swatch" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)"></span>Purple
+            </button>
+            <button class="theme-item" data-t="b" role="menuitem">
+              <span class="swatch" style="background:linear-gradient(135deg,#38bdf8,#818cf8)"></span>Blue
+            </button>
+            <button class="theme-item" data-t="c" role="menuitem">
+              <span class="swatch" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"></span>Amber
+            </button>
+          </div>
+        </div>
+        <a href="mailto:dhruvparekh.dp@gmail.com" class="btn-ghost" aria-label="Send email to Dhruv Parekh">Get in touch</a>
+      </div>
     </div>
   </nav>
 
@@ -113,7 +137,7 @@
           Mumbai, India
         </p>
         <p class="hero-desc">
-          Senior Software Developer &amp; Programmer with 6+ years building
+          Senior Software Developer &amp; Programmer with 7+ years building
           production-grade web apps with the MEAN stack. Now venturing into
           AI/ML — building LLM-powered applications and training models from scratch.
         </p>
@@ -151,7 +175,8 @@
     <span class="t-str">"Angular"</span><span class="t-punct">,</span>
     <span class="t-str">"Node.js"</span><span class="t-punct">,</span>
   <span class="t-punct">],</span>
-  <span class="t-key">yearsExp</span><span class="t-punct">:</span>   <span class="t-num">6</span><span class="t-punct">+,</span>
+  <span class="t-key">company</span><span class="t-punct">:</span>    <span class="t-str">"ValoFin"</span><span class="t-punct">,</span>
+  <span class="t-key">yearsExp</span><span class="t-punct">:</span>   <span class="t-num">7</span><span class="t-punct">+,</span>
   <span class="t-key">venturing</span><span class="t-punct">:</span>  <span class="t-str">"AI / ML"</span><span class="t-punct">,</span>
   <span class="t-key">available</span><span class="t-punct">:</span>  <span class="t-bool">true</span><span class="t-punct">,</span>
 <span class="t-punct">};</span>
@@ -173,18 +198,19 @@
           <div class="about-text">
             <p>
               Dhruv Parekh is a <strong>Senior Software Developer and Programmer</strong> based in
-              <strong>Mumbai, Maharashtra, India</strong>. With over 6 years of experience as a
+              <strong>Mumbai, Maharashtra, India</strong>. With over 7 years of experience as a
               <strong>web developer</strong> and <strong>full stack engineer</strong>, he builds
               production-grade applications using the <strong>MEAN stack</strong> —
-              MongoDB, Express.js, Angular, and Node.js. He is currently working at
-              <strong>Aston Processors Limited</strong> as a Senior Software Engineer.
+              MongoDB, Express.js, Angular, and Node.js. He is currently working as a
+              <strong>Senior Frontend Developer at ValoFin</strong>, a fintech subsidiary of
+              Aston Processors Limited.
             </p>
             <p>
-              As a <strong>software developer in Mumbai</strong>, Dhruv has worked across companies
-              including NSEIT Limited, HuraDigital, and SuperWise. With a Computer Science degree
-              from Shankar Narayan College and an MMS (IT) from Rohidas Patil Institute of
-              Management Studies, he brings strong fundamentals to every project he works on as
-              a <strong>programmer and engineer</strong>.
+              As a <strong>software developer in Mumbai</strong>, Dhruv has worked across 5 companies —
+              ValoFin, Aston Processors, NSEIT Limited, HuraDigital, and SuperWise. With a
+              Computer Science degree from Shankar Narayan College and an MMS (IT) from Rohidas
+              Patil Institute of Management Studies, he brings strong fundamentals to every project
+              as a <strong>programmer and engineer</strong>.
             </p>
             <p>
               Dhruv is now actively growing as an <strong>AI developer in India</strong> —
@@ -196,11 +222,11 @@
           </div>
           <div class="about-stats">
             <div class="stat-card">
-              <span class="stat-num">6<span class="stat-plus">+</span></span>
+              <span class="stat-num">7<span class="stat-plus">+</span></span>
               <span class="stat-label">Years of Experience</span>
             </div>
             <div class="stat-card">
-              <span class="stat-num">4</span>
+              <span class="stat-num">5</span>
               <span class="stat-label">Companies Worked At</span>
             </div>
             <div class="stat-card">
@@ -382,6 +408,44 @@
     window.addEventListener('scroll', () => {
       nav.classList.toggle('nav-scrolled', window.scrollY > 10);
     }, { passive: true });
+
+    // Theme switcher
+    const themeToggle = document.getElementById('themeToggle');
+    const themeMenu   = document.getElementById('themeMenu');
+    const themeItems  = themeMenu.querySelectorAll('.theme-item');
+    const html        = document.documentElement;
+
+    const saved = localStorage.getItem('dp-theme') || 'd';
+    applyTheme(saved);
+
+    themeToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = themeMenu.classList.toggle('open');
+      themeToggle.setAttribute('aria-expanded', open);
+    });
+
+    document.addEventListener('click', () => {
+      themeMenu.classList.remove('open');
+      themeToggle.setAttribute('aria-expanded', 'false');
+    });
+
+    themeItems.forEach(btn => {
+      btn.addEventListener('click', () => {
+        applyTheme(btn.dataset.t);
+        themeMenu.classList.remove('open');
+        themeToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    function applyTheme(t) {
+      if (t === 'd') {
+        html.removeAttribute('data-theme');
+      } else {
+        html.setAttribute('data-theme', t);
+      }
+      localStorage.setItem('dp-theme', t);
+      themeItems.forEach(b => b.classList.toggle('active', b.dataset.t === t));
+    }
   </script>
 </body>
 </html>
