@@ -564,6 +564,36 @@ body::before {
 
 .about-text strong { color: var(--text); font-weight: 600; }
 
+.about-lead {
+  font-size: 19px;
+  color: var(--text);
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+.about-footnote {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.about-footnote span {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-subtle);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.about-footnote span::before {
+  content: '—';
+  color: var(--accent);
+  font-size: 10px;
+}
+
 .about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 .stat-card {
