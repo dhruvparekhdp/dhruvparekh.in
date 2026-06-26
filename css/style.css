@@ -412,6 +412,8 @@ body::before {
   animation: fadeUp 0.6s var(--ease) 0.3s both;
 }
 
+.hero-desc strong { color: var(--text); font-weight: 600; }
+
 .hero-cta {
   display: flex;
   align-items: center;
@@ -436,6 +438,25 @@ body::before {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 48px var(--accent-glow);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 13px 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--text-muted);
+  background: var(--surface);
+  transition: all var(--t) var(--ease);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
 }
 
 .social-row { display: flex; gap: 10px; }
@@ -755,6 +776,138 @@ body::before {
 }
 
 /* ─────────────────────────────────────────────
+   Services — "What I can build for you"
+───────────────────────────────────────────── */
+.services {
+  position: relative;
+  z-index: 1;
+  padding: 96px 40px;
+  border-top: 1px solid var(--border);
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.service-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 30px 28px;
+  overflow: hidden;
+  transition: border-color var(--t) var(--ease), transform var(--t) var(--ease);
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.4s var(--ease);
+}
+
+.service-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-3px);
+}
+
+.service-card:hover::before { width: 100%; }
+
+.service-index {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.service-card-title {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+  letter-spacing: -0.3px;
+}
+
+.service-card-desc {
+  font-size: 14.5px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* ─────────────────────────────────────────────
+   Closing CTA band
+───────────────────────────────────────────── */
+.cta-band {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 110px 40px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.cta-band::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 120%, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.cta-band-inner { max-width: 640px; margin: 0 auto; }
+
+.cta-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+}
+
+.cta-heading {
+  font-size: clamp(30px, 4.5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  margin-bottom: 18px;
+}
+
+.cta-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto 36px;
+}
+
+.cta-band .btn-primary { font-size: 16px; padding: 15px 34px; }
+
+.cta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cta-meta {
+  margin-top: 26px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-subtle);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─────────────────────────────────────────────
    Footer
 ───────────────────────────────────────────── */
 .footer {
@@ -808,6 +961,7 @@ body::before {
   .hero-visual { order: -1; }
   .code-card { max-width: 360px; }
   .skill-groups { grid-template-columns: repeat(2, 1fr); gap: 32px 40px; }
+  .service-grid { grid-template-columns: 1fr; }
 }
 
 /* ─────────────────────────────────────────────
@@ -823,6 +977,9 @@ body::before {
 
   .about { padding: 72px 20px; }
   .skills { padding: 72px 20px; }
+  .services { padding: 72px 20px; }
+  .service-card { padding: 26px 22px; }
+  .cta-band { padding: 80px 20px; }
 
   .skill-groups { grid-template-columns: 1fr; gap: 28px; }
 
