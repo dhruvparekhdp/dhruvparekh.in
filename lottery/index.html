@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Lucky Number — Lottery</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card-2: #222634;
+    --border: #2e3345;
+    --text: #e8eaf0;
+    --muted: #9aa0b4;
+    --accent: #f5b942;
+    --accent-dark: #d99b1d;
+    --green: #3ecf8e;
+    --red: #ff5c6c;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- layout ---------- */
+  .container { max-width: 960px; margin: 0 auto; padding: 16px; }
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  header.topbar h1 { font-size: 1.1rem; letter-spacing: 0.5px; }
+  header.topbar h1 span { color: var(--accent); }
+  .user-chip { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+  .credits-badge {
+    background: var(--card-2); border: 1px solid var(--accent);
+    color: var(--accent); padding: 4px 12px; border-radius: 999px; font-weight: 600;
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-top: 16px;
+  }
+  .card h2 { font-size: 1rem; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ---------- forms ---------- */
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin: 10px 0 4px; }
+  input, select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card-2);
+    color: var(--text); font-size: 1rem;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  button {
+    cursor: pointer; border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 0.95rem; font-weight: 600;
+    background: var(--accent); color: #1a1300; margin-top: 14px;
+  }
+  button:hover { background: var(--accent-dark); }
+  button.secondary { background: var(--card-2); color: var(--text); border: 1px solid var(--border); }
+  button.danger { background: var(--red); color: #fff; }
+  button.small { padding: 6px 12px; font-size: 0.8rem; margin-top: 0; }
+
+  /* ---------- login ---------- */
+  .login-wrap { max-width: 380px; margin: 8vh auto 0; padding: 16px; }
+  .login-wrap .logo { text-align: center; font-size: 2.2rem; margin-bottom: 8px; }
+  .login-wrap .tagline { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+  .msg { margin-top: 12px; font-size: 0.9rem; min-height: 1.2em; }
+  .msg.error { color: var(--red); }
+  .msg.ok { color: var(--green); }
+
+  /* ---------- number grid ---------- */
+  .num-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 8px; }
+  .num-btn {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 700; border-radius: 10px;
+    background: var(--card-2); border: 2px solid var(--border);
+    color: var(--text); cursor: pointer; transition: all 0.12s;
+    margin-top: 0; padding: 0;
+  }
+  .num-btn:hover { border-color: var(--accent); background: var(--card-2); }
+  .num-btn.selected { background: var(--accent); color: #1a1300; border-color: var(--accent); }
+
+  /* ---------- tables ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 0.8rem; text-transform: uppercase; }
+  .table-scroll { overflow-x: auto; }
+  .tag { padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .tag.pending { background: #3a3320; color: var(--accent); }
+  .tag.won { background: #143526; color: var(--green); }
+  .tag.lost { background: #3a1d22; color: var(--red); }
+
+  /* ---------- admin tabs ---------- */
+  .tabs { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .tabs button { margin-top: 0; }
+  .tabs button.active { background: var(--accent); color: #1a1300; }
+  .tabs button:not(.active) { background: var(--card-2); color: var(--text); border: 1px solid var(--border); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .stat {
+    flex: 1; min-width: 140px; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .stat .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+  .stat .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+  .stat .value.gold { color: var(--accent); }
+
+  .winner-banner {
+    text-align: center; padding: 18px; border-radius: var(--radius);
+    background: linear-gradient(135deg, #2a2410, #1a1d27);
+    border: 1px solid var(--accent); margin-top: 16px;
+  }
+  .winner-banner .big-num { font-size: 3rem; font-weight: 800; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN VIEW ================= -->
+<div id="view-login" class="login-wrap">
+  <div class="logo">🎰</div>
+  <div class="tagline">Lucky Number Lottery</div>
+  <div class="card">
+    <h2>Sign in</h2>
+    <label for="login-username">Username</label>
+    <input id="login-username" autocomplete="username" placeholder="username">
+    <label for="login-password">Password</label>
+    <input id="login-password" type="password" autocomplete="current-password" placeholder="password">
+    <button id="btn-login" style="width:100%">Login</button>
+    <div id="login-msg" class="msg error"></div>
+  </div>
+</div>
+
+<!-- ================= PLAYER VIEW ================= -->
+<div id="view-player" class="hidden">
+  <header class="topbar">
+    <h1>🎰 Lucky <span>Number</span></h1>
+    <div class="user-chip">
+      <span id="player-name"></span>
+      <span class="credits-badge" id="player-credits">0 cr</span>
+      <button class="secondary small" onclick="logout()">Logout</button>
+    </div>
+  </header>
+  <div class="container">
+    <div id="player-last-result"></div>
+    <div class="card">
+      <h2>Place your bet — Round <span id="player-round"></span></h2>
+      <p style="color:var(--muted); font-size:0.9rem;">Pick a number from 0–9. If it's drawn, you win <strong style="color:var(--accent)">9× your stake</strong>.</p>
+      <div class="num-grid" id="num-grid"></div>
+      <label for="bet-amount">Stake (credits)</label>
+      <input id="bet-amount" type="number" min="1" step="1" placeholder="e.g. 10">
+      <button id="btn-bet" style="width:100%">Place Bet</button>
+      <div id="bet-msg" class="msg"></div>
+    </div>
+    <div class="card">
+      <h2>My bets</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Round</th><th>Number</th><th>Stake</th><th>Status</th><th>Payout</th></tr></thead>
+          <tbody id="my-bets"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADMIN VIEW ================= -->
+<div id="view-admin" class="hidden">
+  <header class="topbar">
+    <h1>🎰 Lucky <span>Number</span> — Admin</h1>
+    <div class="user-chip">
+      <span>admin</span>
+      <button class="secondary small" onclick="logout()">Logout</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="stat-row">
+      <div class="stat"><div class="label">Current round</div><div class="value" id="stat-round">1</div></div>
+      <div class="stat"><div class="label">Pending bets</div><div class="value" id="stat-bets">0</div></div>
+      <div class="stat"><div class="label">Total staked</div><div class="value gold" id="stat-staked">0</div></div>
+      <div class="stat"><div class="label">Players</div><div class="value" id="stat-users">0</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="draw" onclick="showTab('draw')">🎲 Draw</button>
+      <button data-tab="users" onclick="showTab('users')">👥 Users</button>
+      <button data-tab="bets" onclick="showTab('bets')">🧾 Bets</button>
+    </div>
+
+    <!-- draw tab -->
+    <div id="tab-draw">
+      <div class="card">
+        <h2>Select winning number — Round <span id="admin-round"></span></h2>
+        <p style="color:var(--muted); font-size:0.9rem;">Pick the number that wins this round, then declare the result. All pending bets get settled: winners are paid 9× their stake.</p>
+        <div class="num-grid" id="admin-num-grid"></div>
+        <div id="round-exposure" style="margin-top:12px; color:var(--muted); font-size:0.9rem;"></div>
+        <button id="btn-declare" class="danger" style="width:100%">Declare Result &amp; Settle Bets</button>
+        <div id="declare-msg" class="msg"></div>
+      </div>
+      <div class="card">
+        <h2>Past results</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Round</th><th>Winning #</th><th>Bets</th><th>Paid out</th><th>When</th></tr></thead>
+            <tbody id="results-history"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- users tab -->
+    <div id="tab-users" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Create user</h2>
+          <label for="new-username">Username</label>
+          <input id="new-username" placeholder="e.g. ravi">
+          <label for="new-password">Password</label>
+          <input id="new-password" placeholder="password">
+          <label for="new-credits">Starting credits</label>
+          <input id="new-credits" type="number" min="0" value="100">
+          <button id="btn-create-user" style="width:100%">Create User</button>
+          <div id="create-user-msg" class="msg"></div>
+        </div>
+        <div class="card">
+          <h2>Add credits</h2>
+          <label for="credit-user">User</label>
+          <select id="credit-user"></select>
+          <label for="credit-amount">Credits to add</label>
+          <input id="credit-amount" type="number" min="1" placeholder="e.g. 50">
+          <button id="btn-add-credits" style="width:100%">Add Credits</button>
+          <div id="add-credits-msg" class="msg"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>All users</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Username</th><th>Credits</th><th>Bets placed</th><th></th></tr></thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- bets tab -->
+    <div id="tab-bets" class="hidden">
+      <div class="card">
+        <h2>All bets</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Round</th><th>User</th><th>Number</th><th>Stake</th><th>Status</th><th>Payout</th></tr></thead>
+            <tbody id="all-bets"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+ * Storage layer — the ONLY place that touches localStorage.
+ * To move to Supabase later, reimplement db.load/db.save (or replace the
+ * call sites of db.* helpers with Supabase queries) and leave the UI alone.
+ * ========================================================================= */
+const PAYOUT_MULTIPLIER = 9;   // win pays stake × 9 (numbers are 0–9)
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'admin123'; // hobby project — move to real auth with Supabase
+
+const db = {
+  KEY: 'lottery_db_v1',
+  SESSION_KEY: 'lottery_session_v1',
+
+  defaults() {
+    return {
+      users: [],        // { username, password, credits }
+      bets: [],         // { id, round, username, number, stake, status: 'pending'|'won'|'lost', payout }
+      results: [],      // { round, winningNumber, betCount, totalPaid, at }
+      currentRound: 1,
+    };
+  },
+
+  load() {
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      return raw ? { ...this.defaults(), ...JSON.parse(raw) } : this.defaults();
+    } catch { return this.defaults(); }
+  },
+
+  save(state) { localStorage.setItem(this.KEY, JSON.stringify(state)); },
+
+  getSession() {
+    try { return JSON.parse(localStorage.getItem(this.SESSION_KEY)); } catch { return null; }
+  },
+  setSession(s) { localStorage.setItem(this.SESSION_KEY, JSON.stringify(s)); },
+  clearSession() { localStorage.removeItem(this.SESSION_KEY); },
+};
+
+let state = db.load();
+const $ = (id) => document.getElementById(id);
+
+/* ============================ auth ============================ */
+
+function login() {
+  const username = $('login-username').value.trim();
+  const password = $('login-password').value;
+  const msg = $('login-msg');
+  msg.textContent = '';
+
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    db.setSession({ role: 'admin', username });
+    route();
+    return;
+  }
+  const user = state.users.find(u => u.username === username);
+  if (!user || user.password !== password) {
+    msg.textContent = 'Invalid username or password.';
+    return;
+  }
+  db.setSession({ role: 'player', username });
+  route();
+}
+
+function logout() {
+  db.clearSession();
+  route();
+}
+
+/* ============================ routing ============================ */
+
+function route() {
+  const session = db.getSession();
+  $('view-login').classList.add('hidden');
+  $('view-player').classList.add('hidden');
+  $('view-admin').classList.add('hidden');
+
+  if (!session) {
+    $('view-login').classList.remove('hidden');
+    $('login-username').value = '';
+    $('login-password').value = '';
+    $('login-msg').textContent = '';
+  } else if (session.role === 'admin') {
+    $('view-admin').classList.remove('hidden');
+    showTab('draw');
+    renderAdmin();
+  } else {
+    // player may have been deleted by admin
+    if (!state.users.find(u => u.username === session.username)) { db.clearSession(); return route(); }
+    $('view-player').classList.remove('hidden');
+    renderPlayer();
+  }
+}
+
+/* ============================ player ============================ */
+
+let selectedNumber = null;
+
+function buildNumberGrid(containerId, onSelect) {
+  const grid = $(containerId);
+  grid.innerHTML = '';
+  for (let n = 0; n <= 9; n++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'num-btn';
+    b.textContent = n;
+    b.onclick = () => {
+      grid.querySelectorAll('.num-btn').forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      onSelect(n);
+    };
+    grid.appendChild(b);
+  }
+}
+
+function renderPlayer() {
+  const session = db.getSession();
+  const user = state.users.find(u => u.username === session.username);
+  $('player-name').textContent = user.username;
+  $('player-credits').textContent = `${user.credits} cr`;
+  $('player-round').textContent = state.currentRound;
+
+  selectedNumber = null;
+  buildNumberGrid('num-grid', n => { selectedNumber = n; });
+  $('bet-amount').value = '';
+  $('bet-msg').textContent = '';
+
+  // last result banner
+  const last = state.results[state.results.length - 1];
+  $('player-last-result').innerHTML = last
+    ? `<div class="winner-banner">Round ${last.round} winning number<div class="big-num">${last.winningNumber}</div></div>`
+    : '';
+
+  // my bets (latest first)
+  const rows = state.bets
+    .filter(b => b.username === user.username)
+    .slice().reverse()
+    .map(b => `<tr>
+        <td>${b.round}</td>
+        <td><strong>${b.number}</strong></td>
+        <td>${b.stake}</td>
+        <td><span class="tag ${b.status}">${b.status}</span></td>
+        <td>${b.status === 'won' ? '+' + b.payout : b.status === 'lost' ? '0' : '—'}</td>
+      </tr>`).join('');
+  $('my-bets').innerHTML = rows || '<tr><td colspan="5" style="color:var(--muted)">No bets yet — pick a number above!</td></tr>';
+}
+
+function placeBet() {
+  const session = db.getSession();
+  const user = state.users.find(u => u.username === session.username);
+  const stake = Math.floor(Number($('bet-amount').value));
+  const msg = $('bet-msg');
+  msg.className = 'msg error';
+
+  if (selectedNumber === null) { msg.textContent = 'Pick a number first.'; return; }
+  if (!stake || stake < 1)     { msg.textContent = 'Enter a valid stake (at least 1 credit).'; return; }
+  if (stake > user.credits)    { msg.textContent = `Not enough credits — you have ${user.credits}.`; return; }
+
+  user.credits -= stake;
+  state.bets.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    round: state.currentRound,
+    username: user.username,
+    number: selectedNumber,
+    stake,
+    status: 'pending',
+    payout: 0,
+  });
+  db.save(state);
+
+  msg.className = 'msg ok';
+  renderPlayer();
+  $('bet-msg').className = 'msg ok';
+  $('bet-msg').textContent = `Bet placed: ${stake} cr on number ${state.bets[state.bets.length-1].number}. Good luck! 🍀`;
+}
+
+/* ============================ admin ============================ */
+
+let adminSelectedNumber = null;
+
+function showTab(name) {
+  ['draw', 'users', 'bets'].forEach(t => {
+    $('tab-' + t).classList.toggle('hidden', t !== name);
+  });
+  document.querySelectorAll('.tabs button').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+}
+
+function renderAdmin() {
+  const pending = state.bets.filter(b => b.status === 'pending');
+
+  $('stat-round').textContent = state.currentRound;
+  $('stat-bets').textContent = pending.length;
+  $('stat-staked').textContent = pending.reduce((s, b) => s + b.stake, 0);
+  $('stat-users').textContent = state.users.length;
+  $('admin-round').textContent = state.currentRound;
+
+  adminSelectedNumber = null;
+  buildNumberGrid('admin-num-grid', n => { adminSelectedNumber = n; renderExposure(); });
+  renderExposure();
+  $('declare-msg').textContent = '';
+
+  // results history (latest first)
+  $('results-history').innerHTML = state.results.slice().reverse().map(r => `<tr>
+      <td>${r.round}</td>
+      <td><strong style="color:var(--accent)">${r.winningNumber}</strong></td>
+      <td>${r.betCount}</td>
+      <td>${r.totalPaid}</td>
+      <td>${new Date(r.at).toLocaleString()}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">No rounds settled yet.</td></tr>';
+
+  // users
+  $('users-table').innerHTML = state.users.map(u => `<tr>
+      <td>${u.username}</td>
+      <td>${u.credits}</td>
+      <td>${state.bets.filter(b => b.username === u.username).length}</td>
+      <td><button class="danger small" onclick="deleteUser('${u.username}')">Delete</button></td>
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--muted)">No users yet — create one.</td></tr>';
+
+  // credit dropdown
+  $('credit-user').innerHTML = state.users.map(u =>
+    `<option value="${u.username}">${u.username} (${u.credits} cr)</option>`).join('');
+
+  // all bets (latest first)
+  $('all-bets').innerHTML = state.bets.slice().reverse().map(b => `<tr>
+      <td>${b.round}</td>
+      <td>${b.username}</td>
+      <td><strong>${b.number}</strong></td>
+      <td>${b.stake}</td>
+      <td><span class="tag ${b.status}">${b.status}</span></td>
+      <td>${b.status === 'won' ? '+' + b.payout : b.status === 'lost' ? '0' : '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">No bets yet.</td></tr>';
+}
+
+// shows admin how much each number would cost to declare
+function renderExposure() {
+  const pending = state.bets.filter(b => b.status === 'pending');
+  const el = $('round-exposure');
+  if (!pending.length) { el.textContent = 'No pending bets this round.'; return; }
+  if (adminSelectedNumber === null) {
+    el.textContent = 'Select a number to see how much it would pay out.';
+    return;
+  }
+  const payout = pending
+    .filter(b => b.number === adminSelectedNumber)
+    .reduce((s, b) => s + b.stake * PAYOUT_MULTIPLIER, 0);
+  const winners = pending.filter(b => b.number === adminSelectedNumber).length;
+  el.innerHTML = `Declaring <strong style="color:var(--accent)">${adminSelectedNumber}</strong> pays out <strong>${payout} cr</strong> to ${winners} winning bet${winners === 1 ? '' : 's'}.`;
+}
+
+function declareResult() {
+  const msg = $('declare-msg');
+  msg.className = 'msg error';
+  if (adminSelectedNumber === null) { msg.textContent = 'Select the winning number first.'; return; }
+
+  const winningNumber = adminSelectedNumber;
+  const pending = state.bets.filter(b => b.status === 'pending');
+  let totalPaid = 0;
+
+  for (const bet of pending) {
+    if (bet.number === winningNumber) {
+      bet.status = 'won';
+      bet.payout = bet.stake * PAYOUT_MULTIPLIER;
+      totalPaid += bet.payout;
+      const user = state.users.find(u => u.username === bet.username);
+      if (user) user.credits += bet.payout;
+    } else {
+      bet.status = 'lost';
+    }
+  }
+
+  state.results.push({
+    round: state.currentRound,
+    winningNumber,
+    betCount: pending.length,
+    totalPaid,
+    at: new Date().toISOString(),
+  });
+  state.currentRound += 1;
+  db.save(state);
+
+  renderAdmin();
+  $('declare-msg').className = 'msg ok';
+  $('declare-msg').textContent = `Round settled! Winning number ${winningNumber} — paid out ${totalPaid} cr. Round ${state.currentRound} is open.`;
+}
+
+function createUser() {
+  const username = $('new-username').value.trim().toLowerCase();
+  const password = $('new-password').value;
+  const credits = Math.max(0, Math.floor(Number($('new-credits').value) || 0));
+  const msg = $('create-user-msg');
+  msg.className = 'msg error';
+
+  if (!username || !password)            { msg.textContent = 'Username and password are required.'; return; }
+  if (username === ADMIN_USER)           { msg.textContent = 'That username is reserved.'; return; }
+  if (!/^[a-z0-9_]{2,20}$/.test(username)) { msg.textContent = 'Username: 2–20 chars, letters/numbers/underscore.'; return; }
+  if (state.users.find(u => u.username === username)) { msg.textContent = 'Username already exists.'; return; }
+
+  state.users.push({ username, password, credits });
+  db.save(state);
+  $('new-username').value = '';
+  $('new-password').value = '';
+  $('new-credits').value = '100';
+  renderAdmin();
+  msg.className = 'msg ok';
+  $('create-user-msg').className = 'msg ok';
+  $('create-user-msg').textContent = `User "${username}" created with ${credits} credits.`;
+}
+
+function addCredits() {
+  const username = $('credit-user').value;
+  const amount = Math.floor(Number($('credit-amount').value));
+  const msg = $('add-credits-msg');
+  msg.className = 'msg error';
+
+  const user = state.users.find(u => u.username === username);
+  if (!user)              { msg.textContent = 'Pick a user.'; return; }
+  if (!amount || amount < 1) { msg.textContent = 'Enter a valid amount.'; return; }
+
+  user.credits += amount;
+  db.save(state);
+  $('credit-amount').value = '';
+  renderAdmin();
+  $('add-credits-msg').className = 'msg ok';
+  $('add-credits-msg').textContent = `Added ${amount} cr to ${username} (now ${user.credits}).`;
+}
+
+function deleteUser(username) {
+  if (!confirm(`Delete user "${username}" and their bets?`)) return;
+  state.users = state.users.filter(u => u.username !== username);
+  state.bets = state.bets.filter(b => b.username !== username);
+  db.save(state);
+  renderAdmin();
+}
+
+/* ============================ wire up ============================ */
+
+$('btn-login').onclick = login;
+$('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+$('btn-bet').onclick = placeBet;
+$('btn-declare').onclick = declareResult;
+$('btn-create-user').onclick = createUser;
+$('btn-add-credits').onclick = addCredits;
+
+route();
+</script>
+</body>
+</html>
