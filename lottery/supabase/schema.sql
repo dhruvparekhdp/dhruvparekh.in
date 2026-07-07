@@ -49,25 +49,34 @@ alter table lottery_players enable row level security;
 alter table lottery_matches enable row level security;
 alter table lottery_bets    enable row level security;
 
+-- (drop before create so this whole file is safe to re-run)
+
 -- players: admin only (contains password hashes; players use RPCs)
+drop policy if exists "auth_all_players" on lottery_players;
 create policy "auth_all_players" on lottery_players
   for all using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');
 
 -- matches: anyone can read; only admin writes
+drop policy if exists "public_read_matches" on lottery_matches;
 create policy "public_read_matches" on lottery_matches
   for select using (true);
+drop policy if exists "auth_insert_matches" on lottery_matches;
 create policy "auth_insert_matches" on lottery_matches
   for insert with check (auth.role() = 'authenticated');
+drop policy if exists "auth_update_matches" on lottery_matches;
 create policy "auth_update_matches" on lottery_matches
   for update using (auth.role() = 'authenticated');
+drop policy if exists "auth_delete_matches" on lottery_matches;
 create policy "auth_delete_matches" on lottery_matches
   for delete using (auth.role() = 'authenticated');
 
 -- bets: anyone can read (bet history); inserts happen only inside
 -- the lottery_place_bet function, updates only inside settle
+drop policy if exists "public_read_bets" on lottery_bets;
 create policy "public_read_bets" on lottery_bets
   for select using (true);
+drop policy if exists "auth_delete_bets" on lottery_bets;
 create policy "auth_delete_bets" on lottery_bets
   for delete using (auth.role() = 'authenticated');
 
@@ -262,3 +271,8 @@ revoke execute on function lottery_remove_credits(text, integer) from anon;
 
 grant execute on function lottery_login(text, text) to anon, authenticated;
 grant execute on function lottery_place_bet(text, text, uuid, integer, integer) to anon, authenticated;
+
+-- 5. REFRESH API SCHEMA CACHE ------------------------------------
+-- makes new tables/functions visible to the REST API immediately
+
+notify pgrst, 'reload schema';
