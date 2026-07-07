@@ -96,6 +96,9 @@
   .tag.pending { background: #3a3320; color: var(--accent); }
   .tag.won { background: #143526; color: var(--green); }
   .tag.lost { background: #3a1d22; color: var(--red); }
+  .tag.open { background: #143526; color: var(--green); }
+  .tag.closed { background: #3a1d22; color: var(--red); }
+  .tag.settled { background: #3a3320; color: var(--accent); }
 
   /* ---------- admin tabs ---------- */
   .tabs { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
@@ -121,6 +124,7 @@
     border: 1px solid var(--accent); margin-top: 16px;
   }
   .winner-banner .big-num { font-size: 3rem; font-weight: 800; color: var(--accent); }
+  .winner-banner .match-name { color: var(--muted); font-size: 0.9rem; }
 </style>
 </head>
 <body>
@@ -153,19 +157,24 @@
   <div class="container">
     <div id="player-last-result"></div>
     <div class="card">
-      <h2>Place your bet — Round <span id="player-round"></span></h2>
-      <p style="color:var(--muted); font-size:0.9rem;">Pick a number from 0–9. If it's drawn, you win <strong style="color:var(--accent)">9× your stake</strong>.</p>
-      <div class="num-grid" id="num-grid"></div>
-      <label for="bet-amount">Stake (credits)</label>
-      <input id="bet-amount" type="number" min="1" step="1" placeholder="e.g. 10">
-      <button id="btn-bet" style="width:100%">Place Bet</button>
-      <div id="bet-msg" class="msg"></div>
+      <h2>Place your bet</h2>
+      <div id="no-open-matches" class="hidden" style="color:var(--muted)">No matches are open for betting right now — check back soon.</div>
+      <div id="bet-form">
+        <label for="match-select">Match</label>
+        <select id="match-select"></select>
+        <p style="color:var(--muted); font-size:0.9rem; margin-top:10px;">Pick a number from 0–9. If it's drawn, you win <strong style="color:var(--accent)">9× your stake</strong>.</p>
+        <div class="num-grid" id="num-grid"></div>
+        <label for="bet-amount">Stake (credits)</label>
+        <input id="bet-amount" type="number" min="1" step="1" placeholder="e.g. 10">
+        <button id="btn-bet" style="width:100%">Place Bet</button>
+        <div id="bet-msg" class="msg"></div>
+      </div>
     </div>
     <div class="card">
       <h2>My bets</h2>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Round</th><th>Number</th><th>Stake</th><th>Status</th><th>Payout</th></tr></thead>
+          <thead><tr><th>Match</th><th>Number</th><th>Stake</th><th>Status</th><th>Payout</th></tr></thead>
           <tbody id="my-bets"></tbody>
         </table>
       </div>
@@ -184,34 +193,44 @@
   </header>
   <div class="container">
     <div class="stat-row">
-      <div class="stat"><div class="label">Current round</div><div class="value" id="stat-round">1</div></div>
+      <div class="stat"><div class="label">Open matches</div><div class="value" id="stat-open">0</div></div>
       <div class="stat"><div class="label">Pending bets</div><div class="value" id="stat-bets">0</div></div>
       <div class="stat"><div class="label">Total staked</div><div class="value gold" id="stat-staked">0</div></div>
       <div class="stat"><div class="label">Players</div><div class="value" id="stat-users">0</div></div>
     </div>
 
     <div class="tabs">
-      <button class="active" data-tab="draw" onclick="showTab('draw')">🎲 Draw</button>
+      <button class="active" data-tab="matches" onclick="showTab('matches')">🏟️ Matches</button>
       <button data-tab="users" onclick="showTab('users')">👥 Users</button>
       <button data-tab="bets" onclick="showTab('bets')">🧾 Bets</button>
     </div>
 
-    <!-- draw tab -->
-    <div id="tab-draw">
+    <!-- matches tab -->
+    <div id="tab-matches">
       <div class="card">
-        <h2>Select winning number — Round <span id="admin-round"></span></h2>
-        <p style="color:var(--muted); font-size:0.9rem;">Pick the number that wins this round, then declare the result. All pending bets get settled: winners are paid 9× their stake.</p>
+        <h2>Create match</h2>
+        <label for="new-match-name">Match name</label>
+        <input id="new-match-name" placeholder="e.g. Friday Night Draw">
+        <button id="btn-create-match" style="width:100%">Create Match (opens for betting)</button>
+        <div id="create-match-msg" class="msg"></div>
+      </div>
+
+      <div class="card hidden" id="settle-panel">
+        <h2>Settle match: <span id="settle-match-name" style="color:var(--accent)"></span></h2>
+        <p style="color:var(--muted); font-size:0.9rem;">Pick the winning number, then declare. All pending bets on this match get settled: winners are paid 9× their stake.</p>
         <div class="num-grid" id="admin-num-grid"></div>
-        <div id="round-exposure" style="margin-top:12px; color:var(--muted); font-size:0.9rem;"></div>
+        <div id="match-exposure" style="margin-top:12px; color:var(--muted); font-size:0.9rem;"></div>
         <button id="btn-declare" class="danger" style="width:100%">Declare Result &amp; Settle Bets</button>
+        <button id="btn-cancel-settle" class="secondary" style="width:100%">Cancel</button>
         <div id="declare-msg" class="msg"></div>
       </div>
+
       <div class="card">
-        <h2>Past results</h2>
+        <h2>All matches</h2>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Round</th><th>Winning #</th><th>Bets</th><th>Paid out</th><th>When</th></tr></thead>
-            <tbody id="results-history"></tbody>
+            <thead><tr><th>Match</th><th>Status</th><th>Winning #</th><th>Bets</th><th>Staked</th><th>Paid out</th><th>Actions</th></tr></thead>
+            <tbody id="matches-table"></tbody>
           </table>
         </div>
       </div>
@@ -258,7 +277,7 @@
         <h2>All bets</h2>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Round</th><th>User</th><th>Number</th><th>Stake</th><th>Status</th><th>Payout</th></tr></thead>
+            <thead><tr><th>Match</th><th>User</th><th>Number</th><th>Stake</th><th>Status</th><th>Payout</th></tr></thead>
             <tbody id="all-bets"></tbody>
           </table>
         </div>
@@ -278,22 +297,32 @@ const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'admin123'; // hobby project — move to real auth with Supabase
 
 const db = {
-  KEY: 'lottery_db_v1',
+  KEY: 'lottery_db_v2',
+  OLD_KEY: 'lottery_db_v1',
   SESSION_KEY: 'lottery_session_v1',
 
   defaults() {
     return {
       users: [],        // { username, password, credits }
-      bets: [],         // { id, round, username, number, stake, status: 'pending'|'won'|'lost', payout }
-      results: [],      // { round, winningNumber, betCount, totalPaid, at }
-      currentRound: 1,
+      matches: [],      // { id, name, status: 'open'|'closed'|'settled', winningNumber, totalPaid, createdAt, settledAt }
+      bets: [],         // { id, matchId, username, number, stake, status: 'pending'|'won'|'lost', payout }
     };
   },
 
   load() {
     try {
       const raw = localStorage.getItem(this.KEY);
-      return raw ? { ...this.defaults(), ...JSON.parse(raw) } : this.defaults();
+      if (raw) return { ...this.defaults(), ...JSON.parse(raw) };
+      // migrate from v1 (round-based): keep users + credits, drop old bets/results
+      const old = localStorage.getItem(this.OLD_KEY);
+      if (old) {
+        const prev = JSON.parse(old);
+        const s = this.defaults();
+        s.users = (prev.users || []).map(u => ({ username: u.username, password: u.password, credits: u.credits }));
+        this.save(s);
+        return s;
+      }
+      return this.defaults();
     } catch { return this.defaults(); }
   },
 
@@ -308,6 +337,10 @@ const db = {
 
 let state = db.load();
 const $ = (id) => document.getElementById(id);
+const matchById = (id) => state.matches.find(m => m.id === id);
+const matchName = (id) => (matchById(id) || { name: '(deleted)' }).name;
+const openMatches = () => state.matches.filter(m => m.status === 'open');
+const pendingBetsFor = (matchId) => state.bets.filter(b => b.matchId === matchId && b.status === 'pending');
 
 /* ============================ auth ============================ */
 
@@ -351,7 +384,8 @@ function route() {
     $('login-msg').textContent = '';
   } else if (session.role === 'admin') {
     $('view-admin').classList.remove('hidden');
-    showTab('draw');
+    showTab('matches');
+    cancelSettle();
     renderAdmin();
   } else {
     // player may have been deleted by admin
@@ -387,17 +421,23 @@ function renderPlayer() {
   const user = state.users.find(u => u.username === session.username);
   $('player-name').textContent = user.username;
   $('player-credits').textContent = `${user.credits} cr`;
-  $('player-round').textContent = state.currentRound;
+
+  // open matches to bet on
+  const open = openMatches();
+  $('no-open-matches').classList.toggle('hidden', open.length > 0);
+  $('bet-form').classList.toggle('hidden', open.length === 0);
+  $('match-select').innerHTML = open.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
 
   selectedNumber = null;
   buildNumberGrid('num-grid', n => { selectedNumber = n; });
   $('bet-amount').value = '';
   $('bet-msg').textContent = '';
 
-  // last result banner
-  const last = state.results[state.results.length - 1];
+  // latest settled match banner
+  const settled = state.matches.filter(m => m.status === 'settled');
+  const last = settled[settled.length - 1];
   $('player-last-result').innerHTML = last
-    ? `<div class="winner-banner">Round ${last.round} winning number<div class="big-num">${last.winningNumber}</div></div>`
+    ? `<div class="winner-banner"><div class="match-name">${last.name} — winning number</div><div class="big-num">${last.winningNumber}</div></div>`
     : '';
 
   // my bets (latest first)
@@ -405,50 +445,53 @@ function renderPlayer() {
     .filter(b => b.username === user.username)
     .slice().reverse()
     .map(b => `<tr>
-        <td>${b.round}</td>
+        <td>${matchName(b.matchId)}</td>
         <td><strong>${b.number}</strong></td>
         <td>${b.stake}</td>
         <td><span class="tag ${b.status}">${b.status}</span></td>
         <td>${b.status === 'won' ? '+' + b.payout : b.status === 'lost' ? '0' : '—'}</td>
       </tr>`).join('');
-  $('my-bets').innerHTML = rows || '<tr><td colspan="5" style="color:var(--muted)">No bets yet — pick a number above!</td></tr>';
+  $('my-bets').innerHTML = rows || '<tr><td colspan="5" style="color:var(--muted)">No bets yet — pick a match and a number above!</td></tr>';
 }
 
 function placeBet() {
   const session = db.getSession();
   const user = state.users.find(u => u.username === session.username);
   const stake = Math.floor(Number($('bet-amount').value));
+  const match = matchById($('match-select').value);
   const msg = $('bet-msg');
   msg.className = 'msg error';
 
+  if (!match || match.status !== 'open') { msg.textContent = 'That match is not open for betting.'; renderPlayer(); return; }
   if (selectedNumber === null) { msg.textContent = 'Pick a number first.'; return; }
   if (!stake || stake < 1)     { msg.textContent = 'Enter a valid stake (at least 1 credit).'; return; }
   if (stake > user.credits)    { msg.textContent = `Not enough credits — you have ${user.credits}.`; return; }
 
+  const number = selectedNumber;
   user.credits -= stake;
   state.bets.push({
     id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-    round: state.currentRound,
+    matchId: match.id,
     username: user.username,
-    number: selectedNumber,
+    number,
     stake,
     status: 'pending',
     payout: 0,
   });
   db.save(state);
 
-  msg.className = 'msg ok';
   renderPlayer();
   $('bet-msg').className = 'msg ok';
-  $('bet-msg').textContent = `Bet placed: ${stake} cr on number ${state.bets[state.bets.length-1].number}. Good luck! 🍀`;
+  $('bet-msg').textContent = `Bet placed on "${match.name}": ${stake} cr on number ${number}. Good luck! 🍀`;
 }
 
 /* ============================ admin ============================ */
 
 let adminSelectedNumber = null;
+let settlingMatchId = null;
 
 function showTab(name) {
-  ['draw', 'users', 'bets'].forEach(t => {
+  ['matches', 'users', 'bets'].forEach(t => {
     $('tab-' + t).classList.toggle('hidden', t !== name);
   });
   document.querySelectorAll('.tabs button').forEach(b =>
@@ -458,25 +501,33 @@ function showTab(name) {
 function renderAdmin() {
   const pending = state.bets.filter(b => b.status === 'pending');
 
-  $('stat-round').textContent = state.currentRound;
+  $('stat-open').textContent = openMatches().length;
   $('stat-bets').textContent = pending.length;
   $('stat-staked').textContent = pending.reduce((s, b) => s + b.stake, 0);
   $('stat-users').textContent = state.users.length;
-  $('admin-round').textContent = state.currentRound;
 
-  adminSelectedNumber = null;
-  buildNumberGrid('admin-num-grid', n => { adminSelectedNumber = n; renderExposure(); });
-  renderExposure();
-  $('declare-msg').textContent = '';
-
-  // results history (latest first)
-  $('results-history').innerHTML = state.results.slice().reverse().map(r => `<tr>
-      <td>${r.round}</td>
-      <td><strong style="color:var(--accent)">${r.winningNumber}</strong></td>
-      <td>${r.betCount}</td>
-      <td>${r.totalPaid}</td>
-      <td>${new Date(r.at).toLocaleString()}</td>
-    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">No rounds settled yet.</td></tr>';
+  // matches table (latest first)
+  $('matches-table').innerHTML = state.matches.slice().reverse().map(m => {
+    const bets = state.bets.filter(b => b.matchId === m.id);
+    const staked = bets.reduce((s, b) => s + b.stake, 0);
+    let actions = '';
+    if (m.status === 'open') {
+      actions = `<button class="secondary small" onclick="setMatchStatus('${m.id}','closed')">Close betting</button>
+                 <button class="small" onclick="startSettle('${m.id}')">Settle</button>`;
+    } else if (m.status === 'closed') {
+      actions = `<button class="secondary small" onclick="setMatchStatus('${m.id}','open')">Reopen</button>
+                 <button class="small" onclick="startSettle('${m.id}')">Settle</button>`;
+    }
+    return `<tr>
+      <td>${m.name}</td>
+      <td><span class="tag ${m.status}">${m.status}</span></td>
+      <td>${m.status === 'settled' ? `<strong style="color:var(--accent)">${m.winningNumber}</strong>` : '—'}</td>
+      <td>${bets.length}</td>
+      <td>${staked}</td>
+      <td>${m.status === 'settled' ? m.totalPaid : '—'}</td>
+      <td style="white-space:nowrap">${actions}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="color:var(--muted)">No matches yet — create one above.</td></tr>';
 
   // users
   $('users-table').innerHTML = state.users.map(u => `<tr>
@@ -492,7 +543,7 @@ function renderAdmin() {
 
   // all bets (latest first)
   $('all-bets').innerHTML = state.bets.slice().reverse().map(b => `<tr>
-      <td>${b.round}</td>
+      <td>${matchName(b.matchId)}</td>
       <td>${b.username}</td>
       <td><strong>${b.number}</strong></td>
       <td>${b.stake}</td>
@@ -501,29 +552,87 @@ function renderAdmin() {
     </tr>`).join('') || '<tr><td colspan="6" style="color:var(--muted)">No bets yet.</td></tr>';
 }
 
+/* ---------- match management ---------- */
+
+function createMatch() {
+  const name = $('new-match-name').value.trim();
+  const msg = $('create-match-msg');
+  msg.className = 'msg error';
+
+  if (!name)             { msg.textContent = 'Give the match a name.'; return; }
+  if (name.length > 40)  { msg.textContent = 'Keep the name under 40 characters.'; return; }
+  if (state.matches.find(m => m.name.toLowerCase() === name.toLowerCase() && m.status !== 'settled')) {
+    msg.textContent = 'An active match with that name already exists.'; return;
+  }
+
+  state.matches.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    name,
+    status: 'open',
+    winningNumber: null,
+    totalPaid: 0,
+    createdAt: new Date().toISOString(),
+    settledAt: null,
+  });
+  db.save(state);
+  $('new-match-name').value = '';
+  renderAdmin();
+  $('create-match-msg').className = 'msg ok';
+  $('create-match-msg').textContent = `Match "${name}" created and open for betting.`;
+}
+
+function setMatchStatus(id, status) {
+  const m = matchById(id);
+  if (!m || m.status === 'settled') return;
+  m.status = status;
+  db.save(state);
+  if (settlingMatchId === id && status === 'open') { /* keep settle panel */ }
+  renderAdmin();
+}
+
+function startSettle(id) {
+  const m = matchById(id);
+  if (!m || m.status === 'settled') return;
+  settlingMatchId = id;
+  adminSelectedNumber = null;
+  $('settle-panel').classList.remove('hidden');
+  $('settle-match-name').textContent = m.name;
+  $('declare-msg').textContent = '';
+  buildNumberGrid('admin-num-grid', n => { adminSelectedNumber = n; renderExposure(); });
+  renderExposure();
+  $('settle-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelSettle() {
+  settlingMatchId = null;
+  adminSelectedNumber = null;
+  $('settle-panel').classList.add('hidden');
+}
+
 // shows admin how much each number would cost to declare
 function renderExposure() {
-  const pending = state.bets.filter(b => b.status === 'pending');
-  const el = $('round-exposure');
-  if (!pending.length) { el.textContent = 'No pending bets this round.'; return; }
+  const el = $('match-exposure');
+  if (!settlingMatchId) { el.textContent = ''; return; }
+  const pending = pendingBetsFor(settlingMatchId);
+  if (!pending.length) { el.textContent = 'No pending bets on this match.'; return; }
   if (adminSelectedNumber === null) {
-    el.textContent = 'Select a number to see how much it would pay out.';
+    el.textContent = `${pending.length} pending bet${pending.length === 1 ? '' : 's'} — select a number to see how much it would pay out.`;
     return;
   }
-  const payout = pending
-    .filter(b => b.number === adminSelectedNumber)
-    .reduce((s, b) => s + b.stake * PAYOUT_MULTIPLIER, 0);
-  const winners = pending.filter(b => b.number === adminSelectedNumber).length;
-  el.innerHTML = `Declaring <strong style="color:var(--accent)">${adminSelectedNumber}</strong> pays out <strong>${payout} cr</strong> to ${winners} winning bet${winners === 1 ? '' : 's'}.`;
+  const winners = pending.filter(b => b.number === adminSelectedNumber);
+  const payout = winners.reduce((s, b) => s + b.stake * PAYOUT_MULTIPLIER, 0);
+  el.innerHTML = `Declaring <strong style="color:var(--accent)">${adminSelectedNumber}</strong> pays out <strong>${payout} cr</strong> to ${winners.length} winning bet${winners.length === 1 ? '' : 's'}.`;
 }
 
 function declareResult() {
   const msg = $('declare-msg');
   msg.className = 'msg error';
+  const match = matchById(settlingMatchId);
+  if (!match || match.status === 'settled') { msg.textContent = 'Pick a match to settle first.'; return; }
   if (adminSelectedNumber === null) { msg.textContent = 'Select the winning number first.'; return; }
 
   const winningNumber = adminSelectedNumber;
-  const pending = state.bets.filter(b => b.status === 'pending');
+  const pending = pendingBetsFor(match.id);
   let totalPaid = 0;
 
   for (const bet of pending) {
@@ -538,20 +647,22 @@ function declareResult() {
     }
   }
 
-  state.results.push({
-    round: state.currentRound,
-    winningNumber,
-    betCount: pending.length,
-    totalPaid,
-    at: new Date().toISOString(),
-  });
-  state.currentRound += 1;
+  match.status = 'settled';
+  match.winningNumber = winningNumber;
+  match.totalPaid = totalPaid;
+  match.settledAt = new Date().toISOString();
   db.save(state);
 
+  const name = match.name;
+  cancelSettle();
   renderAdmin();
   $('declare-msg').className = 'msg ok';
-  $('declare-msg').textContent = `Round settled! Winning number ${winningNumber} — paid out ${totalPaid} cr. Round ${state.currentRound} is open.`;
+  const doneMsg = $('create-match-msg');
+  doneMsg.className = 'msg ok';
+  doneMsg.textContent = `"${name}" settled! Winning number ${winningNumber} — paid out ${totalPaid} cr.`;
 }
+
+/* ---------- user management ---------- */
 
 function createUser() {
   const username = $('new-username').value.trim().toLowerCase();
@@ -571,7 +682,6 @@ function createUser() {
   $('new-password').value = '';
   $('new-credits').value = '100';
   renderAdmin();
-  msg.className = 'msg ok';
   $('create-user-msg').className = 'msg ok';
   $('create-user-msg').textContent = `User "${username}" created with ${credits} credits.`;
 }
@@ -607,7 +717,9 @@ function deleteUser(username) {
 $('btn-login').onclick = login;
 $('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 $('btn-bet').onclick = placeBet;
+$('btn-create-match').onclick = createMatch;
 $('btn-declare').onclick = declareResult;
+$('btn-cancel-settle').onclick = cancelSettle;
 $('btn-create-user').onclick = createUser;
 $('btn-add-credits').onclick = addCredits;
 
