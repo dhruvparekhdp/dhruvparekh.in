@@ -223,12 +223,42 @@ begin
   return v_new;
 end $$;
 
+-- Admin removes credits (fails rather than going below zero).
+create or replace function lottery_remove_credits(
+  p_username text, p_amount integer)
+returns integer
+language plpgsql security definer set search_path = public as $$
+declare
+  v_new integer;
+  v_current integer;
+begin
+  if auth.role() <> 'authenticated' then
+    raise exception 'Admin only';
+  end if;
+  if p_amount is null or p_amount < 1 then
+    raise exception 'Amount must be at least 1';
+  end if;
+  select credits into v_current from lottery_players
+    where username = p_username for update;
+  if not found then
+    raise exception 'Player not found';
+  end if;
+  if v_current < p_amount then
+    raise exception 'Player only has % credits', v_current;
+  end if;
+  update lottery_players set credits = credits - p_amount
+    where username = p_username
+    returning credits into v_new;
+  return v_new;
+end $$;
+
 -- 4. FUNCTION PERMISSIONS ----------------------------------------
 -- (admin-only checks are enforced inside the functions too)
 
 revoke execute on function lottery_create_player(text, text, integer) from anon;
 revoke execute on function lottery_settle_match(uuid, integer) from anon;
 revoke execute on function lottery_add_credits(text, integer) from anon;
+revoke execute on function lottery_remove_credits(text, integer) from anon;
 
 grant execute on function lottery_login(text, text) to anon, authenticated;
 grant execute on function lottery_place_bet(text, text, uuid, integer, integer) to anon, authenticated;
