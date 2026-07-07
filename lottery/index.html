@@ -95,6 +95,10 @@
   }
   .num-btn:hover { border-color: var(--accent); background: var(--card-2); }
   .num-btn.selected { background: var(--accent); color: #1a1300; border-color: var(--accent); }
+  .num-btn { flex-direction: column; line-height: 1.15; }
+  .num-btn .sub { font-size: 0.62rem; font-weight: 600; color: var(--muted); }
+  .num-btn.selected .sub { color: #1a1300; }
+  .num-btn.hot { border-color: var(--red); }
 
   /* ---------- tables ---------- */
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -233,7 +237,7 @@
 
       <div class="card hidden" id="settle-panel">
         <h2>Settle match: <span id="settle-match-name" style="color:var(--accent)"></span></h2>
-        <p style="color:var(--muted); font-size:0.9rem;">Pick the winning number, then declare. All pending bets on this match get settled: winners are paid 9× their stake.</p>
+        <p style="color:var(--muted); font-size:0.9rem;">Pick the winning number, then declare. All pending bets on this match get settled: winners are paid 9× their stake. The amount staked on each number is shown under the digit — a red outline marks the most-staked number.</p>
         <div class="num-grid" id="admin-num-grid"></div>
         <div id="match-exposure" style="margin-top:12px; color:var(--muted); font-size:0.9rem;"></div>
         <button id="btn-declare" class="danger" style="width:100%">Declare Result &amp; Settle Bets</button>
@@ -267,12 +271,15 @@
           <div id="create-user-msg" class="msg"></div>
         </div>
         <div class="card">
-          <h2>Add credits</h2>
+          <h2>Add / remove credits</h2>
           <label for="credit-user">User</label>
           <select id="credit-user"></select>
-          <label for="credit-amount">Credits to add</label>
+          <label for="credit-amount">Credits</label>
           <input id="credit-amount" type="number" min="1" placeholder="e.g. 50">
-          <button id="btn-add-credits" style="width:100%">Add Credits</button>
+          <div style="display:flex; gap:10px;">
+            <button id="btn-add-credits" style="flex:1">Add</button>
+            <button id="btn-remove-credits" class="danger" style="flex:1">Remove</button>
+          </div>
           <div id="add-credits-msg" class="msg"></div>
         </div>
       </div>
@@ -423,7 +430,7 @@ async function route() {
 
 let selectedNumber = null;
 
-function buildNumberGrid(containerId, onSelect) {
+function buildNumberGrid(containerId, onSelect, subLabel) {
   const grid = $(containerId);
   grid.innerHTML = '';
   for (let n = 0; n <= 9; n++) {
@@ -431,6 +438,13 @@ function buildNumberGrid(containerId, onSelect) {
     b.type = 'button';
     b.className = 'num-btn';
     b.textContent = n;
+    if (subLabel) {
+      const sub = document.createElement('span');
+      sub.className = 'sub';
+      sub.textContent = subLabel(n).text;
+      if (subLabel(n).hot) b.classList.add('hot');
+      b.appendChild(sub);
+    }
     b.onclick = () => {
       grid.querySelectorAll('.num-btn').forEach(x => x.classList.remove('selected'));
       b.classList.add('selected');
@@ -646,7 +660,18 @@ function startSettle(id) {
   $('settle-panel').classList.remove('hidden');
   $('settle-match-name').textContent = m.name;
   $('declare-msg').textContent = '';
-  buildNumberGrid('admin-num-grid', n => { adminSelectedNumber = n; renderExposure(); });
+
+  // weightage: total stake riding on each number for this match
+  const stakes = Array(10).fill(0);
+  cache.bets.filter(b => b.match_id === id && b.status === 'pending')
+    .forEach(b => { stakes[b.number] += b.stake; });
+  const maxStake = Math.max(...stakes);
+  buildNumberGrid('admin-num-grid',
+    n => { adminSelectedNumber = n; renderExposure(); },
+    n => ({
+      text: stakes[n] ? `${stakes[n]} cr` : '—',
+      hot: stakes[n] > 0 && stakes[n] === maxStake,
+    }));
   renderExposure();
   $('settle-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -722,7 +747,7 @@ async function createUser() {
   });
 }
 
-async function addCredits() {
+async function adjustCredits(direction) {
   const username = $('credit-user').value;
   const amount = Math.floor(Number($('credit-amount').value));
   const msg = $('add-credits-msg');
@@ -732,15 +757,18 @@ async function addCredits() {
   if (!username)             { msg.textContent = 'Pick a user.'; return; }
   if (!amount || amount < 1) { msg.textContent = 'Enter a valid amount.'; return; }
 
-  await busy($('btn-add-credits'), async () => {
-    const { data: newBalance, error } = await sb.rpc('lottery_add_credits', {
-      p_username: username, p_amount: amount,
-    });
+  const adding = direction === 'add';
+  const btn = adding ? $('btn-add-credits') : $('btn-remove-credits');
+  await busy(btn, async () => {
+    const { data: newBalance, error } = await sb.rpc(
+      adding ? 'lottery_add_credits' : 'lottery_remove_credits',
+      { p_username: username, p_amount: amount });
     if (error) { handleError(error, msg); return; }
     $('credit-amount').value = '';
     await loadAdminData();
     $('add-credits-msg').className = 'msg ok';
-    $('add-credits-msg').textContent = `Added ${amount} cr to ${username} (now ${newBalance}).`;
+    $('add-credits-msg').textContent =
+      `${adding ? 'Added' : 'Removed'} ${amount} cr ${adding ? 'to' : 'from'} ${username} (now ${newBalance}).`;
   });
 }
 
@@ -762,7 +790,8 @@ $('btn-create-match').onclick = createMatch;
 $('btn-declare').onclick = declareResult;
 $('btn-cancel-settle').onclick = cancelSettle;
 $('btn-create-user').onclick = createUser;
-$('btn-add-credits').onclick = addCredits;
+$('btn-add-credits').onclick = () => adjustCredits('add');
+$('btn-remove-credits').onclick = () => adjustCredits('remove');
 
 sb.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') route();
