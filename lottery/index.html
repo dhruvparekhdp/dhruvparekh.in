@@ -147,8 +147,9 @@
   <div class="logo">🎰</div>
   <div class="tagline">Lucky Number Lottery</div>
   <div id="setup-banner" class="setup-banner hidden">
-    <strong>Setup needed:</strong> the lottery tables don't exist in Supabase yet.
-    Run <code>lottery/supabase/schema.sql</code> in your project's SQL Editor, then reload this page.
+    <strong>Setup needed:</strong> parts of the lottery database are missing.
+    Run the whole of <code>lottery/supabase/schema.sql</code> in your project's SQL Editor
+    (safe to re-run), then reload this page. Log in as admin to see exactly which pieces are missing.
   </div>
   <div class="card">
     <h2>Sign in</h2>
@@ -212,6 +213,11 @@
     </div>
   </header>
   <div class="container">
+    <div class="setup-banner hidden" id="setup-check">
+      <strong>Database setup incomplete</strong> — some pieces of <code>lottery/supabase/schema.sql</code> are missing:
+      <div id="setup-check-list" style="margin-top:8px; line-height:1.9;"></div>
+      <div style="margin-top:8px;">Fix: copy the <em>entire</em> updated <code>schema.sql</code> and run it again in the Supabase SQL Editor — it is now safe to re-run as many times as you like.</div>
+    </div>
     <div class="stat-row">
       <div class="stat"><div class="label">Open matches</div><div class="value" id="stat-open">0</div></div>
       <div class="stat"><div class="label">Pending bets</div><div class="value" id="stat-bets">0</div></div>
@@ -351,10 +357,40 @@ function isMissingSchema(error) {
 function handleError(error, msgEl) {
   if (isMissingSchema(error)) {
     $('setup-banner').classList.remove('hidden');
-    if (msgEl) msgEl.textContent = 'Supabase tables missing — run lottery/supabase/schema.sql first.';
+    if (msgEl) msgEl.textContent = 'Database setup incomplete — re-run lottery/supabase/schema.sql (safe to re-run), then reload.';
     return;
   }
   if (msgEl) msgEl.textContent = error.message || 'Something went wrong.';
+}
+
+/* Probes every table and function the app needs and lists what's
+ * missing in the admin view — runs on each admin login. */
+async function runSetupCheck() {
+  const probes = [
+    ['table lottery_players',           () => sb.from('lottery_players').select('username', { head: true, count: 'exact' }).limit(0)],
+    ['table lottery_matches',           () => sb.from('lottery_matches').select('id', { head: true, count: 'exact' }).limit(0)],
+    ['table lottery_bets',              () => sb.from('lottery_bets').select('id', { head: true, count: 'exact' }).limit(0)],
+    ['function lottery_login',          () => sb.rpc('lottery_login', { p_username: '__probe__', p_password: 'x' })],
+    ['function lottery_create_player',  () => sb.rpc('lottery_create_player', { p_username: '!', p_password: 'x', p_credits: 0 })],
+    ['function lottery_place_bet',      () => sb.rpc('lottery_place_bet', { p_username: '__probe__', p_password: 'x', p_match_id: null, p_number: 0, p_stake: 1 })],
+    ['function lottery_settle_match',   () => sb.rpc('lottery_settle_match', { p_match_id: null, p_winning_number: null })],
+    ['function lottery_add_credits',    () => sb.rpc('lottery_add_credits', { p_username: '__probe__', p_amount: 0 })],
+    ['function lottery_remove_credits', () => sb.rpc('lottery_remove_credits', { p_username: '__probe__', p_amount: 0 })],
+  ];
+  // probes use invalid args on purpose: a validation error proves the
+  // object exists; only a "could not find …" error means it's missing
+  const results = await Promise.all(probes.map(async ([name, fn]) => {
+    try {
+      const { error } = await fn();
+      return { name, ok: !error || !isMissingSchema(error) };
+    } catch { return { name, ok: false }; }
+  }));
+  const anyMissing = results.some(r => !r.ok);
+  $('setup-check').classList.toggle('hidden', !anyMissing);
+  if (anyMissing) {
+    $('setup-check-list').innerHTML = results.map(r =>
+      `<div>${r.ok ? '✅' : '❌'} <code>${r.name}</code>${r.ok ? '' : ' — MISSING'}</div>`).join('');
+  }
 }
 async function busy(btn, fn) {
   const label = btn.textContent;
@@ -409,6 +445,7 @@ async function route() {
     $('admin-email').textContent = session.user.email || 'admin';
     showTab('matches');
     cancelSettle();
+    runSetupCheck(); // async, fills the setup panel if anything is missing
     await loadAdminData();
     return;
   }
