@@ -33,7 +33,7 @@
   header.topbar {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 16px; border-bottom: 1px solid var(--border);
-    background: var(--card);
+    background: var(--card); flex-wrap: wrap; gap: 8px;
   }
   header.topbar h1 { font-size: 1.1rem; letter-spacing: 0.5px; }
   header.topbar h1 span { color: var(--accent); }
@@ -49,6 +49,13 @@
   }
   .card h2 { font-size: 1rem; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
+  .setup-banner {
+    margin-top: 16px; padding: 14px 16px; border-radius: var(--radius);
+    background: #3a1d22; border: 1px solid var(--red); color: var(--text);
+    font-size: 0.9rem; line-height: 1.5;
+  }
+  .setup-banner code { background: var(--card-2); padding: 1px 6px; border-radius: 4px; }
+
   /* ---------- forms ---------- */
   label { display: block; font-size: 0.85rem; color: var(--muted); margin: 10px 0 4px; }
   input, select {
@@ -63,6 +70,7 @@
     background: var(--accent); color: #1a1300; margin-top: 14px;
   }
   button:hover { background: var(--accent-dark); }
+  button:disabled { opacity: 0.6; cursor: wait; }
   button.secondary { background: var(--card-2); color: var(--text); border: 1px solid var(--border); }
   button.danger { background: var(--red); color: #fff; }
   button.small { padding: 6px 12px; font-size: 0.8rem; margin-top: 0; }
@@ -71,6 +79,7 @@
   .login-wrap { max-width: 380px; margin: 8vh auto 0; padding: 16px; }
   .login-wrap .logo { text-align: center; font-size: 2.2rem; margin-bottom: 8px; }
   .login-wrap .tagline { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+  .login-hint { color: var(--muted); font-size: 0.8rem; margin-top: 10px; }
   .msg { margin-top: 12px; font-size: 0.9rem; min-height: 1.2em; }
   .msg.error { color: var(--red); }
   .msg.ok { color: var(--green); }
@@ -133,14 +142,19 @@
 <div id="view-login" class="login-wrap">
   <div class="logo">🎰</div>
   <div class="tagline">Lucky Number Lottery</div>
+  <div id="setup-banner" class="setup-banner hidden">
+    <strong>Setup needed:</strong> the lottery tables don't exist in Supabase yet.
+    Run <code>lottery/supabase/schema.sql</code> in your project's SQL Editor, then reload this page.
+  </div>
   <div class="card">
     <h2>Sign in</h2>
-    <label for="login-username">Username</label>
-    <input id="login-username" autocomplete="username" placeholder="username">
+    <label for="login-username">Username or admin email</label>
+    <input id="login-username" autocomplete="username" placeholder="username or admin@email.com">
     <label for="login-password">Password</label>
     <input id="login-password" type="password" autocomplete="current-password" placeholder="password">
     <button id="btn-login" style="width:100%">Login</button>
     <div id="login-msg" class="msg error"></div>
+    <div class="login-hint">Players sign in with the username the admin gave them. Admin signs in with their Supabase email (same account as the Saloni admin).</div>
   </div>
 </div>
 
@@ -151,6 +165,7 @@
     <div class="user-chip">
       <span id="player-name"></span>
       <span class="credits-badge" id="player-credits">0 cr</span>
+      <button class="secondary small" id="btn-player-refresh">↻ Refresh</button>
       <button class="secondary small" onclick="logout()">Logout</button>
     </div>
   </header>
@@ -187,7 +202,8 @@
   <header class="topbar">
     <h1>🎰 Lucky <span>Number</span> — Admin</h1>
     <div class="user-chip">
-      <span>admin</span>
+      <span id="admin-email">admin</span>
+      <button class="secondary small" id="btn-admin-refresh">↻ Refresh</button>
       <button class="secondary small" onclick="logout()">Logout</button>
     </div>
   </header>
@@ -286,113 +302,121 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =========================================================================
- * Storage layer — the ONLY place that touches localStorage.
- * To move to Supabase later, reimplement db.load/db.save (or replace the
- * call sites of db.* helpers with Supabase queries) and leave the UI alone.
+ * Supabase backend — shares the same project as Saloni Collection
+ * (see saloni/js/config.js). Schema: lottery/supabase/schema.sql.
+ *
+ * Security model:
+ *  - Admin = Supabase Auth user (email/password), RLS 'authenticated'.
+ *  - Players are rows in lottery_players; login / betting go through
+ *    SECURITY DEFINER functions so credits are enforced server-side.
  * ========================================================================= */
-const PAYOUT_MULTIPLIER = 9;   // win pays stake × 9 (numbers are 0–9)
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin123'; // hobby project — move to real auth with Supabase
+const SUPABASE_URL      = 'https://kvrmqsrfuuuhsvljjlxv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cm1xc3JmdXV1aHN2bGpqbHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODIxNTYsImV4cCI6MjA5NjY1ODE1Nn0.uxV-wuHIcxOqNuAqzBCaHE9Etm_rMBZ5fQ8GkR3cWV4';
+const PAYOUT_MULTIPLIER = 9; // display only — enforced in lottery_settle_match()
 
-const db = {
-  KEY: 'lottery_db_v2',
-  OLD_KEY: 'lottery_db_v1',
-  SESSION_KEY: 'lottery_session_v1',
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  defaults() {
-    return {
-      users: [],        // { username, password, credits }
-      matches: [],      // { id, name, status: 'open'|'closed'|'settled', winningNumber, totalPaid, createdAt, settledAt }
-      bets: [],         // { id, matchId, username, number, stake, status: 'pending'|'won'|'lost', payout }
-    };
-  },
-
-  load() {
-    try {
-      const raw = localStorage.getItem(this.KEY);
-      if (raw) return { ...this.defaults(), ...JSON.parse(raw) };
-      // migrate from v1 (round-based): keep users + credits, drop old bets/results
-      const old = localStorage.getItem(this.OLD_KEY);
-      if (old) {
-        const prev = JSON.parse(old);
-        const s = this.defaults();
-        s.users = (prev.users || []).map(u => ({ username: u.username, password: u.password, credits: u.credits }));
-        this.save(s);
-        return s;
-      }
-      return this.defaults();
-    } catch { return this.defaults(); }
-  },
-
-  save(state) { localStorage.setItem(this.KEY, JSON.stringify(state)); },
-
-  getSession() {
-    try { return JSON.parse(localStorage.getItem(this.SESSION_KEY)); } catch { return null; }
-  },
-  setSession(s) { localStorage.setItem(this.SESSION_KEY, JSON.stringify(s)); },
-  clearSession() { localStorage.removeItem(this.SESSION_KEY); },
+/* Player session lives in localStorage; the password is kept so the
+ * place-bet RPC can re-verify it server-side on every call. */
+const SESSION_KEY = 'lottery_player_session_v1';
+const playerSession = {
+  get() { try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; } },
+  set(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); },
+  clear() { localStorage.removeItem(SESSION_KEY); },
 };
 
-let state = db.load();
 const $ = (id) => document.getElementById(id);
-const matchById = (id) => state.matches.find(m => m.id === id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// cache of fetched rows, refreshed by loadPlayerData / loadAdminData
+let cache = { matches: [], bets: [], players: [], me: null };
+const matchById = (id) => cache.matches.find(m => m.id === id);
 const matchName = (id) => (matchById(id) || { name: '(deleted)' }).name;
-const openMatches = () => state.matches.filter(m => m.status === 'open');
-const pendingBetsFor = (matchId) => state.bets.filter(b => b.matchId === matchId && b.status === 'pending');
+const openMatches = () => cache.matches.filter(m => m.status === 'open');
+
+function isMissingSchema(error) {
+  return error && (error.code === '42P01' || /does not exist|schema cache/i.test(error.message || ''));
+}
+function handleError(error, msgEl) {
+  if (isMissingSchema(error)) {
+    $('setup-banner').classList.remove('hidden');
+    if (msgEl) msgEl.textContent = 'Supabase tables missing — run lottery/supabase/schema.sql first.';
+    return;
+  }
+  if (msgEl) msgEl.textContent = error.message || 'Something went wrong.';
+}
+async function busy(btn, fn) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  try { await fn(); } finally { btn.disabled = false; btn.textContent = label; }
+}
 
 /* ============================ auth ============================ */
 
-function login() {
+async function login() {
   const username = $('login-username').value.trim();
   const password = $('login-password').value;
   const msg = $('login-msg');
   msg.textContent = '';
+  if (!username || !password) { msg.textContent = 'Enter username and password.'; return; }
 
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    db.setSession({ role: 'admin', username });
-    route();
-    return;
-  }
-  const user = state.users.find(u => u.username === username);
-  if (!user || user.password !== password) {
-    msg.textContent = 'Invalid username or password.';
-    return;
-  }
-  db.setSession({ role: 'player', username });
-  route();
+  await busy($('btn-login'), async () => {
+    if (username.includes('@')) {
+      // admin: Supabase Auth (same account as the Saloni admin)
+      const { error } = await sb.auth.signInWithPassword({ email: username, password });
+      if (error) { msg.textContent = error.message; return; }
+      await route();
+    } else {
+      // player: server-side credential check
+      const { data, error } = await sb.rpc('lottery_login', { p_username: username, p_password: password });
+      if (error) { handleError(error, msg); return; }
+      if (!data || !data.length) { msg.textContent = 'Invalid username or password.'; return; }
+      playerSession.set({ username: data[0].username, password });
+      cache.me = { username: data[0].username, credits: data[0].credits };
+      await route();
+    }
+  });
 }
 
-function logout() {
-  db.clearSession();
-  route();
+async function logout() {
+  playerSession.clear();
+  await sb.auth.signOut();
+  cache = { matches: [], bets: [], players: [], me: null };
+  await route();
 }
 
 /* ============================ routing ============================ */
 
-function route() {
-  const session = db.getSession();
+async function route() {
   $('view-login').classList.add('hidden');
   $('view-player').classList.add('hidden');
   $('view-admin').classList.add('hidden');
 
-  if (!session) {
-    $('view-login').classList.remove('hidden');
-    $('login-username').value = '';
-    $('login-password').value = '';
-    $('login-msg').textContent = '';
-  } else if (session.role === 'admin') {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
     $('view-admin').classList.remove('hidden');
+    $('admin-email').textContent = session.user.email || 'admin';
     showTab('matches');
     cancelSettle();
-    renderAdmin();
-  } else {
-    // player may have been deleted by admin
-    if (!state.users.find(u => u.username === session.username)) { db.clearSession(); return route(); }
-    $('view-player').classList.remove('hidden');
-    renderPlayer();
+    await loadAdminData();
+    return;
   }
+
+  const ps = playerSession.get();
+  if (ps) {
+    $('view-player').classList.remove('hidden');
+    await loadPlayerData();
+    return;
+  }
+
+  $('view-login').classList.remove('hidden');
+  $('login-username').value = '';
+  $('login-password').value = '';
+  $('login-msg').textContent = '';
 }
 
 /* ============================ player ============================ */
@@ -416,73 +440,91 @@ function buildNumberGrid(containerId, onSelect) {
   }
 }
 
-function renderPlayer() {
-  const session = db.getSession();
-  const user = state.users.find(u => u.username === session.username);
-  $('player-name').textContent = user.username;
-  $('player-credits').textContent = `${user.credits} cr`;
+async function loadPlayerData() {
+  const ps = playerSession.get();
+  if (!ps) return route();
 
-  // open matches to bet on
+  // re-verify credentials; doubles as the credits refresh
+  const [loginRes, matchesRes, betsRes] = await Promise.all([
+    sb.rpc('lottery_login', { p_username: ps.username, p_password: ps.password }),
+    sb.from('lottery_matches').select('*').order('created_at', { ascending: false }),
+    sb.from('lottery_bets').select('*').eq('username', ps.username).order('created_at', { ascending: false }),
+  ]);
+
+  const err = loginRes.error || matchesRes.error || betsRes.error;
+  if (err) { handleError(err, $('bet-msg')); if (isMissingSchema(err)) { playerSession.clear(); return route(); } }
+  if (!loginRes.error && (!loginRes.data || !loginRes.data.length)) {
+    // player deleted or password changed
+    playerSession.clear();
+    return route();
+  }
+
+  cache.me = loginRes.data ? { username: loginRes.data[0].username, credits: loginRes.data[0].credits } : cache.me;
+  cache.matches = matchesRes.data || [];
+  cache.bets = betsRes.data || [];
+  renderPlayer();
+}
+
+function renderPlayer() {
+  const me = cache.me;
+  if (!me) return;
+  $('player-name').textContent = me.username;
+  $('player-credits').textContent = `${me.credits} cr`;
+
   const open = openMatches();
   $('no-open-matches').classList.toggle('hidden', open.length > 0);
   $('bet-form').classList.toggle('hidden', open.length === 0);
-  $('match-select').innerHTML = open.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  $('match-select').innerHTML = open.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
 
   selectedNumber = null;
   buildNumberGrid('num-grid', n => { selectedNumber = n; });
   $('bet-amount').value = '';
-  $('bet-msg').textContent = '';
 
   // latest settled match banner
-  const settled = state.matches.filter(m => m.status === 'settled');
+  const settled = cache.matches.filter(m => m.status === 'settled')
+    .sort((a, b) => (a.settled_at || '').localeCompare(b.settled_at || ''));
   const last = settled[settled.length - 1];
   $('player-last-result').innerHTML = last
-    ? `<div class="winner-banner"><div class="match-name">${last.name} — winning number</div><div class="big-num">${last.winningNumber}</div></div>`
+    ? `<div class="winner-banner"><div class="match-name">${esc(last.name)} — winning number</div><div class="big-num">${last.winning_number}</div></div>`
     : '';
 
-  // my bets (latest first)
-  const rows = state.bets
-    .filter(b => b.username === user.username)
-    .slice().reverse()
-    .map(b => `<tr>
-        <td>${matchName(b.matchId)}</td>
-        <td><strong>${b.number}</strong></td>
-        <td>${b.stake}</td>
-        <td><span class="tag ${b.status}">${b.status}</span></td>
-        <td>${b.status === 'won' ? '+' + b.payout : b.status === 'lost' ? '0' : '—'}</td>
-      </tr>`).join('');
+  // my bets (already newest first)
+  const rows = cache.bets.map(b => `<tr>
+      <td>${esc(matchName(b.match_id))}</td>
+      <td><strong>${b.number}</strong></td>
+      <td>${b.stake}</td>
+      <td><span class="tag ${b.status}">${b.status}</span></td>
+      <td>${b.status === 'won' ? '+' + b.payout : b.status === 'lost' ? '0' : '—'}</td>
+    </tr>`).join('');
   $('my-bets').innerHTML = rows || '<tr><td colspan="5" style="color:var(--muted)">No bets yet — pick a match and a number above!</td></tr>';
 }
 
-function placeBet() {
-  const session = db.getSession();
-  const user = state.users.find(u => u.username === session.username);
+async function placeBet() {
+  const ps = playerSession.get();
+  if (!ps) return route();
   const stake = Math.floor(Number($('bet-amount').value));
-  const match = matchById($('match-select').value);
+  const matchId = $('match-select').value;
   const msg = $('bet-msg');
   msg.className = 'msg error';
+  msg.textContent = '';
 
-  if (!match || match.status !== 'open') { msg.textContent = 'That match is not open for betting.'; renderPlayer(); return; }
+  if (!matchId)                { msg.textContent = 'Pick a match first.'; return; }
   if (selectedNumber === null) { msg.textContent = 'Pick a number first.'; return; }
   if (!stake || stake < 1)     { msg.textContent = 'Enter a valid stake (at least 1 credit).'; return; }
-  if (stake > user.credits)    { msg.textContent = `Not enough credits — you have ${user.credits}.`; return; }
 
   const number = selectedNumber;
-  user.credits -= stake;
-  state.bets.push({
-    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-    matchId: match.id,
-    username: user.username,
-    number,
-    stake,
-    status: 'pending',
-    payout: 0,
+  const name = matchName(matchId);
+  await busy($('btn-bet'), async () => {
+    const { data: newBalance, error } = await sb.rpc('lottery_place_bet', {
+      p_username: ps.username, p_password: ps.password,
+      p_match_id: matchId, p_number: number, p_stake: stake,
+    });
+    if (error) { handleError(error, msg); return; }
+    cache.me.credits = newBalance;
+    await loadPlayerData();
+    $('bet-msg').className = 'msg ok';
+    $('bet-msg').textContent = `Bet placed on "${name}": ${stake} cr on number ${number}. Good luck! 🍀`;
   });
-  db.save(state);
-
-  renderPlayer();
-  $('bet-msg').className = 'msg ok';
-  $('bet-msg').textContent = `Bet placed on "${match.name}": ${stake} cr on number ${number}. Good luck! 🍀`;
 }
 
 /* ============================ admin ============================ */
@@ -498,17 +540,31 @@ function showTab(name) {
     b.classList.toggle('active', b.dataset.tab === name));
 }
 
+async function loadAdminData() {
+  const [matchesRes, betsRes, playersRes] = await Promise.all([
+    sb.from('lottery_matches').select('*').order('created_at', { ascending: false }),
+    sb.from('lottery_bets').select('*').order('created_at', { ascending: false }),
+    sb.from('lottery_players').select('username, credits, created_at').order('created_at'),
+  ]);
+  const err = matchesRes.error || betsRes.error || playersRes.error;
+  if (err) { handleError(err, $('create-match-msg')); }
+  cache.matches = matchesRes.data || [];
+  cache.bets = betsRes.data || [];
+  cache.players = playersRes.data || [];
+  renderAdmin();
+}
+
 function renderAdmin() {
-  const pending = state.bets.filter(b => b.status === 'pending');
+  const pending = cache.bets.filter(b => b.status === 'pending');
 
   $('stat-open').textContent = openMatches().length;
   $('stat-bets').textContent = pending.length;
   $('stat-staked').textContent = pending.reduce((s, b) => s + b.stake, 0);
-  $('stat-users').textContent = state.users.length;
+  $('stat-users').textContent = cache.players.length;
 
-  // matches table (latest first)
-  $('matches-table').innerHTML = state.matches.slice().reverse().map(m => {
-    const bets = state.bets.filter(b => b.matchId === m.id);
+  // matches table (already newest first)
+  $('matches-table').innerHTML = cache.matches.map(m => {
+    const bets = cache.bets.filter(b => b.match_id === m.id);
     const staked = bets.reduce((s, b) => s + b.stake, 0);
     let actions = '';
     if (m.status === 'open') {
@@ -519,32 +575,32 @@ function renderAdmin() {
                  <button class="small" onclick="startSettle('${m.id}')">Settle</button>`;
     }
     return `<tr>
-      <td>${m.name}</td>
+      <td>${esc(m.name)}</td>
       <td><span class="tag ${m.status}">${m.status}</span></td>
-      <td>${m.status === 'settled' ? `<strong style="color:var(--accent)">${m.winningNumber}</strong>` : '—'}</td>
+      <td>${m.status === 'settled' ? `<strong style="color:var(--accent)">${m.winning_number}</strong>` : '—'}</td>
       <td>${bets.length}</td>
       <td>${staked}</td>
-      <td>${m.status === 'settled' ? m.totalPaid : '—'}</td>
+      <td>${m.status === 'settled' ? m.total_paid : '—'}</td>
       <td style="white-space:nowrap">${actions}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="7" style="color:var(--muted)">No matches yet — create one above.</td></tr>';
 
   // users
-  $('users-table').innerHTML = state.users.map(u => `<tr>
-      <td>${u.username}</td>
+  $('users-table').innerHTML = cache.players.map(u => `<tr>
+      <td>${esc(u.username)}</td>
       <td>${u.credits}</td>
-      <td>${state.bets.filter(b => b.username === u.username).length}</td>
-      <td><button class="danger small" onclick="deleteUser('${u.username}')">Delete</button></td>
+      <td>${cache.bets.filter(b => b.username === u.username).length}</td>
+      <td><button class="danger small" onclick="deleteUser('${esc(u.username)}')">Delete</button></td>
     </tr>`).join('') || '<tr><td colspan="4" style="color:var(--muted)">No users yet — create one.</td></tr>';
 
   // credit dropdown
-  $('credit-user').innerHTML = state.users.map(u =>
-    `<option value="${u.username}">${u.username} (${u.credits} cr)</option>`).join('');
+  $('credit-user').innerHTML = cache.players.map(u =>
+    `<option value="${esc(u.username)}">${esc(u.username)} (${u.credits} cr)</option>`).join('');
 
-  // all bets (latest first)
-  $('all-bets').innerHTML = state.bets.slice().reverse().map(b => `<tr>
-      <td>${matchName(b.matchId)}</td>
-      <td>${b.username}</td>
+  // all bets (already newest first)
+  $('all-bets').innerHTML = cache.bets.map(b => `<tr>
+      <td>${esc(matchName(b.match_id))}</td>
+      <td>${esc(b.username)}</td>
       <td><strong>${b.number}</strong></td>
       <td>${b.stake}</td>
       <td><span class="tag ${b.status}">${b.status}</span></td>
@@ -554,40 +610,32 @@ function renderAdmin() {
 
 /* ---------- match management ---------- */
 
-function createMatch() {
+async function createMatch() {
   const name = $('new-match-name').value.trim();
   const msg = $('create-match-msg');
   msg.className = 'msg error';
+  msg.textContent = '';
 
-  if (!name)             { msg.textContent = 'Give the match a name.'; return; }
-  if (name.length > 40)  { msg.textContent = 'Keep the name under 40 characters.'; return; }
-  if (state.matches.find(m => m.name.toLowerCase() === name.toLowerCase() && m.status !== 'settled')) {
+  if (!name)            { msg.textContent = 'Give the match a name.'; return; }
+  if (name.length > 40) { msg.textContent = 'Keep the name under 40 characters.'; return; }
+  if (cache.matches.find(m => m.name.toLowerCase() === name.toLowerCase() && m.status !== 'settled')) {
     msg.textContent = 'An active match with that name already exists.'; return;
   }
 
-  state.matches.push({
-    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-    name,
-    status: 'open',
-    winningNumber: null,
-    totalPaid: 0,
-    createdAt: new Date().toISOString(),
-    settledAt: null,
+  await busy($('btn-create-match'), async () => {
+    const { error } = await sb.from('lottery_matches').insert({ name });
+    if (error) { handleError(error, msg); return; }
+    $('new-match-name').value = '';
+    await loadAdminData();
+    $('create-match-msg').className = 'msg ok';
+    $('create-match-msg').textContent = `Match "${name}" created and open for betting.`;
   });
-  db.save(state);
-  $('new-match-name').value = '';
-  renderAdmin();
-  $('create-match-msg').className = 'msg ok';
-  $('create-match-msg').textContent = `Match "${name}" created and open for betting.`;
 }
 
-function setMatchStatus(id, status) {
-  const m = matchById(id);
-  if (!m || m.status === 'settled') return;
-  m.status = status;
-  db.save(state);
-  if (settlingMatchId === id && status === 'open') { /* keep settle panel */ }
-  renderAdmin();
+async function setMatchStatus(id, status) {
+  const { error } = await sb.from('lottery_matches').update({ status }).eq('id', id).neq('status', 'settled');
+  if (error) { handleError(error, $('create-match-msg')); return; }
+  await loadAdminData();
 }
 
 function startSettle(id) {
@@ -613,7 +661,7 @@ function cancelSettle() {
 function renderExposure() {
   const el = $('match-exposure');
   if (!settlingMatchId) { el.textContent = ''; return; }
-  const pending = pendingBetsFor(settlingMatchId);
+  const pending = cache.bets.filter(b => b.match_id === settlingMatchId && b.status === 'pending');
   if (!pending.length) { el.textContent = 'No pending bets on this match.'; return; }
   if (adminSelectedNumber === null) {
     el.textContent = `${pending.length} pending bet${pending.length === 1 ? '' : 's'} — select a number to see how much it would pay out.`;
@@ -624,92 +672,83 @@ function renderExposure() {
   el.innerHTML = `Declaring <strong style="color:var(--accent)">${adminSelectedNumber}</strong> pays out <strong>${payout} cr</strong> to ${winners.length} winning bet${winners.length === 1 ? '' : 's'}.`;
 }
 
-function declareResult() {
+async function declareResult() {
   const msg = $('declare-msg');
   msg.className = 'msg error';
+  msg.textContent = '';
   const match = matchById(settlingMatchId);
   if (!match || match.status === 'settled') { msg.textContent = 'Pick a match to settle first.'; return; }
   if (adminSelectedNumber === null) { msg.textContent = 'Select the winning number first.'; return; }
 
-  const winningNumber = adminSelectedNumber;
-  const pending = pendingBetsFor(match.id);
-  let totalPaid = 0;
-
-  for (const bet of pending) {
-    if (bet.number === winningNumber) {
-      bet.status = 'won';
-      bet.payout = bet.stake * PAYOUT_MULTIPLIER;
-      totalPaid += bet.payout;
-      const user = state.users.find(u => u.username === bet.username);
-      if (user) user.credits += bet.payout;
-    } else {
-      bet.status = 'lost';
-    }
-  }
-
-  match.status = 'settled';
-  match.winningNumber = winningNumber;
-  match.totalPaid = totalPaid;
-  match.settledAt = new Date().toISOString();
-  db.save(state);
-
   const name = match.name;
-  cancelSettle();
-  renderAdmin();
-  $('declare-msg').className = 'msg ok';
-  const doneMsg = $('create-match-msg');
-  doneMsg.className = 'msg ok';
-  doneMsg.textContent = `"${name}" settled! Winning number ${winningNumber} — paid out ${totalPaid} cr.`;
+  const winningNumber = adminSelectedNumber;
+  await busy($('btn-declare'), async () => {
+    const { data: totalPaid, error } = await sb.rpc('lottery_settle_match', {
+      p_match_id: match.id, p_winning_number: winningNumber,
+    });
+    if (error) { handleError(error, msg); return; }
+    cancelSettle();
+    await loadAdminData();
+    const doneMsg = $('create-match-msg');
+    doneMsg.className = 'msg ok';
+    doneMsg.textContent = `"${name}" settled! Winning number ${winningNumber} — paid out ${totalPaid} cr.`;
+  });
 }
 
 /* ---------- user management ---------- */
 
-function createUser() {
+async function createUser() {
   const username = $('new-username').value.trim().toLowerCase();
   const password = $('new-password').value;
   const credits = Math.max(0, Math.floor(Number($('new-credits').value) || 0));
   const msg = $('create-user-msg');
   msg.className = 'msg error';
+  msg.textContent = '';
 
-  if (!username || !password)            { msg.textContent = 'Username and password are required.'; return; }
-  if (username === ADMIN_USER)           { msg.textContent = 'That username is reserved.'; return; }
+  if (!username || !password) { msg.textContent = 'Username and password are required.'; return; }
   if (!/^[a-z0-9_]{2,20}$/.test(username)) { msg.textContent = 'Username: 2–20 chars, letters/numbers/underscore.'; return; }
-  if (state.users.find(u => u.username === username)) { msg.textContent = 'Username already exists.'; return; }
 
-  state.users.push({ username, password, credits });
-  db.save(state);
-  $('new-username').value = '';
-  $('new-password').value = '';
-  $('new-credits').value = '100';
-  renderAdmin();
-  $('create-user-msg').className = 'msg ok';
-  $('create-user-msg').textContent = `User "${username}" created with ${credits} credits.`;
+  await busy($('btn-create-user'), async () => {
+    const { error } = await sb.rpc('lottery_create_player', {
+      p_username: username, p_password: password, p_credits: credits,
+    });
+    if (error) { handleError(error, msg); return; }
+    $('new-username').value = '';
+    $('new-password').value = '';
+    $('new-credits').value = '100';
+    await loadAdminData();
+    $('create-user-msg').className = 'msg ok';
+    $('create-user-msg').textContent = `User "${username}" created with ${credits} credits.`;
+  });
 }
 
-function addCredits() {
+async function addCredits() {
   const username = $('credit-user').value;
   const amount = Math.floor(Number($('credit-amount').value));
   const msg = $('add-credits-msg');
   msg.className = 'msg error';
+  msg.textContent = '';
 
-  const user = state.users.find(u => u.username === username);
-  if (!user)              { msg.textContent = 'Pick a user.'; return; }
+  if (!username)             { msg.textContent = 'Pick a user.'; return; }
   if (!amount || amount < 1) { msg.textContent = 'Enter a valid amount.'; return; }
 
-  user.credits += amount;
-  db.save(state);
-  $('credit-amount').value = '';
-  renderAdmin();
-  $('add-credits-msg').className = 'msg ok';
-  $('add-credits-msg').textContent = `Added ${amount} cr to ${username} (now ${user.credits}).`;
+  await busy($('btn-add-credits'), async () => {
+    const { data: newBalance, error } = await sb.rpc('lottery_add_credits', {
+      p_username: username, p_amount: amount,
+    });
+    if (error) { handleError(error, msg); return; }
+    $('credit-amount').value = '';
+    await loadAdminData();
+    $('add-credits-msg').className = 'msg ok';
+    $('add-credits-msg').textContent = `Added ${amount} cr to ${username} (now ${newBalance}).`;
+  });
 }
 
-function deleteUser(username) {
+async function deleteUser(username) {
   if (!confirm(`Delete user "${username}" and their bets?`)) return;
-  state.users = state.users.filter(u => u.username !== username);
-  state.bets = state.bets.filter(b => b.username !== username);
-  db.save(state);
-  renderAdmin();
+  const { error } = await sb.from('lottery_players').delete().eq('username', username);
+  if (error) { handleError(error, $('create-user-msg')); return; }
+  await loadAdminData();
 }
 
 /* ============================ wire up ============================ */
@@ -717,11 +756,17 @@ function deleteUser(username) {
 $('btn-login').onclick = login;
 $('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 $('btn-bet').onclick = placeBet;
+$('btn-player-refresh').onclick = loadPlayerData;
+$('btn-admin-refresh').onclick = loadAdminData;
 $('btn-create-match').onclick = createMatch;
 $('btn-declare').onclick = declareResult;
 $('btn-cancel-settle').onclick = cancelSettle;
 $('btn-create-user').onclick = createUser;
 $('btn-add-credits').onclick = addCredits;
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') route();
+});
 
 route();
 </script>
