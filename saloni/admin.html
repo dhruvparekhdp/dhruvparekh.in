@@ -4,233 +4,247 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Saloni Collection</title>
+  <link rel="icon" href="../img/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body class="admin-body">
 
-  <!-- AUTH OVERLAY -->
-  <div class="auth-overlay" id="authOverlay">
+  <!-- ══ AUTH ══ -->
+  <div class="auth" id="auth">
     <div class="auth-card">
-      <div class="auth-logo">Saloni</div>
-      <h2>Admin Login</h2>
-      <p class="auth-sub">Sign in to manage your collection</p>
-      <form onsubmit="handleLogin(event)" class="auth-form">
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="loginEmail" placeholder="you@example.com" required autocomplete="email" />
+      <div class="auth-brand">Saloni<sup>CO</sup></div>
+      <h2>Admin Access</h2>
+      <p class="auth-sub">Sign in to manage products and orders</p>
+      <form onsubmit="handleLogin(event)" class="form-grid">
+        <div class="field">
+          <label for="lEmail">Email</label>
+          <input id="lEmail" type="email" placeholder="you@example.com" required autocomplete="email" />
         </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" />
+        <div class="field">
+          <label for="lPass">Password</label>
+          <input id="lPass" type="password" placeholder="••••••••" required autocomplete="current-password" />
         </div>
-        <p class="auth-error" id="loginError"></p>
-        <button type="submit" class="btn btn-primary" id="loginBtn" style="width:100%">Sign In</button>
+        <p class="auth-err" id="lErr"></p>
+        <button type="submit" class="btn btn-fill btn-block" id="lBtn">Sign In</button>
       </form>
-      <p class="auth-hint">Use the email &amp; password you registered with in Supabase Auth.</p>
+      <p class="auth-hint">Create this user in Supabase → Authentication → Users.</p>
     </div>
   </div>
 
-  <!-- SETUP BANNER -->
-  <div class="setup-banner" id="setupBanner" style="display:none;">
-    <div class="setup-banner-inner">
-      <span>⚙ <strong>Demo mode</strong> — products saved to localStorage only.</span>
-      <span>To connect Supabase: fill in <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in <code>js/config.js</code>, then run <code>supabase/schema.sql</code> in your project's SQL Editor.</span>
-    </div>
-    <button onclick="this.parentElement.style.display='none'">×</button>
+  <!-- ══ SETUP BANNER ══ -->
+  <div class="setup" id="setupBanner" style="display:none">
+    <span>⚙ <b>Demo mode</b> — data is stored in this browser only. Add Supabase keys in <code>js/config.js</code>, then run <code>supabase/schema.sql</code> and <code>supabase/orders.sql</code>.</span>
+    <button onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
   </div>
 
-  <!-- ADMIN CONTENT -->
-  <div id="adminContent">
+  <div id="app" style="display:none">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <a href="index.html">Saloni</a>
-        <span class="sidebar-tag">Admin</span>
+    <!-- ══ SIDEBAR ══ -->
+    <aside class="side" id="side">
+      <div class="side-top">
+        <a href="index.html" class="side-brand">Saloni<sup>CO</sup></a>
+        <span class="side-tag">Admin</span>
       </div>
-      <nav class="sidebar-nav">
-        <a href="#" class="sidebar-link active" data-section="products">
-          <span class="sidebar-icon">◈</span> Products
-        </a>
-        <a href="#" class="sidebar-link" data-section="add">
-          <span class="sidebar-icon">+</span> Add Product
-        </a>
+      <nav class="side-nav">
+        <button class="side-link on" data-sec="orders">
+          <span class="ic">◆</span> Orders <span class="side-pill" id="navOrders">0</span>
+        </button>
+        <button class="side-link" data-sec="products">
+          <span class="ic">◈</span> Products <span class="side-pill" id="navProducts">0</span>
+        </button>
+        <button class="side-link" data-sec="edit">
+          <span class="ic">+</span> Add Product
+        </button>
       </nav>
-      <div class="sidebar-footer">
-        <a href="index.html" class="sidebar-back">← View Store</a>
-        <button class="sidebar-logout" id="logoutBtn" onclick="handleLogout()" style="display:none">Sign Out</button>
+      <div class="side-foot">
+        <a href="index.html" class="side-back">← View store</a>
+        <button class="side-out" id="outBtn" onclick="handleLogout()" style="display:none">Sign out</button>
       </div>
     </aside>
 
-    <!-- MAIN -->
-    <main class="admin-main">
+    <button class="side-toggle" id="sideToggle" aria-label="Menu">☰</button>
 
-      <!-- PRODUCTS LIST -->
-      <section class="admin-section active" id="section-products">
-        <div class="admin-header">
+    <!-- ══ MAIN ══ -->
+    <main class="main">
+
+      <!-- ─── ORDERS ─── -->
+      <section class="sec-a on" id="s-orders">
+        <div class="a-head">
           <div>
-            <h1>Products</h1>
-            <p class="admin-sub">Manage your collection</p>
+            <h1>Orders</h1>
+            <p class="a-sub">Every order placed on your store</p>
           </div>
-          <button class="btn btn-primary" onclick="showSection('add'); resetForm();">+ Add Product</button>
+          <button class="btn btn-line btn-sm" onclick="loadOrders()">↻ Refresh</button>
         </div>
 
-        <div class="stats-row" id="statsRow">
-          <div class="stat-card">
-            <span class="stat-card-num" id="statTotal">—</span>
-            <span class="stat-card-label">Total Products</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-card-num" id="statCategories">—</span>
-            <span class="stat-card-label">Categories</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-card-num" id="statFeatured">—</span>
-            <span class="stat-card-label">Featured</span>
-          </div>
+        <div class="stats">
+          <div class="stat-c"><span class="n" id="oTotal">0</span><span class="l">Total Orders</span></div>
+          <div class="stat-c"><span class="n" id="oNew">0</span><span class="l">Awaiting Action</span></div>
+          <div class="stat-c"><span class="n" id="oRevenue">₹0</span><span class="l">Revenue</span></div>
+          <div class="stat-c"><span class="n" id="oPending">0</span><span class="l">Unpaid</span></div>
         </div>
 
-        <div class="admin-toolbar">
-          <input type="search" id="searchInput" placeholder="Search products…" oninput="renderAdminProducts()" />
-          <select id="categoryFilter" onchange="renderAdminProducts()">
-            <option value="">All Categories</option>
+        <div class="a-bar">
+          <input type="search" id="oSearch" placeholder="Search by order no, name or phone…" oninput="renderOrders()" />
+          <select id="oStatus" onchange="renderOrders()">
+            <option value="">All statuses</option>
+            <option value="placed">Placed</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
 
-        <div class="table-wrap">
-          <table class="product-table" id="productTable">
+        <div id="ordersList"></div>
+      </section>
+
+      <!-- ─── PRODUCTS ─── -->
+      <section class="sec-a" id="s-products">
+        <div class="a-head">
+          <div>
+            <h1>Products</h1>
+            <p class="a-sub">Manage your collection</p>
+          </div>
+          <button class="btn btn-fill" onclick="newProduct()">+ Add Product</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat-c"><span class="n" id="pTotal">0</span><span class="l">Products</span></div>
+          <div class="stat-c"><span class="n" id="pCats">0</span><span class="l">Categories</span></div>
+          <div class="stat-c"><span class="n" id="pFeat">0</span><span class="l">Featured</span></div>
+          <div class="stat-c"><span class="n" id="pValue">₹0</span><span class="l">Catalogue Value</span></div>
+        </div>
+
+        <div class="a-bar">
+          <input type="search" id="pSearch" placeholder="Search products…" oninput="renderProducts()" />
+          <select id="pCat" onchange="renderProducts()"><option value="">All categories</option></select>
+        </div>
+
+        <div class="tbl-wrap">
+          <table class="tbl">
             <thead>
-              <tr>
-                <th>Image</th>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Featured</th>
-                <th>Actions</th>
-              </tr>
+              <tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Featured</th><th></th></tr>
             </thead>
-            <tbody id="productTableBody"></tbody>
+            <tbody id="pBody"></tbody>
           </table>
-          <div class="table-empty" id="tableEmpty" style="display:none;">
-            <p>No products yet. <a href="#" onclick="showSection('add'); resetForm();">Add your first product →</a></p>
+          <div class="tbl-empty" id="pEmpty" style="display:none">
+            <p>No products yet. <button class="lnk" onclick="newProduct()">Add your first product →</button></p>
           </div>
         </div>
       </section>
 
-      <!-- ADD / EDIT -->
-      <section class="admin-section" id="section-add">
-        <div class="admin-header">
+      <!-- ─── ADD / EDIT ─── -->
+      <section class="sec-a" id="s-edit">
+        <div class="a-head">
           <div>
-            <h1 id="formHeading">Add Product</h1>
-            <p class="admin-sub" id="formSubheading">Fill in the details below</p>
+            <h1 id="fTitle">Add Product</h1>
+            <p class="a-sub" id="fSub">Fill in the details below</p>
           </div>
-          <button class="btn btn-ghost" onclick="showSection('products')">← Back</button>
+          <button class="btn btn-line" onclick="go('products')">← Back</button>
         </div>
 
-        <form class="product-form" id="productForm" onsubmit="handleProductSubmit(event)">
+        <form class="a-card" id="pForm" onsubmit="saveProduct(event)">
           <input type="hidden" id="editId" />
+          <div class="f-cols">
 
-          <div class="form-grid">
-            <!-- LEFT -->
-            <div class="form-col">
-              <div class="form-group">
-                <label>Product Name <span class="req">*</span></label>
-                <input type="text" id="fName" placeholder="e.g. Ivory Silk Kurta" required />
+            <div class="form-grid">
+              <div class="field">
+                <label for="fName">Product Name <span class="req">*</span></label>
+                <input id="fName" type="text" placeholder="e.g. Ivory Silk Kurta" required />
               </div>
-              <div class="form-group">
-                <label>Category <span class="req">*</span></label>
-                <input type="text" id="fCategory" list="categoryList" placeholder="e.g. Kurtas, Sarees, Dresses" required />
-                <datalist id="categoryList"></datalist>
+              <div class="field">
+                <label for="fCat">Category <span class="req">*</span></label>
+                <input id="fCat" type="text" list="catList" placeholder="e.g. Kurtas, Sarees, Dresses" required />
+                <datalist id="catList"></datalist>
               </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label>Price (₹) <span class="req">*</span></label>
-                  <input type="number" id="fPrice" placeholder="2500" min="0" step="0.01" required />
+              <div class="f-row-2">
+                <div class="field">
+                  <label for="fPrice">Price (₹) <span class="req">*</span></label>
+                  <input id="fPrice" type="number" min="0" step="0.01" placeholder="2800" required />
                 </div>
-                <div class="form-group">
-                  <label>Original Price (₹)</label>
-                  <input type="number" id="fOriginalPrice" placeholder="3200" min="0" step="0.01" />
+                <div class="field">
+                  <label for="fWas">Original Price (₹)</label>
+                  <input id="fWas" type="number" min="0" step="0.01" placeholder="3500" />
                 </div>
               </div>
-              <div class="form-group">
-                <label>Description <span class="req">*</span></label>
-                <textarea id="fDescription" rows="4" placeholder="Describe the fabric, fit, and feel…" required></textarea>
+              <div class="field">
+                <label for="fDesc">Description <span class="req">*</span></label>
+                <textarea id="fDesc" rows="4" placeholder="Describe the fabric, fit and feel…" required></textarea>
               </div>
-              <div class="form-group">
-                <label>Tags</label>
-                <input type="text" id="fTags" placeholder="summer, handwoven, bestseller (comma separated)" />
+              <div class="field">
+                <label for="fTags">Tags</label>
+                <input id="fTags" type="text" placeholder="summer, handwoven, bestseller" />
               </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label>Badge Label</label>
-                  <input type="text" id="fBadge" placeholder="New · Sale · Limited" />
+              <div class="f-row-2">
+                <div class="field">
+                  <label for="fBadge">Badge</label>
+                  <input id="fBadge" type="text" placeholder="New · Sale · Limited" />
                 </div>
-                <div class="form-group form-group-check">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="fFeatured" />
-                    <span class="checkbox-custom"></span>
-                    Mark as Featured
+                <div class="field" style="justify-content:end">
+                  <label class="chk">
+                    <input type="checkbox" id="fFeat" />
+                    <span class="chk-box"></span>
+                    Mark as featured
                   </label>
                 </div>
               </div>
             </div>
 
-            <!-- RIGHT -->
-            <div class="form-col">
-              <div class="form-group">
+            <div class="form-grid">
+              <div class="field">
                 <label>Product Image <span class="req">*</span></label>
-                <div class="image-upload-area" id="imageUploadArea">
-                  <div class="image-preview-wrap" id="imagePreviewWrap" style="display:none;">
-                    <img id="imagePreview" src="" alt="Preview" />
-                    <button type="button" class="remove-img-btn" onclick="clearImage()">×</button>
+                <div class="drop" id="drop">
+                  <div class="drop-prev" id="prevWrap" style="display:none">
+                    <img id="prev" alt="Preview" />
+                    <button type="button" class="drop-x" onclick="clearImg()">×</button>
                   </div>
-                  <div class="image-placeholder" id="imagePlaceholder">
-                    <span class="upload-icon">⊕</span>
+                  <div class="drop-ph" id="ph">
+                    <span class="gl">⊕</span>
                     <span>Click or drag an image here</span>
+                    <span class="hint">JPG, PNG or WEBP · up to 5 MB</span>
                   </div>
-                  <input type="file" id="fImageFile" accept="image/*" onchange="handleFileUpload(event)" style="display:none;" />
+                  <input type="file" id="fFile" accept="image/*" hidden />
                 </div>
-                <div class="image-options">
-                  <button type="button" class="img-option-btn" onclick="document.getElementById('fImageFile').click()">Upload from Device</button>
-                  <span class="img-option-sep">or</span>
-                  <div class="url-input-wrap">
-                    <input type="url" id="fImageUrl" placeholder="Paste image URL…" oninput="handleUrlInput(this.value)" />
-                  </div>
+                <div class="drop-alt">
+                  <button type="button" class="btn btn-line btn-sm" onclick="document.getElementById('fFile').click()">Upload File</button>
+                  <span class="or">or</span>
+                  <input type="url" id="fUrl" placeholder="Paste an image URL…" />
                 </div>
-                <input type="hidden" id="fImageFinal" />
+                <input type="hidden" id="fImg" />
               </div>
 
-              <div class="form-group">
+              <div class="field">
                 <label>Available Sizes</label>
-                <div class="size-selector" id="sizeSelector">
-                  <button type="button" class="size-btn" data-size="XS">XS</button>
-                  <button type="button" class="size-btn" data-size="S">S</button>
-                  <button type="button" class="size-btn" data-size="M">M</button>
-                  <button type="button" class="size-btn" data-size="L">L</button>
-                  <button type="button" class="size-btn" data-size="XL">XL</button>
-                  <button type="button" class="size-btn" data-size="XXL">XXL</button>
-                  <button type="button" class="size-btn" data-size="Free">Free</button>
+                <div class="opt-row" id="sizeRow">
+                  <button type="button" class="opt-b" data-size="XS">XS</button>
+                  <button type="button" class="opt-b" data-size="S">S</button>
+                  <button type="button" class="opt-b" data-size="M">M</button>
+                  <button type="button" class="opt-b" data-size="L">L</button>
+                  <button type="button" class="opt-b" data-size="XL">XL</button>
+                  <button type="button" class="opt-b" data-size="XXL">XXL</button>
+                  <button type="button" class="opt-b" data-size="Free">Free</button>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label>Color Options</label>
-                <div class="color-input-row">
-                  <input type="text" id="colorInput" placeholder="e.g. Ivory, Blush, Navy" />
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="addColor()">Add</button>
+              <div class="field">
+                <label for="colorIn">Colour Options</label>
+                <div class="col-in">
+                  <input id="colorIn" type="text" placeholder="e.g. Ivory, Blush, Navy" />
+                  <button type="button" class="btn btn-line btn-sm" onclick="addColor()">Add</button>
                 </div>
-                <div class="color-chips" id="colorChips"></div>
+                <div class="chips" id="chips"></div>
               </div>
             </div>
-          </div>
 
-          <div class="form-actions">
-            <button type="button" class="btn btn-ghost" onclick="resetForm()">Reset</button>
-            <button type="submit" class="btn btn-primary" id="submitBtn">Add Product</button>
+          </div>
+          <div class="f-actions">
+            <button type="button" class="btn btn-line" onclick="newProduct()">Reset</button>
+            <button type="submit" class="btn btn-fill" id="saveBtn">Add Product</button>
           </div>
         </form>
       </section>
@@ -238,25 +252,35 @@
     </main>
   </div>
 
-  <!-- DELETE MODAL -->
-  <div class="modal-overlay" id="deleteModal">
-    <div class="modal-card modal-small">
-      <div class="delete-icon">⚠</div>
-      <h3>Delete Product?</h3>
-      <p>This action cannot be undone.</p>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-        <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+  <!-- ══ ORDER DETAIL DRAWER ══ -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="oDrawer" aria-hidden="true" aria-label="Order details">
+    <div class="dr-head">
+      <h3>Order Details</h3>
+      <button class="dr-x" onclick="closeDrawer('oDrawer')" aria-label="Close">×</button>
+    </div>
+    <div class="dr-body" id="oBody"></div>
+  </aside>
+
+  <!-- ══ DELETE CONFIRM ══ -->
+  <div class="modal" id="delModal">
+    <div class="modal-card">
+      <div class="modal-gl">⚠</div>
+      <h3>Delete this product?</h3>
+      <p>This can't be undone. The product image will be removed too.</p>
+      <div class="modal-act">
+        <button class="btn btn-line" onclick="closeDel()">Cancel</button>
+        <button class="btn btn-danger" id="delYes">Delete</button>
       </div>
     </div>
   </div>
 
-  <!-- TOAST -->
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/cart.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

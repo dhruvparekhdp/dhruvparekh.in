@@ -1,361 +1,547 @@
-/* ─── ADMIN INIT ─────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', initAdmin);
+/* ═══ SALONI · ADMIN ════════════════════════════════════════════
+   Requires: config.js → store.js → cart.js → admin.js
+   ═══════════════════════════════════════════════════════════════ */
 
-async function initAdmin() {
-  if (!_configured) {
-    showSetupBanner();
-    // run in localStorage-only mode
-    await initAdminUI();
-    return;
+let ORDERS = [], PRODUCTS = [];
+
+/* ─── BOOT ───────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  if (DEGRADED) {
+    const b = document.getElementById('setupBanner');
+    b.innerHTML = '<span>⚠ <b>Connection problem</b> — could not reach Supabase. Check your network and refresh; nothing shown below is live data.</span>';
+    b.style.display = 'flex';
   }
-  // Check existing session
+
+  if (!CONFIGURED) {
+    if (!DEGRADED) document.getElementById('setupBanner').style.display = 'flex';
+    document.getElementById('auth').classList.remove('on');
+    document.getElementById('app').style.display = '';
+    return boot();
+  }
+
   const { data: { session } } = await db.auth.getSession();
-  if (session?.user) {
-    await initAdminUI();
+  if (session && session.user) {
+    unlock();
   } else {
-    showAuthScreen();
+    document.getElementById('auth').classList.add('on');
   }
-  // Listen for auth changes
-  db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN')  { hideAuthScreen(); await initAdminUI(); }
-    if (event === 'SIGNED_OUT') { showAuthScreen(); }
+
+  db.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN')  unlock();
+    if (event === 'SIGNED_OUT') {
+      document.getElementById('auth').classList.add('on');
+      document.getElementById('app').style.display = 'none';
+    }
   });
+});
+
+function unlock() {
+  document.getElementById('auth').classList.remove('on');
+  document.getElementById('app').style.display = '';
+  const out = document.getElementById('outBtn');
+  if (out) out.style.display = '';
+  boot();
 }
 
-async function initAdminUI() {
-  setupSidebarNav();
-  setupSizeButtons();
-  await renderAdminProducts();
-  await updateStats();
-  await populateCategoryDatalist();
-  if (_configured) {
-    document.getElementById('logoutBtn')?.style.removeProperty('display');
-  }
+/* The notice banner is in normal flow but the sidebar is fixed at top:0,
+   so push the sidebar down by the banner's height while it is on screen. */
+function offsetForBanner() {
+  const b = document.getElementById('setupBanner');
+  const side = document.getElementById('side');
+  if (!b || !side || b.offsetParent === null) return;
+  const apply = () => { side.style.top = b.offsetHeight + 'px'; };
+  apply();
+  window.addEventListener('resize', apply);
+}
+
+let _booted = false;
+async function boot() {
+  if (_booted) return;
+  _booted = true;
+  offsetForBanner();
+  wireNav();
+  wireSizes();
+  wireImage();
+  wireDrawer();
+  await Promise.all([loadOrders(), loadProducts()]);
 }
 
 /* ─── AUTH ───────────────────────────────────────────────────── */
-function showAuthScreen() {
-  document.getElementById('authOverlay').classList.add('visible');
-  document.getElementById('adminContent').style.display = 'none';
-}
-function hideAuthScreen() {
-  document.getElementById('authOverlay').classList.remove('visible');
-  document.getElementById('adminContent').style.display = '';
-}
-
 async function handleLogin(e) {
   e.preventDefault();
-  const btn   = document.getElementById('loginBtn');
-  const error = document.getElementById('loginError');
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPassword').value;
-  btn.textContent = 'Signing in…';
-  btn.disabled    = true;
-  error.textContent = '';
-  const { error: err } = await db.auth.signInWithPassword({ email, password: pass });
-  if (err) {
-    error.textContent = err.message;
-    btn.textContent = 'Sign In';
-    btn.disabled    = false;
-  }
-}
-
-async function handleLogout() {
-  await db.auth.signOut();
-}
-
-function showSetupBanner() {
-  const banner = document.getElementById('setupBanner');
-  if (banner) banner.style.display = 'flex';
-}
-
-/* ─── SIDEBAR NAV ────────────────────────────────────────────── */
-function setupSidebarNav() {
-  document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      const s = link.dataset.section;
-      showSection(s);
-      if (s === 'add') resetForm();
-    });
+  const btn = document.getElementById('lBtn');
+  const err = document.getElementById('lErr');
+  btn.disabled = true; btn.textContent = 'Signing in…'; err.textContent = '';
+  const { error } = await db.auth.signInWithPassword({
+    email:    document.getElementById('lEmail').value.trim(),
+    password: document.getElementById('lPass').value,
   });
-}
-
-function showSection(name) {
-  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-  document.getElementById('section-' + name)?.classList.add('active');
-  document.querySelector(`.sidebar-link[data-section="${name}"]`)?.classList.add('active');
-  if (name === 'products') renderAdminProducts();
-}
-
-/* ─── STATS ──────────────────────────────────────────────────── */
-async function updateStats() {
-  const products = await getProducts();
-  const cats = new Set(products.map(p => p.category));
-  document.getElementById('statTotal').textContent     = products.length;
-  document.getElementById('statCategories').textContent = cats.size;
-  document.getElementById('statFeatured').textContent  = products.filter(p => p.featured).length;
-}
-
-/* ─── CATEGORY DATALIST ──────────────────────────────────────── */
-async function populateCategoryDatalist() {
-  const products = await getProducts();
-  const cats = [...new Set(products.map(p => p.category))];
-  const dl = document.getElementById('categoryList');
-  const cf = document.getElementById('categoryFilter');
-  if (dl) dl.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
-  if (cf) {
-    const cur = cf.value;
-    cf.innerHTML = '<option value="">All Categories</option>' +
-      cats.map(c => `<option value="${escapeHtml(c)}"${c===cur?' selected':''}>${escapeHtml(c)}</option>`).join('');
+  if (error) {
+    err.textContent = error.message;
+    btn.disabled = false; btn.textContent = 'Sign In';
   }
 }
 
-/* ─── PRODUCT TABLE ──────────────────────────────────────────── */
-async function renderAdminProducts() {
-  const tbody  = document.getElementById('productTableBody');
-  const empty  = document.getElementById('tableEmpty');
-  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
-  const catF   = document.getElementById('categoryFilter')?.value || '';
+async function handleLogout() { await db.auth.signOut(); location.reload(); }
 
-  let products = await getProducts();
-  if (search) products = products.filter(p =>
-    p.name.toLowerCase().includes(search) ||
-    p.category.toLowerCase().includes(search) ||
-    (p.description||'').toLowerCase().includes(search)
+/* ─── NAV ────────────────────────────────────────────────────── */
+function wireNav() {
+  document.querySelectorAll('.side-link[data-sec]').forEach(b =>
+    b.addEventListener('click', () => {
+      go(b.dataset.sec);
+      if (b.dataset.sec === 'edit') newProduct();
+    })
   );
-  if (catF) products = products.filter(p => p.category === catF);
+  const t = document.getElementById('sideToggle');
+  if (t) t.addEventListener('click', () => document.getElementById('side').classList.toggle('open'));
+}
 
-  if (!products.length) {
-    tbody.innerHTML = '';
-    if (empty) empty.style.display = 'block';
+function go(sec) {
+  document.querySelectorAll('.sec-a').forEach(s => s.classList.toggle('on', s.id === 's' + '-' + sec));
+  document.querySelectorAll('.side-link').forEach(l => l.classList.toggle('on', l.dataset.sec === sec));
+  document.getElementById('side').classList.remove('open');
+  window.scrollTo({ top: 0 });
+}
+
+/* ═══ ORDERS ═══════════════════════════════════════════════════ */
+const O_STATUS = ['placed', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+
+async function loadOrders() {
+  ORDERS = await getOrders();
+  const revenue = ORDERS
+    .filter(o => o.order_status !== 'cancelled')
+    .reduce((s, o) => s + Number(o.total || 0), 0);
+
+  document.getElementById('oTotal').textContent   = ORDERS.length;
+  document.getElementById('oNew').textContent     = ORDERS.filter(o => o.order_status === 'placed').length;
+  document.getElementById('oRevenue').textContent = inr(revenue);
+  document.getElementById('oPending').textContent = ORDERS.filter(o => o.payment_status !== 'paid' && o.order_status !== 'cancelled').length;
+  document.getElementById('navOrders').textContent = ORDERS.length;
+
+  renderOrders();
+}
+
+function renderOrders() {
+  const wrap = document.getElementById('ordersList');
+  const q    = (document.getElementById('oSearch').value || '').toLowerCase();
+  const st   = document.getElementById('oStatus').value;
+
+  let list = ORDERS;
+  if (q)  list = list.filter(o =>
+    (o.order_number   || '').toLowerCase().includes(q) ||
+    (o.customer_name  || '').toLowerCase().includes(q) ||
+    (o.customer_phone || '').includes(q));
+  if (st) list = list.filter(o => o.order_status === st);
+
+  if (!list.length) {
+    wrap.innerHTML = `<div class="tbl-empty"><p>${ORDERS.length ? 'No orders match this filter.' : 'No orders yet. They will appear here as soon as someone checks out.'}</p></div>`;
     return;
   }
-  if (empty) empty.style.display = 'none';
 
-  tbody.innerHTML = products.map(p => {
-    const thumb = p.image_url
-      ? `<img class="table-thumb" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" onerror="this.outerHTML='<div class=table-thumb-placeholder>✦</div>'" />`
-      : `<div class="table-thumb-placeholder">✦</div>`;
-    const featEl = p.featured
-      ? `<span class="featured-badge">★ Featured</span>`
-      : `<span style="color:var(--light-text);font-size:.8rem">—</span>`;
-    return `<tr>
-      <td>${thumb}</td>
-      <td><span class="table-name">${escapeHtml(p.name)}</span></td>
-      <td><span class="table-category">${escapeHtml(p.category)}</span></td>
-      <td><span class="table-price">₹${Number(p.price).toLocaleString('en-IN')}</span></td>
-      <td>${featEl}</td>
-      <td><div class="action-btns">
-        <button class="action-btn action-btn-edit" onclick="editProduct('${p.id}')">Edit</button>
-        <button class="action-btn action-btn-delete" onclick="confirmDelete('${p.id}', ${JSON.stringify(escapeHtml(p.image_url||''))})">Delete</button>
-      </div></td>
-    </tr>`;
+  wrap.innerHTML = list.map(o => {
+    const count = (o.items || []).reduce((n, i) => n + (i.qty || 0), 0);
+    return `
+      <div class="ord" data-id="${escapeHtml(o.id)}">
+        <div class="ord-main">
+          <div class="ord-no">${escapeHtml(o.order_number)}</div>
+          <div class="ord-who">${escapeHtml(o.customer_name)} · ${escapeHtml(o.customer_phone)}</div>
+          <div class="ord-meta">${count} item${count === 1 ? '' : 's'} · ${escapeHtml(o.city)}, ${escapeHtml(o.state)} · ${fmtDate(o.created_at)}</div>
+        </div>
+        <div class="ord-pay">
+          <span class="pill pay-${escapeHtml(o.payment_status)}">${payLabel(o)}</span>
+        </div>
+        <div class="ord-amt">${inr(o.total)}</div>
+        <div class="ord-act">
+          <select class="ord-sel" data-status="${escapeHtml(o.id)}">
+            ${O_STATUS.map(s => `<option value="${s}"${o.order_status === s ? ' selected' : ''}>${cap(s)}</option>`).join('')}
+          </select>
+          <button class="btn btn-line btn-sm" data-view="${escapeHtml(o.id)}">View</button>
+        </div>
+      </div>`;
   }).join('');
-}
 
-/* ─── SIZE BUTTONS ───────────────────────────────────────────── */
-function setupSizeButtons() {
-  document.querySelectorAll('.size-btn').forEach(btn =>
-    btn.addEventListener('click', () => btn.classList.toggle('selected'))
+  wrap.querySelectorAll('[data-status]').forEach(sel =>
+    sel.addEventListener('change', () => setOrderStatus(sel.dataset.status, { order_status: sel.value }))
   );
-}
-function getSelectedSizes() {
-  return [...document.querySelectorAll('.size-btn.selected')].map(b => b.dataset.size);
-}
-function setSelectedSizes(sizes) {
-  document.querySelectorAll('.size-btn').forEach(b =>
-    b.classList.toggle('selected', (sizes||[]).includes(b.dataset.size))
+  wrap.querySelectorAll('[data-view]').forEach(b =>
+    b.addEventListener('click', () => viewOrder(b.dataset.view))
   );
 }
 
-/* ─── COLOR CHIPS ────────────────────────────────────────────── */
-let _colors = [];
-function addColor() {
-  const input = document.getElementById('colorInput');
-  input.value.split(',').map(c => c.trim()).filter(Boolean).forEach(c => {
-    if (!_colors.includes(c)) _colors.push(c);
-  });
-  input.value = '';
-  renderColorChips();
-}
-function renderColorChips() {
-  document.getElementById('colorChips').innerHTML = _colors.map((c,i) =>
-    `<span class="color-chip">${escapeHtml(c)}<span class="color-chip-remove" onclick="removeColor(${i})">×</span></span>`
-  ).join('');
-}
-function removeColor(i) { _colors.splice(i,1); renderColorChips(); }
-
-/* ─── IMAGE HANDLING ─────────────────────────────────────────── */
-let _uploadedFile = null;
-
-async function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5MB'); return; }
-  _uploadedFile = file;
-  const previewUrl = URL.createObjectURL(file);
-  setImagePreview(previewUrl, false); // preview only — upload on submit
+function payLabel(o) {
+  const m = { cod: 'COD', upi: 'UPI', razorpay: 'Card' }[o.payment_method] || o.payment_method;
+  return `${m} · ${cap(o.payment_status)}`;
 }
 
-function handleUrlInput(url) {
-  if (!url) return;
-  const img = new Image();
-  img.onload = () => { _uploadedFile = null; setImagePreview(url, true); };
-  img.src = url;
+async function setOrderStatus(id, patch) {
+  try {
+    await updateOrder(id, patch);
+    const o = ORDERS.find(x => x.id === id);
+    if (o) Object.assign(o, patch);
+    showToast('Order updated');
+    loadOrders();
+  } catch (e) {
+    showToast('Could not update: ' + e.message);
+  }
 }
 
-function setImagePreview(src, setFinal) {
-  document.getElementById('imagePreview').src = src;
-  document.getElementById('imagePreviewWrap').style.display = 'block';
-  document.getElementById('imagePlaceholder').style.display = 'none';
-  if (setFinal) document.getElementById('fImageFinal').value = src;
-  else document.getElementById('fImageFinal').value = '__pending__';
+function viewOrder(id) {
+  const o = ORDERS.find(x => x.id === id);
+  if (!o) return;
+  const items = (o.items || []).map(i => {
+    const variant = [i.size, i.color].filter(Boolean).join(' · ');
+    const thumb = i.image_url
+      ? `<img src="${escapeHtml(i.image_url)}" alt="" onerror="this.outerHTML='<div class=&quot;ph&quot;>✦</div>'" />`
+      : `<div class="ph">✦</div>`;
+    return `
+      <div class="co-item">
+        ${thumb}
+        <div>
+          <div class="nm">${escapeHtml(i.name)}</div>
+          <div class="vr">${variant ? escapeHtml(variant) + ' · ' : ''}Qty ${i.qty}</div>
+        </div>
+        <div class="pr">${inr(i.price * i.qty)}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('oBody').innerHTML = `
+    <div class="od">
+      <div class="od-top">
+        <div>
+          <div class="od-no">${escapeHtml(o.order_number)}</div>
+          <div class="od-date">${fmtDate(o.created_at, true)}</div>
+        </div>
+        <span class="pill st-${escapeHtml(o.order_status)}">${cap(o.order_status)}</span>
+      </div>
+
+      <h4 class="od-h">Customer</h4>
+      <div class="od-kv"><span>Name</span><b>${escapeHtml(o.customer_name)}</b></div>
+      <div class="od-kv"><span>Phone</span><b><a href="tel:${escapeHtml(o.customer_phone)}">${escapeHtml(o.customer_phone)}</a></b></div>
+      ${o.customer_email ? `<div class="od-kv"><span>Email</span><b><a href="mailto:${escapeHtml(o.customer_email)}">${escapeHtml(o.customer_email)}</a></b></div>` : ''}
+
+      <h4 class="od-h">Delivery Address</h4>
+      <p class="od-addr">${escapeHtml(o.address_line)}${o.landmark ? '<br/>Near ' + escapeHtml(o.landmark) : ''}<br/>${escapeHtml(o.city)}, ${escapeHtml(o.state)} — ${escapeHtml(o.pincode)}</p>
+      <button class="btn btn-line btn-sm" onclick="copyAddress('${escapeHtml(o.id)}')">Copy address</button>
+
+      <h4 class="od-h">Items</h4>
+      <div class="co-items">${items}</div>
+
+      <div class="sum">
+        <div class="sum-r"><span>Subtotal</span><span>${inr(o.subtotal)}</span></div>
+        <div class="sum-r"><span>Shipping</span><span>${Number(o.shipping) === 0 ? '<span class="free">Free</span>' : inr(o.shipping)}</span></div>
+        <div class="sum-r total"><span>Total</span><span>${inr(o.total)}</span></div>
+      </div>
+
+      <h4 class="od-h">Payment</h4>
+      <div class="od-kv"><span>Method</span><b>${escapeHtml({ cod:'Cash on Delivery', upi:'UPI', razorpay:'Card / Netbanking' }[o.payment_method] || o.payment_method)}</b></div>
+      ${o.payment_ref ? `<div class="od-kv"><span>Reference</span><b>${escapeHtml(o.payment_ref)}</b></div>` : ''}
+      <div class="od-kv"><span>Status</span><b>${cap(o.payment_status)}</b></div>
+      ${o.payment_status !== 'paid'
+        ? `<button class="btn btn-fill btn-block" style="margin-top:.8rem" onclick="markPaid('${escapeHtml(o.id)}')">Mark as Paid</button>`
+        : ''}
+
+      ${o.notes ? `<h4 class="od-h">Customer Note</h4><p class="od-addr">${escapeHtml(o.notes)}</p>` : ''}
+    </div>`;
+  openDrawer('oDrawer');
 }
 
-function clearImage() {
-  _uploadedFile = null;
-  document.getElementById('fImageFinal').value = '';
-  document.getElementById('fImageUrl').value   = '';
-  document.getElementById('fImageFile').value  = '';
-  document.getElementById('imagePreviewWrap').style.display = 'none';
-  document.getElementById('imagePlaceholder').style.display  = 'flex';
+async function markPaid(id) {
+  await setOrderStatus(id, { payment_status: 'paid' });
+  closeDrawer('oDrawer');
 }
 
-/* ─── FORM RESET ─────────────────────────────────────────────── */
-function resetForm() {
-  document.getElementById('productForm').reset();
+function copyAddress(id) {
+  const o = ORDERS.find(x => x.id === id);
+  if (!o) return;
+  const text = [
+    o.customer_name,
+    o.customer_phone,
+    o.address_line,
+    o.landmark ? 'Near ' + o.landmark : '',
+    `${o.city}, ${o.state} - ${o.pincode}`,
+  ].filter(Boolean).join('\n');
+  navigator.clipboard.writeText(text)
+    .then(() => showToast('Address copied'))
+    .catch(() => showToast('Could not copy'));
+}
+
+/* ═══ PRODUCTS ═════════════════════════════════════════════════ */
+async function loadProducts() {
+  PRODUCTS = await getProducts();
+  const counts = categoryCounts(PRODUCTS);
+  const value  = PRODUCTS.reduce((s, p) => s + Number(p.price || 0), 0);
+
+  document.getElementById('pTotal').textContent = PRODUCTS.length;
+  document.getElementById('pCats').textContent  = Object.keys(counts).length;
+  document.getElementById('pFeat').textContent  = PRODUCTS.filter(p => p.featured).length;
+  document.getElementById('pValue').textContent = inr(value);
+  document.getElementById('navProducts').textContent = PRODUCTS.length;
+
+  const names = Object.keys(counts);
+  document.getElementById('catList').innerHTML = names.map(c => `<option value="${escapeHtml(c)}">`).join('');
+  const sel = document.getElementById('pCat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All categories</option>' +
+    names.map(c => `<option value="${escapeHtml(c)}"${c === cur ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('');
+
+  renderProducts();
+}
+
+function renderProducts() {
+  const body  = document.getElementById('pBody');
+  const empty = document.getElementById('pEmpty');
+  const q     = (document.getElementById('pSearch').value || '').toLowerCase();
+  const cat   = document.getElementById('pCat').value;
+
+  let list = PRODUCTS;
+  if (q)   list = list.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    (p.category || '').toLowerCase().includes(q) ||
+    (p.description || '').toLowerCase().includes(q));
+  if (cat) list = list.filter(p => p.category === cat);
+
+  if (!list.length) {
+    body.innerHTML = '';
+    empty.style.display = 'block';
+    empty.querySelector('p').innerHTML = PRODUCTS.length
+      ? 'No products match this filter.'
+      : 'No products yet. <button class="lnk" onclick="newProduct()">Add your first product →</button>';
+    return;
+  }
+  empty.style.display = 'none';
+
+  body.innerHTML = list.map(p => `
+    <tr>
+      <td>${p.image_url
+        ? `<img class="thumb" src="${escapeHtml(p.image_url)}" alt="" onerror="this.outerHTML='<div class=&quot;thumb ph&quot;>✦</div>'" />`
+        : `<div class="thumb ph">✦</div>`}</td>
+      <td><span class="t-nm">${escapeHtml(p.name)}</span></td>
+      <td><span class="t-cat">${escapeHtml(p.category)}</span></td>
+      <td><span class="t-pr">${inr(p.price)}</span></td>
+      <td>${p.featured ? '<span class="pill st-delivered">★ Featured</span>' : '<span class="dash">—</span>'}</td>
+      <td>
+        <div class="t-act">
+          <button class="btn btn-line btn-sm" onclick="editProduct('${escapeHtml(p.id)}')">Edit</button>
+          <button class="btn btn-line btn-sm danger" onclick="askDelete('${escapeHtml(p.id)}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+/* ─── FORM ───────────────────────────────────────────────────── */
+let COLORS = [], FILE = null;
+
+function newProduct() {
+  go('edit');
+  document.getElementById('pForm').reset();
   document.getElementById('editId').value = '';
-  document.getElementById('formHeading').textContent    = 'Add Product';
-  document.getElementById('formSubheading').textContent = 'Fill in the details below';
-  document.getElementById('submitBtn').textContent      = 'Add Product';
-  clearImage();
-  setSelectedSizes([]);
-  _colors = [];
-  renderColorChips();
+  document.getElementById('fTitle').textContent = 'Add Product';
+  document.getElementById('fSub').textContent   = 'Fill in the details below';
+  document.getElementById('saveBtn').textContent = 'Add Product';
+  clearImg();
+  setSizes([]);
+  COLORS = []; renderChips();
 }
 
-/* ─── EDIT ───────────────────────────────────────────────────── */
-async function editProduct(id) {
-  const products = await getProducts();
-  const p = products.find(x => x.id === id);
+function editProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id);
   if (!p) return;
-  showSection('add');
-  document.getElementById('editId').value          = p.id;
-  document.getElementById('fName').value           = p.name || '';
-  document.getElementById('fCategory').value       = p.category || '';
-  document.getElementById('fPrice').value          = p.price || '';
-  document.getElementById('fOriginalPrice').value  = p.original_price || '';
-  document.getElementById('fDescription').value    = p.description || '';
-  document.getElementById('fTags').value           = (p.tags||[]).join(', ');
-  document.getElementById('fBadge').value          = p.badge || '';
-  document.getElementById('fFeatured').checked     = !!p.featured;
-  if (p.image_url) setImagePreview(p.image_url, true); else clearImage();
-  setSelectedSizes(p.sizes || []);
-  _colors = [...(p.colors || [])];
-  renderColorChips();
-  document.getElementById('formHeading').textContent    = 'Edit Product';
-  document.getElementById('formSubheading').textContent = p.name;
-  document.getElementById('submitBtn').textContent      = 'Save Changes';
+  go('edit');
+  document.getElementById('editId').value = p.id;
+  document.getElementById('fName').value  = p.name || '';
+  document.getElementById('fCat').value   = p.category || '';
+  document.getElementById('fPrice').value = p.price || '';
+  document.getElementById('fWas').value   = p.original_price || '';
+  document.getElementById('fDesc').value  = p.description || '';
+  document.getElementById('fTags').value  = (p.tags || []).join(', ');
+  document.getElementById('fBadge').value = p.badge || '';
+  document.getElementById('fFeat').checked = Boolean(p.featured);
+  if (p.image_url) showImg(p.image_url, true); else clearImg();
+  setSizes(p.sizes || []);
+  COLORS = [...(p.colors || [])]; renderChips();
+  document.getElementById('fTitle').textContent = 'Edit Product';
+  document.getElementById('fSub').textContent   = p.name;
+  document.getElementById('saveBtn').textContent = 'Save Changes';
 }
 
-/* ─── SUBMIT ─────────────────────────────────────────────────── */
-async function handleProductSubmit(e) {
+async function saveProduct(e) {
   e.preventDefault();
-  const btn = document.getElementById('submitBtn');
-  const imageFinal = document.getElementById('fImageFinal').value.trim();
-  if (!imageFinal) { showToast('Please add a product image'); return; }
+  const btn = document.getElementById('saveBtn');
+  const img = document.getElementById('fImg').value.trim();
+  if (!img) { showToast('Please add a product image'); return; }
 
-  btn.textContent = 'Saving…';
-  btn.disabled    = true;
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
-    let imageUrl = imageFinal;
-
-    // Upload file to Supabase Storage if a file was selected
-    if (_uploadedFile && imageFinal === '__pending__') {
-      imageUrl = await uploadImage(_uploadedFile);
-      _uploadedFile = null;
+    let imageUrl = img;
+    if (FILE && img === '__file__') {
+      imageUrl = await uploadImage(FILE);
+      FILE = null;
     }
 
-    const data = {
+    const row = {
       name:           document.getElementById('fName').value.trim(),
-      category:       document.getElementById('fCategory').value.trim(),
+      category:       document.getElementById('fCat').value.trim(),
       price:          parseFloat(document.getElementById('fPrice').value),
-      original_price: parseFloat(document.getElementById('fOriginalPrice').value) || null,
-      description:    document.getElementById('fDescription').value.trim(),
+      original_price: parseFloat(document.getElementById('fWas').value) || null,
+      description:    document.getElementById('fDesc').value.trim(),
       badge:          document.getElementById('fBadge').value.trim(),
-      featured:       document.getElementById('fFeatured').checked,
+      featured:       document.getElementById('fFeat').checked,
       image_url:      imageUrl,
-      sizes:          getSelectedSizes(),
-      colors:         [..._colors],
-      tags:           document.getElementById('fTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+      sizes:          [...document.querySelectorAll('#sizeRow .opt-b.on')].map(b => b.dataset.size),
+      colors:         [...COLORS],
+      tags:           document.getElementById('fTags').value.split(',').map(t => t.trim()).filter(Boolean),
     };
 
-    const editId = document.getElementById('editId').value;
-    if (editId) {
-      await updateProduct(editId, data);
-      showToast('Product updated!');
-    } else {
-      await addProduct(data);
-      showToast('Product added!');
-    }
+    const id = document.getElementById('editId').value;
+    if (id) { await updateProduct(id, row); showToast('Product updated'); }
+    else    { await addProduct(row);        showToast('Product added'); }
 
-    await updateStats();
-    showSection('products');
-  } catch(err) {
+    await loadProducts();
+    go('products');
+  } catch (err) {
     console.error(err);
-    showToast('Error: ' + (err.message || 'Something went wrong'));
+    showToast('Could not save: ' + (err.message || 'unknown error'));
   } finally {
-    btn.textContent = document.getElementById('editId').value ? 'Save Changes' : 'Add Product';
-    btn.disabled    = false;
+    btn.disabled = false; btn.textContent = label;
   }
 }
 
 /* ─── DELETE ─────────────────────────────────────────────────── */
-let _deleteTarget = null;
-let _deleteImageUrl = null;
+let DEL_ID = null;
 
-function confirmDelete(id, imageUrl) {
-  _deleteTarget   = id;
-  _deleteImageUrl = imageUrl || null;
-  document.getElementById('deleteModal').classList.add('open');
-  document.getElementById('confirmDeleteBtn').onclick = async () => {
+function askDelete(id) {
+  DEL_ID = id;
+  document.getElementById('delModal').classList.add('on');
+}
+function closeDel() {
+  DEL_ID = null;
+  document.getElementById('delModal').classList.remove('on');
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const yes = document.getElementById('delYes');
+  if (yes) yes.addEventListener('click', async () => {
+    if (!DEL_ID) return;
+    const p = PRODUCTS.find(x => x.id === DEL_ID);
     try {
-      if (_deleteImageUrl) await deleteImage(_deleteImageUrl);
-      await deleteProduct(_deleteTarget);
-      closeDeleteModal();
-      await renderAdminProducts();
-      await updateStats();
+      if (p && p.image_url) await deleteImage(p.image_url);
+      await deleteProduct(DEL_ID);
       showToast('Product deleted');
-    } catch(err) {
-      showToast('Error: ' + err.message);
-    }
-    _deleteTarget = _deleteImageUrl = null;
-  };
-}
-function closeDeleteModal() {
-  document.getElementById('deleteModal').classList.remove('open');
-}
-document.getElementById('deleteModal')?.addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeDeleteModal();
-});
-
-/* ─── DRAG-OVER UPLOAD ───────────────────────────────────────── */
-const uploadArea = document.getElementById('imageUploadArea');
-if (uploadArea) {
-  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--dark)'; });
-  uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
-  uploadArea.addEventListener('drop', e => {
-    e.preventDefault(); uploadArea.style.borderColor = '';
-    const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith('image/')) {
-      _uploadedFile = file;
-      setImagePreview(URL.createObjectURL(file), false);
+      closeDel();
+      await loadProducts();
+    } catch (err) {
+      showToast('Could not delete: ' + err.message);
     }
   });
-  document.getElementById('imagePlaceholder')?.addEventListener('click', () =>
-    document.getElementById('fImageFile').click()
+  const modal = document.getElementById('delModal');
+  if (modal) modal.addEventListener('click', e => { if (e.target === modal) closeDel(); });
+});
+
+/* ─── SIZES & COLOURS ────────────────────────────────────────── */
+function wireSizes() {
+  document.querySelectorAll('#sizeRow .opt-b').forEach(b =>
+    b.addEventListener('click', () => b.classList.toggle('on'))
   );
+}
+function setSizes(sizes) {
+  document.querySelectorAll('#sizeRow .opt-b').forEach(b =>
+    b.classList.toggle('on', (sizes || []).includes(b.dataset.size))
+  );
+}
+function addColor() {
+  const el = document.getElementById('colorIn');
+  el.value.split(',').map(c => c.trim()).filter(Boolean).forEach(c => {
+    if (!COLORS.includes(c)) COLORS.push(c);
+  });
+  el.value = '';
+  renderChips();
+}
+function renderChips() {
+  document.getElementById('chips').innerHTML = COLORS.map((c, i) =>
+    `<span class="chip-c">${escapeHtml(c)}<button type="button" onclick="rmColor(${i})" aria-label="Remove">×</button></span>`
+  ).join('');
+}
+function rmColor(i) { COLORS.splice(i, 1); renderChips(); }
+
+/* ─── IMAGE ──────────────────────────────────────────────────── */
+function wireImage() {
+  const drop = document.getElementById('drop');
+  const file = document.getElementById('fFile');
+  const url  = document.getElementById('fUrl');
+  if (!drop) return;
+
+  document.getElementById('ph').addEventListener('click', () => file.click());
+  file.addEventListener('change', e => { if (e.target.files[0]) takeFile(e.target.files[0]); });
+
+  url.addEventListener('input', () => {
+    const v = url.value.trim();
+    if (!v) return;
+    const probe = new Image();
+    probe.onload = () => { FILE = null; showImg(v, true); };
+    probe.src = v;
+  });
+
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) takeFile(f);
+  });
+}
+
+function takeFile(f) {
+  if (f.size > 5 * 1024 * 1024) { showToast('Image must be under 5 MB'); return; }
+  FILE = f;
+  showImg(URL.createObjectURL(f), false);
+}
+
+function showImg(src, isFinal) {
+  document.getElementById('prev').src = src;
+  document.getElementById('prevWrap').style.display = 'block';
+  document.getElementById('ph').style.display = 'none';
+  document.getElementById('fImg').value = isFinal ? src : '__file__';
+}
+
+function clearImg() {
+  FILE = null;
+  document.getElementById('fImg').value = '';
+  document.getElementById('fUrl').value = '';
+  document.getElementById('fFile').value = '';
+  document.getElementById('prevWrap').style.display = 'none';
+  document.getElementById('ph').style.display = '';
+}
+
+/* ─── DRAWER ─────────────────────────────────────────────────── */
+function wireDrawer() {
+  const s = document.getElementById('scrim');
+  if (s) s.addEventListener('click', () => closeDrawer('oDrawer'));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeDrawer('oDrawer'); closeDel(); }
+  });
+}
+function openDrawer(id) {
+  document.getElementById(id).classList.add('on');
+  document.getElementById(id).setAttribute('aria-hidden', 'false');
+  document.getElementById('scrim').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer(id) {
+  const d = document.getElementById(id);
+  if (d) { d.classList.remove('on'); d.setAttribute('aria-hidden', 'true'); }
+  document.getElementById('scrim').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+/* ─── UTIL ───────────────────────────────────────────────────── */
+function cap(s) { return String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1); }
+
+function fmtDate(iso, long) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleString('en-IN', long
+    ? { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }
+    : { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 }

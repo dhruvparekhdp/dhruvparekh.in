@@ -1,268 +1,517 @@
-/* ─── SUPABASE CLIENT INIT ───────────────────────────────────── */
-const _configured = SUPABASE_URL && SUPABASE_ANON_KEY;
-const db = _configured
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+/* ═══ SALONI · STOREFRONT ═══════════════════════════════════════
+   Requires: config.js → store.js → cart.js → app.js
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ─── LOCAL FALLBACK STORE (used when Supabase not yet configured) */
-const STORE_KEY = 'saloni_products';
-const DEMO_PRODUCTS = [
-  { id:'demo-1', name:'Ivory Silk Kurta',      category:'Kurtas',   price:2800, original_price:3500, description:'A whisper-soft ivory silk kurta with delicate hand-embroidered neckline. Flows effortlessly from desk to dinner. Pair with palazzo trousers or straight-cut jeans.', image_url:'', badge:'New',     featured:true,  sizes:['XS','S','M','L','XL'], colors:['Ivory','Blush','Sage'],         tags:['summer','handcrafted','bestseller'], created_at: new Date(Date.now()-86400000).toISOString() },
-  { id:'demo-2', name:'Rosewood Anarkali Set', category:'Anarkali', price:5400, original_price:6800, description:'A floor-length rosewood Anarkali adorned with subtle zari work and a flared silhouette. Comes with matching churidar and dupatta.',                                     image_url:'', badge:'Sale',    featured:true,  sizes:['S','M','L','XL'],      colors:['Rosewood','Burgundy'],          tags:['festive','premium'],                created_at: new Date(Date.now()-172800000).toISOString() },
-  { id:'demo-3', name:'Midnight Linen Co-ord', category:'Co-ords',  price:3200, original_price:null, description:'Washed midnight-navy linen co-ord set featuring wide-leg trousers and a relaxed boxy blazer. Minimal, modern, effortlessly cool.',                                    image_url:'', badge:'',       featured:true,  sizes:['XS','S','M','L'],      colors:['Midnight Navy','Sand'],         tags:['contemporary','everyday'],          created_at: new Date(Date.now()-259200000).toISOString() },
-  { id:'demo-4', name:'Blush Organza Saree',   category:'Sarees',   price:7200, original_price:null, description:'Pure organza saree in the softest blush with a scattered floral hand-block print. Lightweight and luminous — perfect for celebrations.',                              image_url:'', badge:'Limited',featured:false, sizes:['Free'],                colors:['Blush','Champagne'],            tags:['bridal','festive','handblock'],     created_at: new Date(Date.now()-345600000).toISOString() },
-];
+const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let PRODUCTS = [];
 
-function _localGet() {
-  try { const s = localStorage.getItem(STORE_KEY); if (s) return JSON.parse(s); } catch(e) {}
-  localStorage.setItem(STORE_KEY, JSON.stringify(DEMO_PRODUCTS));
-  return DEMO_PRODUCTS;
-}
-function _localSave(products) { localStorage.setItem(STORE_KEY, JSON.stringify(products)); }
+/* ─── BOOT ───────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', init);
 
-/* ─── PRODUCT CRUD ───────────────────────────────────────────── */
-async function getProducts() {
-  if (db) {
-    const { data, error } = await db.from('products').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('Supabase fetch error:', error); return []; }
-    return data || [];
+async function init() {
+  const banner = document.getElementById('setupBanner');
+  if (DEGRADED && banner) {
+    banner.innerHTML = '<span>⚠ <b>Connection problem</b> — we could not reach the store. Please refresh the page.</span>';
+    banner.style.display = 'flex';
+  } else if (!CONFIGURED && banner) {
+    banner.style.display = 'flex';
   }
-  return _localGet();
+
+  buildMarquee();
+  wireDrawers();
+  paintBag();
+  document.addEventListener('cart:change', paintBag);
+
+  stickyHeader();
+  skeletons(8);
+  PRODUCTS = await getProducts();
+
+  renderCategories();
+  renderFilters();
+  renderGrid('all');
+  renderHeroFigure();
+
+  const stat = document.getElementById('statCount');
+  if (stat) stat.textContent = PRODUCTS.length ? PRODUCTS.length + '+' : '—';
+
+  initReveal();
+  initParallax();
+  initMagnetic();
 }
 
-async function addProduct(product) {
-  if (db) {
-    const { data, error } = await db.from('products').insert([product]).select().single();
-    if (error) throw error;
-    return data;
-  }
-  const products = _localGet();
-  const newProduct = { ...product, id: 'p-' + Date.now(), created_at: new Date().toISOString() };
-  products.unshift(newProduct);
-  _localSave(products);
-  return newProduct;
+/* ─── HEADER ─────────────────────────────────────────────────── */
+function stickyHeader() {
+  const h = document.getElementById('hdr');
+  if (!h) return;
+  const banner = document.getElementById('setupBanner');
+
+  const onScroll = () => {
+    h.classList.toggle('stuck', window.scrollY > 40);
+    // The banner sits in normal flow, so slide the fixed header down by
+    // whatever of it is still visible instead of covering it.
+    const bh = banner && banner.offsetParent !== null ? banner.offsetHeight : 0;
+    h.style.top = bh ? Math.max(0, bh - window.scrollY) + 'px' : '';
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
 }
 
-async function updateProduct(id, updates) {
-  if (db) {
-    const { data, error } = await db.from('products').update(updates).eq('id', id).select().single();
-    if (error) throw error;
-    return data;
-  }
-  const products = _localGet();
-  const idx = products.findIndex(p => p.id === id);
-  if (idx === -1) return null;
-  products[idx] = { ...products[idx], ...updates };
-  _localSave(products);
-  return products[idx];
+/* ─── MARQUEE ────────────────────────────────────────────────── */
+function buildMarquee() {
+  const t = document.getElementById('marqTrack');
+  if (!t) return;
+  const words = ['New Arrivals', 'Handwoven Fabrics', 'Small-Batch Made', 'Cash on Delivery', 'Free Shipping Over ' + inr(SHOP.freeShippingAbove), 'Packed by Hand'];
+  const half = words.map(w => `<span>${escapeHtml(w)}</span><i>✦</i>`).join('');
+  t.innerHTML = half + half;
 }
 
-async function deleteProduct(id) {
-  if (db) {
-    const { error } = await db.from('products').delete().eq('id', id);
-    if (error) throw error;
+/* ─── SKELETONS ──────────────────────────────────────────────── */
+function skeletons(n) {
+  const g = document.getElementById('grid');
+  if (!g) return;
+  g.innerHTML = Array.from({ length: n }, () => `
+    <div class="skel">
+      <div class="sk-m sk"></div>
+      <div class="sk-b">
+        <div class="sk sk-l1"></div>
+        <div class="sk sk-l2"></div>
+        <div class="sk sk-l3"></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ─── CATEGORIES ─────────────────────────────────────────────── */
+const GLYPH = { Kurtas:'✦', Sarees:'◈', Anarkali:'❋', 'Co-ords':'◉', Dresses:'✿', Lehengas:'✾' };
+
+function renderCategories() {
+  const g = document.getElementById('catGrid');
+  if (!g) return;
+  const counts = categoryCounts(PRODUCTS);
+  const names = Object.keys(counts);
+  if (!names.length) {
+    g.innerHTML = `<p class="empty">Categories appear once you add products.</p>`;
     return;
   }
-  _localSave(_localGet().filter(p => p.id !== id));
-}
+  g.innerHTML = names.map((name, i) => `
+    <button class="tile cat reveal ${i < 4 ? 'd' + (i + 1) : ''}" data-cat="${escapeHtml(name)}">
+      <span class="gl">${GLYPH[name] || '◇'}</span>
+      <span>
+        <span class="nm">${escapeHtml(name)}</span><br/>
+        <span class="ct">${counts[name]} piece${counts[name] === 1 ? '' : 's'}</span>
+      </span>
+    </button>`).join('');
 
-/* ─── IMAGE UPLOAD ───────────────────────────────────────────── */
-async function uploadImage(file) {
-  if (!db) {
-    // base64 fallback when Supabase not configured
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  g.querySelectorAll('.cat').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('shop').scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth' });
+      const chip = document.querySelector(`.chip[data-f="${CSS.escape(btn.dataset.cat)}"]`);
+      if (chip) setTimeout(() => chip.click(), REDUCE ? 0 : 520);
     });
+  });
+}
+
+/* ─── FILTERS ────────────────────────────────────────────────── */
+function renderFilters() {
+  const bar = document.getElementById('filters');
+  if (!bar) return;
+  const names = Object.keys(categoryCounts(PRODUCTS));
+  bar.innerHTML = `<button class="chip on" data-f="all">All</button>` +
+    names.map(n => `<button class="chip" data-f="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('');
+
+  bar.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      bar.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+      chip.classList.add('on');
+      renderGrid(chip.dataset.f);
+    });
+  });
+}
+
+/* ─── PRODUCT GRID (bento) ───────────────────────────────────── */
+function renderGrid(filter) {
+  const g = document.getElementById('grid');
+  if (!g) return;
+  const list = filter === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.category === filter);
+
+  if (!list.length) {
+    g.innerHTML = `
+      <div class="empty">
+        <div class="gl">✦</div>
+        <h3>Nothing here yet</h3>
+        <p>${PRODUCTS.length ? 'No pieces in this category.' : 'Add your first product from the admin panel.'}</p>
+        ${PRODUCTS.length ? '' : '<a href="admin.html" class="btn btn-fill">Open Admin</a>'}
+      </div>`;
+    return;
   }
-  const ext  = file.name.split('.').pop();
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await db.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
-  if (error) throw error;
-  const { data } = db.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+
+  g.innerHTML = list.map((p, i) => card(p, i)).join('');
+
+  g.querySelectorAll('.p-card').forEach((el, i) => {
+    const p = list[i];
+    el.addEventListener('click', ev => {
+      if (ev.target.closest('.p-fav')) return;
+      openProduct(p);
+    });
+    const fav = el.querySelector('.p-fav');
+    if (fav) fav.addEventListener('click', ev => {
+      ev.stopPropagation();
+      fav.classList.toggle('on');
+      const liked = fav.classList.contains('on');
+      fav.textContent = liked ? '♥' : '♡';
+      showToast(liked ? 'Saved to wishlist' : 'Removed from wishlist');
+    });
+    attachTilt(el);
+  });
+
+  initReveal();
 }
 
-async function deleteImage(url) {
-  if (!db || !url) return;
-  // extract path from public URL
-  const match = url.match(/product-images\/(.+)$/);
-  if (!match) return;
-  await db.storage.from(STORAGE_BUCKET).remove([match[1]]);
+function card(p, i) {
+  const wide  = i % 7 === 2;
+  const off   = discountPct(p);
+  const tag   = p.badge ? `<span class="p-tag ${p.badge.toLowerCase() === 'sale' ? 'sale' : p.badge.toLowerCase() === 'new' ? 'new' : ''}">${escapeHtml(p.badge)}</span>` : '';
+  const media = p.image_url
+    ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy"
+           onerror="this.closest('.p-media').innerHTML='<div class=&quot;p-ph&quot;><b>✦</b><span>No image</span></div>'" />`
+    : `<div class="p-ph"><b>✦</b><span>No image</span></div>`;
+  const sizes = (p.sizes || []).slice(0, 5).map(s => `<span class="sz">${escapeHtml(s)}</span>`).join('');
+
+  return `
+    <article class="p-card reveal ${wide ? 'wide' : ''} ${i < 4 ? 'd' + (i + 1) : ''}">
+      <div class="p-media">
+        ${media}${tag}
+        <button class="p-fav" aria-label="Save to wishlist">♡</button>
+        <div class="p-quick">Quick view</div>
+      </div>
+      <div class="p-body">
+        <div class="p-cat">${escapeHtml(p.category)}</div>
+        <h3 class="p-name">${escapeHtml(p.name)}</h3>
+        <p class="p-desc">${escapeHtml(p.description)}</p>
+        <div class="p-foot">
+          <span class="p-price">${inr(p.price)}</span>
+          ${p.original_price ? `<span class="p-was">${inr(p.original_price)}</span>` : ''}
+          ${off ? `<span class="p-off">${off}% off</span>` : ''}
+        </div>
+        ${sizes ? `<div class="p-sizes">${sizes}</div>` : ''}
+      </div>
+    </article>`;
 }
 
-/* ─── HELPERS ────────────────────────────────────────────────── */
-function getCategories(products) {
-  const cats = {};
-  products.forEach(p => { cats[p.category] = (cats[p.category] || 0) + 1; });
-  return cats;
+/* ─── HERO FIGURE ────────────────────────────────────────────── */
+function renderHeroFigure() {
+  const tile = document.getElementById('heroFigure');
+  if (!tile) return;
+  const hero = PRODUCTS.find(p => p.featured && p.image_url) || PRODUCTS.find(p => p.image_url) || PRODUCTS[0];
+  if (!hero) return;
+
+  if (hero.image_url) {
+    const img = new Image();
+    img.alt = '';                       // decorative; the caption already names it
+    img.loading = 'eager';
+    img.onload = () => {
+      const ph = tile.querySelector('.p-ph');
+      if (ph) ph.replaceWith(img);      // only swap in once it has actually loaded
+    };
+    img.src = hero.image_url;
+  }
+  document.getElementById('figName').textContent = hero.name;
+  document.getElementById('figCat').textContent  = `${hero.category} · ${inr(hero.price)}`;
+  document.getElementById('figBtn').addEventListener('click', () => openProduct(hero));
 }
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+/* ═══ PRODUCT DRAWER ═══════════════════════════════════════════ */
+let DP = null, DSize = '', DColor = '', DQty = 1;
+
+function openProduct(p) {
+  DP = p;
+  DSize  = (p.sizes  && p.sizes.length  === 1) ? p.sizes[0]  : '';
+  DColor = (p.colors && p.colors.length === 1) ? p.colors[0] : '';
+  DQty = 1;
+  paintProductDrawer();
+  openDrawer('pDrawer');
 }
 
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function showToast(msg, duration = 3200) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), duration);
+function paintProductDrawer() {
+  const p = DP;
+  if (!p) return;
+  const body = document.getElementById('pBody');
+  const off  = discountPct(p);
+
+  const media = p.image_url
+    ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}"
+           onerror="this.closest('.dr-media').innerHTML='<div class=&quot;p-ph&quot; style=&quot;height:100%&quot;><b>✦</b><span>No image</span></div>'" />`
+    : `<div class="p-ph" style="height:100%"><b>✦</b><span>No image</span></div>`;
+
+  const sizeOpts = (p.sizes || []).map(s =>
+    `<button class="opt-b ${s === DSize ? 'on' : ''}" data-size="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
+  const colorOpts = (p.colors || []).map(c =>
+    `<button class="opt-b ${c === DColor ? 'on' : ''}" data-color="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+
+  body.innerHTML = `
+    <div class="dr-media">${media}${p.badge ? `<span class="p-tag ${p.badge.toLowerCase()==='sale'?'sale':p.badge.toLowerCase()==='new'?'new':''}" style="top:1rem;left:1rem">${escapeHtml(p.badge)}</span>` : ''}</div>
+    <div class="dr-info">
+      <div class="dr-cat">${escapeHtml(p.category)}</div>
+      <h2 class="dr-name">${escapeHtml(p.name)}</h2>
+      <div class="dr-price-row">
+        <span class="dr-price">${inr(p.price)}</span>
+        ${p.original_price ? `<span class="dr-was">${inr(p.original_price)}</span>` : ''}
+        ${off ? `<span class="dr-off">${off}% off</span>` : ''}
+      </div>
+      <p class="dr-desc">${escapeHtml(p.description)}</p>
+
+      ${sizeOpts ? `<div class="opt">
+        <div class="opt-lab"><span>Size</span><span class="pick" id="pickSize">${DSize ? escapeHtml(DSize) : 'Select a size'}</span></div>
+        <div class="opt-row" id="sizeRow">${sizeOpts}</div>
+      </div>` : ''}
+
+      ${colorOpts ? `<div class="opt">
+        <div class="opt-lab"><span>Colour</span><span class="pick" id="pickColor">${DColor ? escapeHtml(DColor) : 'Select a colour'}</span></div>
+        <div class="opt-row" id="colorRow">${colorOpts}</div>
+      </div>` : ''}
+
+      <div class="opt">
+        <div class="opt-lab"><span>Quantity</span></div>
+        <div class="qty">
+          <button id="qMinus" aria-label="Decrease quantity">−</button>
+          <span id="qVal">${DQty}</span>
+          <button id="qPlus" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+
+      <div class="dr-meta">
+        <div class="dr-meta-r"><b>✦</b> ${SHOP.freeShippingAbove ? `Free shipping over ${inr(SHOP.freeShippingAbove)}` : `Flat ${inr(SHOP.shippingFlat)} shipping`}</div>
+        <div class="dr-meta-r"><b>◈</b> Cash on delivery available</div>
+        <div class="dr-meta-r"><b>❋</b> Handcrafted in small batches</div>
+      </div>
+    </div>`;
+
+  body.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => {
+    DSize = b.dataset.size;
+    body.querySelectorAll('[data-size]').forEach(x => x.classList.toggle('on', x === b));
+    document.getElementById('pickSize').textContent = DSize;
+  }));
+  body.querySelectorAll('[data-color]').forEach(b => b.addEventListener('click', () => {
+    DColor = b.dataset.color;
+    body.querySelectorAll('[data-color]').forEach(x => x.classList.toggle('on', x === b));
+    document.getElementById('pickColor').textContent = DColor;
+  }));
+  document.getElementById('qMinus').addEventListener('click', () => {
+    DQty = Math.max(1, DQty - 1);
+    document.getElementById('qVal').textContent = DQty;
+  });
+  document.getElementById('qPlus').addEventListener('click', () => {
+    DQty = Math.min(99, DQty + 1);
+    document.getElementById('qVal').textContent = DQty;
+  });
+  body.scrollTop = 0;
 }
 
-/* ─── PRODUCT MODAL ──────────────────────────────────────────── */
-function openProductModal(product) {
-  const overlay = document.getElementById('productModal');
-  if (!overlay) return;
-  const img = document.getElementById('modalImg');
-  img.src = product.image_url || '';
-  img.style.display = product.image_url ? 'block' : 'none';
-  const badge = document.getElementById('modalBadge');
-  badge.textContent = product.badge || '';
-  badge.style.display = product.badge ? 'block' : 'none';
-  document.getElementById('modalCategory').textContent = product.category;
-  document.getElementById('modalTitle').textContent = product.name;
-  document.getElementById('modalDesc').textContent = product.description;
-  document.getElementById('modalPrice').textContent = '₹' + Number(product.price).toLocaleString('en-IN');
-  overlay.classList.add('open');
+document.addEventListener('DOMContentLoaded', () => {
+  const add = document.getElementById('pAdd');
+  if (add) add.addEventListener('click', () => {
+    if (!DP) return;
+    if ((DP.sizes || []).length && !DSize)   { showToast('Please choose a size');   return; }
+    if ((DP.colors || []).length && !DColor) { showToast('Please choose a colour'); return; }
+    cartAdd(DP, { size: DSize, color: DColor, qty: DQty });
+    closeDrawer('pDrawer');
+    showToast(`${DP.name} added to your bag`);
+    bagPop();
+    setTimeout(() => openDrawer('bDrawer'), 320);
+  });
+});
+
+/* ═══ BAG DRAWER ═══════════════════════════════════════════════ */
+function paintBag() {
+  const items = cartRead();
+  const n = cartCount();
+
+  const badge = document.getElementById('bagCount');
+  if (badge) { badge.textContent = n; badge.classList.toggle('on', n > 0); }
+  const bc = document.getElementById('bCount');
+  if (bc) bc.textContent = n;
+
+  const body = document.getElementById('bBody');
+  const foot = document.getElementById('bFoot');
+  if (!body) return;
+
+  if (!items.length) {
+    body.innerHTML = `
+      <div class="bag-empty">
+        <div class="gl">✦</div>
+        <h4>Your bag is empty</h4>
+        <p>Pieces you add will show up here.</p>
+        <button class="btn btn-fill" onclick="closeDrawer('bDrawer')">Continue Shopping</button>
+      </div>`;
+    if (foot) foot.style.display = 'none';
+    return;
+  }
+
+  body.innerHTML = `<div class="bag-list">` + items.map(i => {
+    const variant = [i.size, i.color].filter(Boolean).join(' · ');
+    const thumb = i.image_url
+      ? `<img src="${escapeHtml(i.image_url)}" alt="${escapeHtml(i.name)}" onerror="this.outerHTML='<div class=&quot;bag-ph&quot;>✦</div>'" />`
+      : `<div class="bag-ph">✦</div>`;
+    return `
+      <div class="bag-row">
+        ${thumb}
+        <div>
+          <div class="bag-nm">${escapeHtml(i.name)}</div>
+          ${variant ? `<div class="bag-var">${escapeHtml(variant)}</div>` : ''}
+          <div class="bag-pr">${inr(i.price * i.qty)}</div>
+        </div>
+        <div class="bag-ctl">
+          <div class="qty-mini">
+            <button data-dec="${escapeHtml(i.key)}" aria-label="Decrease">−</button>
+            <span>${i.qty}</span>
+            <button data-inc="${escapeHtml(i.key)}" aria-label="Increase">+</button>
+          </div>
+          <button class="bag-rm" data-rm="${escapeHtml(i.key)}">Remove</button>
+        </div>
+      </div>`;
+  }).join('') + `</div>`;
+
+  const { subtotal, shipping, total } = cartTotals('cod');
+  const gap = (Number(SHOP.freeShippingAbove) || 0) - subtotal;
+
+  if (foot) {
+    foot.style.display = '';
+    foot.innerHTML = `
+      ${gap > 0 ? `<p class="ship-hint">Add <b>${inr(gap)}</b> more for free shipping</p>` : ''}
+      <div class="sum">
+        <div class="sum-r"><span>Subtotal</span><span>${inr(subtotal)}</span></div>
+        <div class="sum-r"><span>Shipping</span><span>${shipping === 0 ? '<span class="free">Free</span>' : inr(shipping)}</span></div>
+        <div class="sum-r total"><span>Total</span><span>${inr(total)}</span></div>
+      </div>
+      <a href="checkout.html" class="btn btn-clay btn-block mag">Checkout</a>`;
+    initMagnetic();
+  }
+
+  body.querySelectorAll('[data-inc]').forEach(b => b.addEventListener('click', () => {
+    const line = cartRead().find(i => i.key === b.dataset.inc);
+    if (line) cartSetQty(line.key, line.qty + 1);
+  }));
+  body.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => {
+    const line = cartRead().find(i => i.key === b.dataset.dec);
+    if (line) cartSetQty(line.key, line.qty - 1);
+  }));
+  body.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+    cartRemove(b.dataset.rm);
+    showToast('Removed from bag');
+  }));
+}
+
+function bagPop() {
+  const badge = document.getElementById('bagCount');
+  if (!badge || REDUCE) return;
+  badge.classList.remove('pop');
+  void badge.offsetWidth;
+  badge.classList.add('pop');
+}
+
+/* ═══ DRAWER PLUMBING ══════════════════════════════════════════ */
+function openDrawer(id) {
+  const d = document.getElementById(id);
+  const s = document.getElementById('scrim');
+  if (!d) return;
+  document.querySelectorAll('.drawer.on').forEach(x => { if (x !== d) closeDrawer(x.id); });
+  d.classList.add('on');
+  d.setAttribute('aria-hidden', 'false');
+  if (s) s.classList.add('on');
   document.body.style.overflow = 'hidden';
 }
 
-function closeModal() {
-  const overlay = document.getElementById('productModal');
-  if (overlay) overlay.classList.remove('open');
-  document.body.style.overflow = '';
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-
-/* ─── STOREFRONT INIT ────────────────────────────────────────── */
-if (document.getElementById('productsGrid')) {
-  document.addEventListener('DOMContentLoaded', initStorefront);
-}
-
-async function initStorefront() {
-  const header = document.getElementById('header');
-  if (header) {
-    window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 60));
-  }
-
-  const products = await getProducts();
-  renderCategories(products);
-  renderProducts(products, 'all');
-  buildFilters(products);
-
-  // show setup banner if Supabase not configured
-  if (!_configured) {
-    const banner = document.getElementById('setupBanner');
-    if (banner) banner.style.display = 'flex';
+function closeDrawer(id) {
+  const d = document.getElementById(id);
+  if (d) { d.classList.remove('on'); d.setAttribute('aria-hidden', 'true'); }
+  if (!document.querySelector('.drawer.on')) {
+    const s = document.getElementById('scrim');
+    if (s) s.classList.remove('on');
+    document.body.style.overflow = '';
   }
 }
 
-function buildFilters(products) {
-  const bar = document.getElementById('filterBar');
-  if (!bar) return;
-  const cats = getCategories(products);
-  // clear old dynamic buttons
-  bar.querySelectorAll('.filter-btn:not([data-filter="all"])').forEach(b => b.remove());
-  Object.keys(cats).forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn';
-    btn.dataset.filter = cat;
-    btn.textContent = cat;
-    btn.onclick = () => {
-      bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderProducts(products, cat);
-    };
-    bar.appendChild(btn);
+function closeAllDrawers() {
+  document.querySelectorAll('.drawer.on').forEach(d => closeDrawer(d.id));
+}
+
+function wireDrawers() {
+  const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+  bind('bagBtn', () => openDrawer('bDrawer'));
+  bind('pClose', () => closeDrawer('pDrawer'));
+  bind('bClose', () => closeDrawer('bDrawer'));
+  bind('scrim',  closeAllDrawers);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllDrawers(); });
+}
+
+/* ═══ 3D MOTION ════════════════════════════════════════════════ */
+
+/* Cursor-following tilt with layered depth. */
+function attachTilt(el) {
+  if (REDUCE || window.matchMedia('(hover: none)').matches) return;
+  let raf = 0;
+  el.addEventListener('pointermove', e => {
+    const r = el.getBoundingClientRect();
+    const dx = (e.clientX - r.left) / r.width  - .5;
+    const dy = (e.clientY - r.top)  / r.height - .5;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      el.style.transform =
+        `perspective(1100px) rotateY(${(dx * 7).toFixed(2)}deg) rotateX(${(-dy * 7).toFixed(2)}deg) translateZ(12px)`;
+    });
   });
-  const allBtn = bar.querySelector('[data-filter="all"]');
-  allBtn.onclick = () => {
-    bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    allBtn.classList.add('active');
-    renderProducts(products, 'all');
+  el.addEventListener('pointerleave', () => {
+    cancelAnimationFrame(raf);
+    el.style.transform = '';
+  });
+}
+
+/* Scroll-triggered reveal that rises out of Z-space. */
+let revealObserver = null;
+function initReveal() {
+  if (REDUCE) {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+    return;
+  }
+  if (!revealObserver) {
+    revealObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(en => {
+        if (en.isIntersecting) { en.target.classList.add('in'); obs.unobserve(en.target); }
+      });
+    }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+  }
+  document.querySelectorAll('.reveal:not(.in)').forEach(el => revealObserver.observe(el));
+}
+
+/* Three hero layers drifting at different depths. */
+function initParallax() {
+  if (REDUCE) return;
+  const layers = [...document.querySelectorAll('[data-px]')];
+  if (!layers.length) return;
+  let raf = 0;
+  const run = () => {
+    const y = window.scrollY;
+    layers.forEach(l => {
+      l.style.transform = `translate3d(0, ${(y * parseFloat(l.dataset.px)).toFixed(1)}px, 0)`;
+    });
+    raf = 0;
   };
+  window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(run); }, { passive: true });
+  run();
 }
 
-function renderCategories(products) {
-  const grid = document.getElementById('categoryGrid');
-  if (!grid) return;
-  const cats = getCategories(products);
-  const icons = { Kurtas:'✦', Sarees:'◈', Anarkali:'❋', 'Co-ords':'◉', Dresses:'✿', Lehengas:'✾', default:'◇' };
-  if (!Object.keys(cats).length) {
-    grid.innerHTML = '<p class="category-empty">Categories will appear once products are added.</p>';
-    return;
-  }
-  grid.innerHTML = '';
-  Object.entries(cats).forEach(([name, count]) => {
-    const card = document.createElement('div');
-    card.className = 'category-card';
-    card.innerHTML = `
-      <div class="cat-icon">${icons[name] || icons.default}</div>
-      <div class="cat-name">${escapeHtml(name)}</div>
-      <div class="cat-count">${count} piece${count!==1?'s':''}</div>
-    `;
-    card.onclick = () => {
-      document.getElementById('featured').scrollIntoView({ behavior:'smooth' });
-      setTimeout(() => { document.querySelector(`[data-filter="${name}"]`)?.click(); }, 600);
-    };
-    grid.appendChild(card);
-  });
-}
-
-function renderProducts(products, filter) {
-  const grid = document.getElementById('productsGrid');
-  const empty = document.getElementById('emptyState');
-  if (!grid) return;
-  let list = filter === 'all' ? products : products.filter(p => p.category === filter);
-  if (!list.length) {
-    grid.innerHTML = '';
-    if (empty) { empty.style.display = ''; grid.appendChild(empty); }
-    return;
-  }
-  if (empty) empty.style.display = 'none';
-  grid.innerHTML = '';
-  list.forEach(p => {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    const badgeClass = p.badge === 'Sale' ? 'badge-sale' : p.badge === 'New' ? 'badge-new' : '';
-    const imgContent = p.image_url
-      ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=product-img-placeholder><span>✦</span><span>No Image</span></div>'" />`
-      : `<div class="product-img-placeholder"><span>✦</span><span>No Image</span></div>`;
-    const sizeHtml = (p.sizes||[]).slice(0,5).map(s => `<span class="size-chip">${escapeHtml(s)}</span>`).join('');
-    const origPrice = p.original_price
-      ? `<span class="product-original-price">₹${Number(p.original_price).toLocaleString('en-IN')}</span>` : '';
-    card.innerHTML = `
-      <div class="product-card-img">
-        ${imgContent}
-        ${p.badge ? `<span class="product-badge ${badgeClass}">${escapeHtml(p.badge)}</span>` : ''}
-        <button class="product-wishlist" title="Add to wishlist">♡</button>
-      </div>
-      <div class="product-card-body">
-        <div class="product-category">${escapeHtml(p.category)}</div>
-        <div class="product-name">${escapeHtml(p.name)}</div>
-        <div class="product-desc">${escapeHtml(p.description)}</div>
-        <div class="product-price-row">
-          <span class="product-price">₹${Number(p.price).toLocaleString('en-IN')}</span>
-          ${origPrice}
-        </div>
-        ${sizeHtml ? `<div class="product-sizes">${sizeHtml}</div>` : ''}
-      </div>
-    `;
-    card.onclick = () => openProductModal(p);
-    card.querySelector('.product-wishlist').onclick = e => {
-      e.stopPropagation();
-      const isWished = e.currentTarget.textContent === '♥';
-      e.currentTarget.textContent = isWished ? '♡' : '♥';
-      showToast(isWished ? 'Removed from wishlist' : 'Added to wishlist');
-    };
-    grid.appendChild(card);
+/* Buttons that lean toward the pointer. */
+function initMagnetic() {
+  if (REDUCE || window.matchMedia('(hover: none)').matches) return;
+  document.querySelectorAll('.mag:not([data-mag])').forEach(btn => {
+    btn.dataset.mag = '1';
+    btn.addEventListener('pointermove', e => {
+      const r = btn.getBoundingClientRect();
+      const dx = (e.clientX - (r.left + r.width  / 2)) * .22;
+      const dy = (e.clientY - (r.top  + r.height / 2)) * .32;
+      btn.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0)`;
+    });
+    btn.addEventListener('pointerleave', () => { btn.style.transform = ''; });
   });
 }
