@@ -1,0 +1,128 @@
+/* ═══ SALONI · PALETTES ═════════════════════════════════════════
+   Each block overrides only colour tokens. Apply one by adding the
+   class to <body>, or copy its values into :root in style.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── A · ROSE QUARTZ ─────────────────────────────────────────────
+   Pink-led, warm and romantic. Dusty rose on a soft ivory paper,
+   with a deep plum ink so text never reads harsh.               */
+.t-rose {
+  --paper:      #FDFAFA;
+  --surface:    #FFFFFF;
+  --muted:      #F9F0F2;
+  --muted-2:    #F0E2E6;
+  --line:       #EFE0E4;
+
+  --ink:        #2A1D24;
+  --ink-2:      #5C4A53;
+  --ink-3:      #9B8890;
+
+  --clay:       #C9758C;
+  --clay-deep:  #AE5B73;
+  --clay-soft:  #F7E3E9;
+  --gold:       #C0956B;
+  --forest:     #4A7C6B;
+
+  --hero-grad:  linear-gradient(150deg, #2E1E27 0%, #4A2C3A 42%, #7A4457 78%, #37222C 100%);
+  --about-grad: linear-gradient(145deg, #2E1E27 0%, #4A2C3A 55%, #331F29 100%);
+  --hero-wash1: radial-gradient(ellipse 60% 50% at 22% 62%, rgba(201,117,140,.38) 0%, transparent 68%);
+  --hero-wash2: radial-gradient(ellipse 46% 40% at 78% 22%, rgba(232,180,196,.22) 0%, transparent 62%);
+
+  --sh-1: 0 1px 2px rgba(42,29,36,.04), 0 2px 8px rgba(42,29,36,.04);
+  --sh-2: 0 4px 12px rgba(42,29,36,.07), 0 12px 32px rgba(42,29,36,.06);
+  --sh-3: 0 12px 24px rgba(42,29,36,.09), 0 32px 64px rgba(42,29,36,.10);
+  --sh-4: 0 24px 48px rgba(42,29,36,.13), 0 48px 96px rgba(42,29,36,.16);
+}
+
+/* ── B · LILAC BLOOM ─────────────────────────────────────────────
+   Purple-led, cool and contemporary. Soft lilac against a barely
+   blue-white, grounded by aubergine.                            */
+.t-lilac {
+  --paper:      #FBFAFD;
+  --surface:    #FFFFFF;
+  --muted:      #F4F1FA;
+  --muted-2:    #E8E2F2;
+  --line:       #E7E1F1;
+
+  --ink:        #241C2E;
+  --ink-2:      #524A60;
+  --ink-3:      #8F869C;
+
+  --clay:       #9370B8;
+  --clay-deep:  #7A57A0;
+  --clay-soft:  #EEE7F7;
+  --gold:       #B08FA8;
+  --forest:     #4A7C6B;
+
+  --hero-grad:  linear-gradient(150deg, #241B30 0%, #3A2A4E 42%, #574075 78%, #2A2038 100%);
+  --about-grad: linear-gradient(145deg, #241B30 0%, #3A2A4E 55%, #281E36 100%);
+  --hero-wash1: radial-gradient(ellipse 60% 50% at 22% 62%, rgba(147,112,184,.40) 0%, transparent 68%);
+  --hero-wash2: radial-gradient(ellipse 46% 40% at 78% 22%, rgba(198,175,224,.24) 0%, transparent 62%);
+
+  --sh-1: 0 1px 2px rgba(36,28,46,.04), 0 2px 8px rgba(36,28,46,.04);
+  --sh-2: 0 4px 12px rgba(36,28,46,.07), 0 12px 32px rgba(36,28,46,.06);
+  --sh-3: 0 12px 24px rgba(36,28,46,.09), 0 32px 64px rgba(36,28,46,.10);
+  --sh-4: 0 24px 48px rgba(36,28,46,.13), 0 48px 96px rgba(36,28,46,.16);
+}
+
+/* ── C · BLUSH MIST ──────────────────────────────────────────────
+   The subtle one. Almost neutral — a greige paper with the faintest
+   pink lift and a muted mauve accent. Lets the clothes carry colour. */
+.t-mist {
+  --paper:      #FAF9F8;
+  --surface:    #FFFFFF;
+  --muted:      #F3F0EF;
+  --muted-2:    #E7E1E0;
+  --line:       #E8E3E2;
+
+  --ink:        #23201F;
+  --ink-2:      #55504E;
+  --ink-3:      #928C8A;
+
+  --clay:       #B08B93;
+  --clay-deep:  #96707A;
+  --clay-soft:  #F1E7E8;
+  --gold:       #B49A7C;
+  --forest:     #55756A;
+
+  --hero-grad:  linear-gradient(150deg, #2B2624 0%, #3F3634 42%, #5C4A4B 78%, #322B2A 100%);
+  --about-grad: linear-gradient(145deg, #2B2624 0%, #3F3634 55%, #2E2827 100%);
+  --hero-wash1: radial-gradient(ellipse 60% 50% at 22% 62%, rgba(176,139,147,.32) 0%, transparent 68%);
+  --hero-wash2: radial-gradient(ellipse 46% 40% at 78% 22%, rgba(210,190,180,.20) 0%, transparent 62%);
+
+  --sh-1: 0 1px 2px rgba(35,32,31,.04), 0 2px 8px rgba(35,32,31,.04);
+  --sh-2: 0 4px 12px rgba(35,32,31,.06), 0 12px 32px rgba(35,32,31,.06);
+  --sh-3: 0 12px 24px rgba(35,32,31,.08), 0 32px 64px rgba(35,32,31,.09);
+  --sh-4: 0 24px 48px rgba(35,32,31,.12), 0 48px 96px rgba(35,32,31,.15);
+}
+
+/* ── D · ORCHID & PLUM ───────────────────────────────────────────
+   Pink and purple together, turned up. Orchid accent over a cool
+   white, with plum depth. The boldest of the four.              */
+.t-orchid {
+  --paper:      #FCFAFC;
+  --surface:    #FFFFFF;
+  --muted:      #F7F0F6;
+  --muted-2:    #EDDFEA;
+  --line:       #EDE0EA;
+
+  --ink:        #1F1725;
+  --ink-2:      #4E4257;
+  --ink-3:      #8E8296;
+
+  --clay:       #B5589A;
+  --clay-deep:  #983F80;
+  --clay-soft:  #F7E2F0;
+  --gold:       #A87FB0;
+  --forest:     #46796A;
+
+  --hero-grad:  linear-gradient(150deg, #201628 0%, #3D2246 42%, #6E2F63 78%, #26192E 100%);
+  --about-grad: linear-gradient(145deg, #201628 0%, #3D2246 55%, #241830 100%);
+  --hero-wash1: radial-gradient(ellipse 60% 50% at 22% 62%, rgba(181,88,154,.42) 0%, transparent 68%);
+  --hero-wash2: radial-gradient(ellipse 46% 40% at 78% 22%, rgba(168,127,176,.26) 0%, transparent 62%);
+
+  --sh-1: 0 1px 2px rgba(31,23,37,.04), 0 2px 8px rgba(31,23,37,.04);
+  --sh-2: 0 4px 12px rgba(31,23,37,.07), 0 12px 32px rgba(31,23,37,.06);
+  --sh-3: 0 12px 24px rgba(31,23,37,.09), 0 32px 64px rgba(31,23,37,.10);
+  --sh-4: 0 24px 48px rgba(31,23,37,.13), 0 48px 96px rgba(31,23,37,.16);
+}

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Palette Options — Saloni Collection</title>
+  <link rel="icon" href="../img/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <style>
+    body { background: #EFEDEA; }
+    .pick-hd { padding: 3rem 0 1.5rem; text-align: center; }
+    .pick-hd h1 { font-size: clamp(2rem,4vw,3rem); }
+    .pick-hd p  { color: #55504E; margin-top: .5rem; font-size: .95rem; }
+
+    .opt { padding: 2.5rem 0 3.5rem; background: var(--paper); }
+    .opt + .opt { border-top: 1px solid rgba(0,0,0,.08); }
+    .opt-hd { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.6rem; }
+    .opt-hd h2 { font-size: 2rem; }
+    .opt-key {
+      display: inline-block; font-size: .68rem; font-weight: 700;
+      letter-spacing: .16em; text-transform: uppercase; color: #fff;
+      background: var(--clay); padding: .25rem .7rem; border-radius: 100px; margin-bottom: .5rem;
+    }
+    .opt-hd p { color: var(--ink-2); font-size: .9rem; max-width: 52ch; margin-top: .4rem; }
+
+    .sw { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .sw i {
+      width: 46px; height: 46px; border-radius: 10px; display: block;
+      border: 1px solid rgba(0,0,0,.08); font-style: normal;
+    }
+    .demo-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: var(--gap); }
+    .mini-hero {
+      border-radius: var(--r-lg); overflow: hidden; position: relative;
+      background: var(--hero-grad); color: #fff; padding: 2.2rem;
+      display: flex; flex-direction: column; justify-content: flex-end; min-height: 340px;
+    }
+    .mini-hero::before { content:''; position:absolute; inset:0; background: var(--hero-wash1); }
+    .mini-hero::after  { content:''; position:absolute; inset:0; background: var(--hero-wash2); }
+    .mini-hero > * { position: relative; z-index: 1; }
+    .mini-hero h3 { font-size: 2.6rem; color: #fff; margin: .6rem 0 .8rem; font-weight: 300; }
+    .mini-hero h3 em { font-style: italic; color: var(--clay-soft); }
+    .mini-hero .eyebrow { color: var(--clay-soft); }
+    .mini-hero p { color: rgba(255,255,255,.66); font-size: .9rem; margin-bottom: 1.3rem; max-width: 38ch; }
+    .mini-side { display: grid; gap: var(--gap); align-content: start; }
+    .bits { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: 1.2rem; }
+    @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="pick-hd">
+    <div class="shell">
+      <h1>Four Palettes for Saloni</h1>
+      <p>Same layout, same components — only the colour changes. Tell me the letter you want.</p>
+    </div>
+  </div>
+
+  <!-- A -->
+  <section class="opt t-rose">
+    <div class="shell">
+      <div class="opt-hd">
+        <div>
+          <span class="opt-key">Option A</span>
+          <h2>Rose Quartz</h2>
+          <p>Pink-led and warm. Dusty rose on soft ivory, grounded by plum rather than black — romantic without tipping into sugary.</p>
+        </div>
+        <div class="sw">
+          <i style="background:#FDFAFA"></i><i style="background:#F7E3E9"></i>
+          <i style="background:#C9758C"></i><i style="background:#AE5B73"></i>
+          <i style="background:#4A2C3A"></i><i style="background:#2A1D24"></i>
+        </div>
+      </div>
+      <div class="demo-grid">
+        <div class="mini-hero">
+          <span class="eyebrow">Collection 01 — 2026</span>
+          <h3>Where Every<br/><em>Thread Tells</em> a Story</h3>
+          <p>Curated handcrafted womenswear.</p>
+          <div class="bits">
+            <span class="btn btn-clay">Shop the Collection</span>
+            <span class="btn btn-ghost-l">Browse</span>
+          </div>
+        </div>
+        <div class="mini-side">
+          <article class="p-card">
+            <div class="p-media"><div class="p-ph"><b>✦</b><span>Product image</span></div>
+              <span class="p-tag sale">Sale</span></div>
+            <div class="p-body">
+              <div class="p-cat">Kurtas</div>
+              <h3 class="p-name">Ivory Silk Kurta</h3>
+              <div class="p-foot"><span class="p-price">₹2,800</span>
+                <span class="p-was">₹3,500</span><span class="p-off">20% off</span></div>
+              <div class="p-sizes"><span class="sz">XS</span><span class="sz">S</span><span class="sz">M</span><span class="sz">L</span></div>
+            </div>
+          </article>
+          <div class="tile t-stat accent" style="min-height:0;padding:1.3rem">
+            <span class="n">120+</span><span class="l">Pieces Curated</span>
+          </div>
+          <div class="bits">
+            <span class="chip on">All</span><span class="chip">Sarees</span><span class="chip">Kurtas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="opt t-lilac">
+    <div class="shell">
+      <div class="opt-hd">
+        <div>
+          <span class="opt-key">Option B</span>
+          <h2>Lilac Bloom</h2>
+          <p>Purple-led and cool. Soft lilac over a barely blue-white with aubergine depth — the most modern and boutique-feeling of the four.</p>
+        </div>
+        <div class="sw">
+          <i style="background:#FBFAFD"></i><i style="background:#EEE7F7"></i>
+          <i style="background:#9370B8"></i><i style="background:#7A57A0"></i>
+          <i style="background:#3A2A4E"></i><i style="background:#241C2E"></i>
+        </div>
+      </div>
+      <div class="demo-grid">
+        <div class="mini-hero">
+          <span class="eyebrow">Collection 01 — 2026</span>
+          <h3>Where Every<br/><em>Thread Tells</em> a Story</h3>
+          <p>Curated handcrafted womenswear.</p>
+          <div class="bits">
+            <span class="btn btn-clay">Shop the Collection</span>
+            <span class="btn btn-ghost-l">Browse</span>
+          </div>
+        </div>
+        <div class="mini-side">
+          <article class="p-card">
+            <div class="p-media"><div class="p-ph"><b>✦</b><span>Product image</span></div>
+              <span class="p-tag sale">Sale</span></div>
+            <div class="p-body">
+              <div class="p-cat">Kurtas</div>
+              <h3 class="p-name">Ivory Silk Kurta</h3>
+              <div class="p-foot"><span class="p-price">₹2,800</span>
+                <span class="p-was">₹3,500</span><span class="p-off">20% off</span></div>
+              <div class="p-sizes"><span class="sz">XS</span><span class="sz">S</span><span class="sz">M</span><span class="sz">L</span></div>
+            </div>
+          </article>
+          <div class="tile t-stat accent" style="min-height:0;padding:1.3rem">
+            <span class="n">120+</span><span class="l">Pieces Curated</span>
+          </div>
+          <div class="bits">
+            <span class="chip on">All</span><span class="chip">Sarees</span><span class="chip">Kurtas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="opt t-mist">
+    <div class="shell">
+      <div class="opt-hd">
+        <div>
+          <span class="opt-key">Option C</span>
+          <h2>Blush Mist</h2>
+          <p>The subtle one. Nearly neutral greige with the faintest pink lift and a muted mauve accent — it steps back so the clothes carry all the colour.</p>
+        </div>
+        <div class="sw">
+          <i style="background:#FAF9F8"></i><i style="background:#F1E7E8"></i>
+          <i style="background:#B08B93"></i><i style="background:#96707A"></i>
+          <i style="background:#3F3634"></i><i style="background:#23201F"></i>
+        </div>
+      </div>
+      <div class="demo-grid">
+        <div class="mini-hero">
+          <span class="eyebrow">Collection 01 — 2026</span>
+          <h3>Where Every<br/><em>Thread Tells</em> a Story</h3>
+          <p>Curated handcrafted womenswear.</p>
+          <div class="bits">
+            <span class="btn btn-clay">Shop the Collection</span>
+            <span class="btn btn-ghost-l">Browse</span>
+          </div>
+        </div>
+        <div class="mini-side">
+          <article class="p-card">
+            <div class="p-media"><div class="p-ph"><b>✦</b><span>Product image</span></div>
+              <span class="p-tag sale">Sale</span></div>
+            <div class="p-body">
+              <div class="p-cat">Kurtas</div>
+              <h3 class="p-name">Ivory Silk Kurta</h3>
+              <div class="p-foot"><span class="p-price">₹2,800</span>
+                <span class="p-was">₹3,500</span><span class="p-off">20% off</span></div>
+              <div class="p-sizes"><span class="sz">XS</span><span class="sz">S</span><span class="sz">M</span><span class="sz">L</span></div>
+            </div>
+          </article>
+          <div class="tile t-stat accent" style="min-height:0;padding:1.3rem">
+            <span class="n">120+</span><span class="l">Pieces Curated</span>
+          </div>
+          <div class="bits">
+            <span class="chip on">All</span><span class="chip">Sarees</span><span class="chip">Kurtas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D -->
+  <section class="opt t-orchid">
+    <div class="shell">
+      <div class="opt-hd">
+        <div>
+          <span class="opt-key">Option D</span>
+          <h2>Orchid &amp; Plum</h2>
+          <p>Pink and purple together, turned up. Orchid over cool white with plum depth — the boldest, and the one that photographs best on social.</p>
+        </div>
+        <div class="sw">
+          <i style="background:#FCFAFC"></i><i style="background:#F7E2F0"></i>
+          <i style="background:#B5589A"></i><i style="background:#983F80"></i>
+          <i style="background:#3D2246"></i><i style="background:#1F1725"></i>
+        </div>
+      </div>
+      <div class="demo-grid">
+        <div class="mini-hero">
+          <span class="eyebrow">Collection 01 — 2026</span>
+          <h3>Where Every<br/><em>Thread Tells</em> a Story</h3>
+          <p>Curated handcrafted womenswear.</p>
+          <div class="bits">
+            <span class="btn btn-clay">Shop the Collection</span>
+            <span class="btn btn-ghost-l">Browse</span>
+          </div>
+        </div>
+        <div class="mini-side">
+          <article class="p-card">
+            <div class="p-media"><div class="p-ph"><b>✦</b><span>Product image</span></div>
+              <span class="p-tag sale">Sale</span></div>
+            <div class="p-body">
+              <div class="p-cat">Kurtas</div>
+              <h3 class="p-name">Ivory Silk Kurta</h3>
+              <div class="p-foot"><span class="p-price">₹2,800</span>
+                <span class="p-was">₹3,500</span><span class="p-off">20% off</span></div>
+              <div class="p-sizes"><span class="sz">XS</span><span class="sz">S</span><span class="sz">M</span><span class="sz">L</span></div>
+            </div>
+          </article>
+          <div class="tile t-stat accent" style="min-height:0;padding:1.3rem">
+            <span class="n">120+</span><span class="l">Pieces Curated</span>
+          </div>
+          <div class="bits">
+            <span class="chip on">All</span><span class="chip">Sarees</span><span class="chip">Kurtas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="pick-hd" style="padding-bottom:4rem">
+    <div class="shell">
+      <p>Reply with <b>A</b>, <b>B</b>, <b>C</b> or <b>D</b> and I'll apply it across the whole site.</p>
+    </div>
+  </div>
+
+</body>
+</html>
