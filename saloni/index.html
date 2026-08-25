@@ -3,202 +3,249 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Saloni Collection</title>
+  <title>Saloni Collection — Handcrafted Womenswear</title>
+  <meta name="description" content="Curated handcrafted womenswear — kurtas, sarees, anarkalis and co-ords. Timeless elegance meets contemporary design." />
+  <link rel="icon" href="../img/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-  <!-- SETUP BANNER (hidden once Supabase is configured) -->
-  <div class="setup-banner" id="setupBanner" style="display:none;">
-    <span>⚙ Running in demo mode — <a href="admin.html">configure Supabase</a> to connect your database.</span>
-    <button onclick="this.parentElement.style.display='none'">×</button>
+  <div class="setup" id="setupBanner" style="display:none">
+    <span>⚙ <b>Demo mode</b> — products are stored locally. Add your Supabase keys in <code>js/config.js</code> to go live.</span>
+    <button onclick="this.parentElement.remove()" aria-label="Dismiss">×</button>
   </div>
 
-  <!-- HEADER -->
-  <header class="header" id="header">
-    <div class="header-inner">
-      <nav class="nav-left">
+  <!-- ══ HEADER ══ -->
+  <header class="hdr" id="hdr">
+    <div class="hdr-in">
+      <a href="index.html" class="brand">Saloni<sup>CO</sup></a>
+      <nav class="nav">
+        <a href="#shop">Shop</a>
         <a href="#collections">Collections</a>
         <a href="#about">About</a>
-      </nav>
-      <a href="index.html" class="logo">Saloni</a>
-      <nav class="nav-right">
         <a href="#contact">Contact</a>
-        <a href="admin.html" class="nav-admin">Admin ↗</a>
       </nav>
+      <div class="hdr-act">
+        <a href="admin.html" class="btn btn-line btn-sm">Admin</a>
+        <button class="icon-btn" id="bagBtn" aria-label="Open bag">
+          <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span class="bag-count" id="bagCount">0</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- HERO -->
-  <section class="hero" id="hero">
-    <div class="hero-bg">
-      <div class="hero-gradient"></div>
-    </div>
-    <div class="hero-content">
-      <span class="hero-tag">New Collection · 2025</span>
-      <h1 class="hero-title">Where Every<br/><em>Thread Tells</em><br/>a Story</h1>
-      <p class="hero-subtitle">Curated fashion for the modern woman — timeless elegance meets contemporary design.</p>
-      <div class="hero-actions">
-        <a href="#collections" class="btn btn-primary">Explore Collection</a>
-        <a href="#featured" class="btn btn-ghost">View Lookbook</a>
+  <!-- ══ HERO BENTO ══ -->
+  <section class="hero">
+    <div class="shell">
+      <div class="bento">
+
+        <div class="tile t-headline reveal" id="heroTile">
+          <div class="px px-1" data-px="0.05"></div>
+          <div class="px px-2" data-px="0.11"></div>
+          <div class="px px-3" data-px="0.03"></div>
+          <span class="eyebrow">Collection 01 — 2026</span>
+          <h1 class="d1">Where Every<br/><em>Thread Tells</em><br/>a Story</h1>
+          <p class="lede">Curated handcrafted womenswear — timeless silhouettes, honest fabrics, and detail you can feel.</p>
+          <div class="hero-cta">
+            <a href="#shop" class="btn btn-clay mag">Shop the Collection</a>
+            <a href="#collections" class="btn btn-ghost-l mag">Browse Categories</a>
+          </div>
+        </div>
+
+        <div class="tile t-figure reveal d1" id="heroFigure">
+          <div class="p-ph" style="height:100%"><b>✦</b><span>Featured piece</span></div>
+          <div class="fig-cap">
+            <div>
+              <b id="figName">Featured</b>
+              <span id="figCat">Loading…</span>
+            </div>
+            <button class="btn btn-fill btn-sm mag" id="figBtn">View</button>
+          </div>
+        </div>
+
+        <div class="tile t-stat accent reveal d2">
+          <span class="n" id="statCount">—</span>
+          <span class="l">Pieces Curated</span>
+        </div>
+        <div class="tile t-stat reveal d3">
+          <span class="n">100%</span>
+          <span class="l">Handcrafted</span>
+        </div>
+        <div class="tile t-stat ink reveal d4">
+          <span class="n">15+</span>
+          <span class="l">Fabric Origins</span>
+        </div>
+
       </div>
-    </div>
-    <div class="hero-scroll">
-      <span>Scroll</span>
-      <div class="hero-scroll-line"></div>
     </div>
   </section>
 
-  <!-- MARQUEE STRIP -->
-  <div class="marquee-strip">
-    <div class="marquee-track">
-      <span>New Arrivals</span><span class="dot">·</span>
-      <span>Summer 2025</span><span class="dot">·</span>
-      <span>Handcrafted Fabrics</span><span class="dot">·</span>
-      <span>Sustainable Fashion</span><span class="dot">·</span>
-      <span>Made with Love</span><span class="dot">·</span>
-      <span>New Arrivals</span><span class="dot">·</span>
-      <span>Summer 2025</span><span class="dot">·</span>
-      <span>Handcrafted Fabrics</span><span class="dot">·</span>
-      <span>Sustainable Fashion</span><span class="dot">·</span>
-      <span>Made with Love</span><span class="dot">·</span>
-    </div>
+  <!-- ══ MARQUEE ══ -->
+  <div class="marq">
+    <div class="marq-t" id="marqTrack"></div>
   </div>
 
-  <!-- CATEGORIES -->
-  <section class="categories" id="collections">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Browse by Category</span>
-        <h2 class="section-title">Our Collections</h2>
+  <!-- ══ COLLECTIONS ══ -->
+  <section class="sec" id="collections">
+    <div class="shell">
+      <div class="sec-head reveal">
+        <div class="txt">
+          <span class="eyebrow">Browse by category</span>
+          <h2 class="d2">Our Collections</h2>
+        </div>
       </div>
-      <div class="category-grid" id="categoryGrid"></div>
+      <div class="bento" id="catGrid"></div>
     </div>
   </section>
 
-  <!-- FEATURED PRODUCTS -->
-  <section class="products-section" id="featured">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Hand-picked for you</span>
-        <h2 class="section-title">Featured Pieces</h2>
-        <div class="filter-bar" id="filterBar">
-          <button class="filter-btn active" data-filter="all">All</button>
+  <!-- ══ SHOP ══ -->
+  <section class="sec" id="shop">
+    <div class="shell">
+      <div class="sec-head reveal">
+        <div class="txt">
+          <span class="eyebrow">The full edit</span>
+          <h2 class="d2">Shop Every Piece</h2>
+        </div>
+        <div class="filters" id="filters">
+          <button class="chip on" data-f="all">All</button>
         </div>
       </div>
-      <div class="products-grid" id="productsGrid">
-        <div class="empty-state" id="emptyState">
-          <div class="empty-icon">✦</div>
-          <h3>Collection Coming Soon</h3>
-          <p>Our curators are handpicking the finest pieces for you.</p>
-          <a href="admin.html" class="btn btn-primary">Add Products</a>
+      <div class="bento tilt-scene" id="grid"></div>
+    </div>
+  </section>
+
+  <!-- ══ ABOUT ══ -->
+  <section class="sec" id="about">
+    <div class="shell">
+      <div class="bento">
+        <div class="tile t-about reveal">
+          <span class="eyebrow">Our story</span>
+          <h2 class="d2">Crafted with Intention,<br/><em>Worn with Grace</em></h2>
+          <p>Saloni Collection began at a kitchen table with a love of textiles and a stubborn belief that clothes should feel as good as they look. Every piece is chosen by hand, made in small runs, and packed by us — never a warehouse.</p>
+          <div class="hero-cta">
+            <a href="#shop" class="btn btn-ghost-l mag">Explore the Collection</a>
+          </div>
+        </div>
+        <div class="tile t-note reveal d1">
+          <span class="gl">✦</span>
+          <h4>Small-batch by design</h4>
+          <p>We make a few of each piece, not thousands. It keeps the quality high and the waste low — and it means what you wear stays a little bit rare.</p>
+        </div>
+        <div class="tile t-note reveal d2" style="background:var(--clay-soft)">
+          <span class="gl">◈</span>
+          <h4>Honest materials</h4>
+          <p>Cotton, silk, linen and organza sourced from weavers we know by name. No blends hiding behind vague labels.</p>
+        </div>
+        <div class="tile t-note reveal d3">
+          <span class="gl">❋</span>
+          <h4>Packed with care</h4>
+          <p>Every order is folded in tissue, wrapped in a reusable cloth bag, and sent with a handwritten note. Cash on delivery available across India.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ABOUT STRIP -->
-  <section class="about-strip" id="about">
-    <div class="about-inner">
-      <div class="about-text">
-        <span class="section-tag">Our Story</span>
-        <h2>Crafted with Intention,<br/><em>Worn with Grace</em></h2>
-        <p>Saloni Collection was born from a love of textiles and the belief that fashion should feel as beautiful as it looks. Each piece is thoughtfully curated to blend heritage craft with modern sensibility.</p>
-        <a href="#featured" class="btn btn-outline-dark">Explore Now</a>
-      </div>
-      <div class="about-stats">
-        <div class="stat">
-          <span class="stat-number">200+</span>
-          <span class="stat-label">Pieces Curated</span>
-        </div>
-        <div class="stat">
-          <span class="stat-number">15+</span>
-          <span class="stat-label">Fabric Origins</span>
-        </div>
-        <div class="stat">
-          <span class="stat-number">100%</span>
-          <span class="stat-label">Handcrafted</span>
+  <!-- ══ CONTACT ══ -->
+  <section class="sec" id="contact">
+    <div class="shell">
+      <div class="sec-head reveal">
+        <div class="txt">
+          <span class="eyebrow">Get in touch</span>
+          <h2 class="d2">Questions? Say Hello</h2>
+          <p class="lede" style="margin-top:.7rem">Sizing help, fabric questions, custom orders — we answer every message ourselves, usually within a day.</p>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- CONTACT -->
-  <section class="contact-section" id="contact">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Get in Touch</span>
-        <h2 class="section-title">We'd Love to Hear from You</h2>
-      </div>
-      <form class="contact-form" onsubmit="handleContact(event)">
-        <div class="form-row">
-          <input type="text" placeholder="Your Name" required />
-          <input type="email" placeholder="Email Address" required />
+      <form class="form-grid reveal d1" style="max-width:680px" onsubmit="sendContact(event)">
+        <div class="f-row-2">
+          <div class="field">
+            <label for="cName">Name <span class="req">*</span></label>
+            <input id="cName" type="text" placeholder="Your name" required />
+          </div>
+          <div class="field">
+            <label for="cMail">Email <span class="req">*</span></label>
+            <input id="cMail" type="email" placeholder="you@example.com" required />
+          </div>
         </div>
-        <textarea placeholder="Your Message" rows="4" required></textarea>
-        <button type="submit" class="btn btn-primary">Send Message</button>
+        <div class="field">
+          <label for="cMsg">Message <span class="req">*</span></label>
+          <textarea id="cMsg" rows="4" placeholder="How can we help?" required></textarea>
+        </div>
+        <div><button type="submit" class="btn btn-fill mag">Send Message</button></div>
       </form>
     </div>
   </section>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <span class="logo">Saloni</span>
-        <p>Timeless fashion for the<br/>modern woman.</p>
+  <!-- ══ FOOTER ══ -->
+  <footer class="ftr">
+    <div class="ftr-top">
+      <div>
+        <span class="brand">Saloni<sup>CO</sup></span>
+        <p>Handcrafted womenswear, made in small batches and sent with care.</p>
       </div>
-      <div class="footer-links">
-        <div class="footer-col">
-          <h4>Shop</h4>
+      <div class="ftr-cols">
+        <div class="ftr-col">
+          <h5>Shop</h5>
+          <a href="#shop">All Pieces</a>
           <a href="#collections">Collections</a>
-          <a href="#featured">New Arrivals</a>
         </div>
-        <div class="footer-col">
-          <h4>Info</h4>
+        <div class="ftr-col">
+          <h5>Company</h5>
           <a href="#about">About</a>
           <a href="#contact">Contact</a>
         </div>
+        <div class="ftr-col">
+          <h5>Help</h5>
+          <a href="#contact">Sizing</a>
+          <a href="#contact">Shipping &amp; Returns</a>
+        </div>
       </div>
     </div>
-    <div class="footer-bottom">
-      <span>© 2025 Saloni Collection. All rights reserved.</span>
+    <div class="ftr-btm">
+      <span>© 2026 Saloni Collection. All rights reserved.</span>
+      <span>Cash on delivery · UPI accepted</span>
     </div>
   </footer>
 
-  <!-- PRODUCT MODAL -->
-  <div class="modal-overlay" id="productModal">
-    <div class="modal-card">
-      <button class="modal-close" onclick="closeModal()">×</button>
-      <div class="modal-img-wrap">
-        <img id="modalImg" src="" alt="" />
-        <span class="modal-badge" id="modalBadge"></span>
-      </div>
-      <div class="modal-info">
-        <span class="modal-category" id="modalCategory"></span>
-        <h2 class="modal-title" id="modalTitle"></h2>
-        <p class="modal-desc" id="modalDesc"></p>
-        <div class="modal-price-row">
-          <span class="modal-price" id="modalPrice"></span>
-        </div>
-        <button class="btn btn-primary modal-cta">Add to Wishlist</button>
-      </div>
-    </div>
-  </div>
+  <!-- ══ SCRIM + DRAWERS ══ -->
+  <div class="scrim" id="scrim"></div>
 
-  <!-- TOAST -->
-  <div class="toast" id="toast"></div>
+  <!-- product drawer -->
+  <aside class="drawer" id="pDrawer" aria-hidden="true" aria-label="Product details">
+    <div class="dr-head">
+      <h3>Product Details</h3>
+      <button class="dr-x" id="pClose" aria-label="Close">×</button>
+    </div>
+    <div class="dr-body" id="pBody"></div>
+    <div class="dr-foot">
+      <button class="btn btn-clay btn-block mag" id="pAdd">Add to Bag</button>
+    </div>
+  </aside>
+
+  <!-- bag drawer -->
+  <aside class="drawer" id="bDrawer" aria-hidden="true" aria-label="Shopping bag">
+    <div class="dr-head">
+      <h3>Your Bag (<span id="bCount">0</span>)</h3>
+      <button class="dr-x" id="bClose" aria-label="Close">×</button>
+    </div>
+    <div class="dr-body" id="bBody"></div>
+    <div class="dr-foot" id="bFoot" style="display:none"></div>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/cart.js"></script>
   <script src="js/app.js"></script>
   <script>
-    function handleContact(e) {
+    function sendContact(e){
       e.preventDefault();
-      showToast('Message sent! We\'ll get back to you soon.');
+      showToast("Thanks — we'll get back to you within a day.");
       e.target.reset();
     }
   </script>
