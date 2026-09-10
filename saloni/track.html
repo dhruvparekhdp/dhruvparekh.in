@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Your Order — Saloni Collection</title>
+  <meta name="description" content="Check the status of your Saloni Collection order with your order number and phone number." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="../img/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/checkout.css" />
+</head>
+<body>
+
+  <header class="hdr stuck">
+    <div class="hdr-in">
+      <a href="index.html" class="brand">Saloni<sup>CO</sup></a>
+      <a href="index.html" class="co-back">&larr; Back to shop</a>
+    </div>
+  </header>
+
+  <main class="co-wrap">
+    <div class="shell">
+
+      <div class="co-head" style="text-align:center">
+        <span class="eyebrow">Order status</span>
+        <h1>Track Your Order</h1>
+      </div>
+
+      <form class="co-card" id="trackForm" style="max-width:480px;margin-inline:auto" novalidate>
+        <div class="form-grid">
+          <div class="field" id="w-num">
+            <label for="fNum">Order Number <span class="req">*</span></label>
+            <input id="fNum" type="text" placeholder="SC-XXXXXXXX" autocomplete="off" spellcheck="false" />
+            <span class="err"></span>
+          </div>
+          <div class="field" id="w-ph">
+            <label for="fPh">Phone Number <span class="req">*</span></label>
+            <input id="fPh" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel" />
+            <span class="err"></span>
+          </div>
+          <button type="submit" class="btn btn-clay btn-block" id="trackBtn">Check Status</button>
+          <p class="co-note">Use the phone number you placed the order with.</p>
+        </div>
+      </form>
+
+      <div id="result" style="display:none;max-width:560px;margin:1.5rem auto 0"></div>
+
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/shop.js"></script>
+  <script>
+    const STEPS = [
+      { key: 'placed',    label: 'Order placed',  note: 'We have your order' },
+      { key: 'confirmed', label: 'Confirmed',     note: 'Packing your parcel' },
+      { key: 'shipped',   label: 'Dispatched',    note: 'On its way to you' },
+      { key: 'delivered', label: 'Delivered',     note: 'Enjoy your pieces' },
+    ];
+
+    document.getElementById('fPh').addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    });
+
+    document.getElementById('trackForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const num = document.getElementById('fNum').value.trim();
+      const ph  = document.getElementById('fPh').value.trim();
+      const btn = document.getElementById('trackBtn');
+      const setErr = (id, m) => {
+        const w = document.getElementById(id);
+        w.classList.toggle('invalid', Boolean(m));
+        w.querySelector('.err').textContent = m || '';
+      };
+
+      setErr('w-num', ''); setErr('w-ph', '');
+      let ok = true;
+      if (num.length < 4)            { setErr('w-num', 'Enter your order number'); ok = false; }
+      if (!/^[6-9]\d{9}$/.test(ph))  { setErr('w-ph', 'Enter a valid 10-digit number'); ok = false; }
+      if (!ok) return;
+
+      btn.disabled = true; btn.textContent = 'Checking…';
+      try {
+        const order = await trackOrder(num, ph);
+        if (!order) {
+          showToast('No order found with those details');
+          document.getElementById('result').style.display = 'none';
+        } else {
+          render(order);
+        }
+      } catch (err) {
+        showToast('Could not check right now: ' + (err.message || 'please try again'));
+      } finally {
+        btn.disabled = false; btn.textContent = 'Check Status';
+      }
+    });
+
+    function render(o) {
+      const box = document.getElementById('result');
+      const cancelled = o.order_status === 'cancelled';
+      const idx = STEPS.findIndex(s => s.key === o.order_status);
+
+      const steps = cancelled ? '' : `
+        <ol class="track-steps">
+          ${STEPS.map((s, i) => `
+            <li class="${i < idx ? 'done' : i === idx ? 'now' : ''}">
+              <span class="dot"></span>
+              <span class="lb"><b>${escapeHtml(s.label)}</b><em>${escapeHtml(s.note)}</em></span>
+            </li>`).join('')}
+        </ol>`;
+
+      const items = (o.items || []).map(i => {
+        const v = [i.size, i.color].filter(Boolean).join(' · ');
+        return `<div class="co-item">
+          ${i.image_url
+            ? `<img src="${escapeHtml(i.image_url)}" alt="" onerror="this.outerHTML='<div class=&quot;ph&quot;>&#10022;</div>'" />`
+            : `<div class="ph">&#10022;</div>`}
+          <div>
+            <div class="nm">${escapeHtml(i.name)}</div>
+            <div class="vr">${v ? escapeHtml(v) + ' · ' : ''}Qty ${Number(i.qty) || 1}</div>
+          </div>
+          <div class="pr">${inr((Number(i.price) || 0) * (Number(i.qty) || 1))}</div>
+        </div>`;
+      }).join('');
+
+      const tracking = o.tracking_number
+        ? `<div class="done-r"><span>Courier</span><b>${escapeHtml(o.courier || 'Courier')}</b></div>
+           <div class="done-r"><span>Tracking no.</span><b>${escapeHtml(o.tracking_number)}</b></div>
+           ${o.tracking_url ? `<div class="done-r"><span></span><b><a href="${escapeHtml(o.tracking_url)}" target="_blank" rel="noopener">Track with courier &rarr;</a></b></div>` : ''}`
+        : '';
+
+      box.innerHTML = `
+        <div class="co-card">
+          <div class="od-top" style="border:0;padding-bottom:.6rem">
+            <div>
+              <div class="done-no">${escapeHtml(o.order_number)}</div>
+              <div class="od-date">Placed ${new Date(o.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}</div>
+            </div>
+            <span class="pill st-${escapeHtml(o.order_status)}">${escapeHtml(o.order_status.charAt(0).toUpperCase() + o.order_status.slice(1))}</span>
+          </div>
+
+          ${cancelled ? '<p class="co-note" style="margin:1rem 0">This order was cancelled. Message us on WhatsApp if that looks wrong.</p>' : steps}
+
+          <h3 style="margin-top:1.4rem">Items</h3>
+          <div class="co-items">${items}</div>
+          <div class="sum">
+            <div class="sum-r total"><span>Total</span><span>${inr(o.total)}</span></div>
+            <div class="sum-r"><span>Payment</span><span>${escapeHtml({cod:'Cash on Delivery',upi:'UPI',razorpay:'Card'}[o.payment_method] || o.payment_method)} · ${escapeHtml(o.payment_status)}</span></div>
+            ${tracking}
+          </div>
+          ${waAvailable() ? `<a class="btn btn-wa btn-block" href="${waOrderLink(o.order_number)}" target="_blank" rel="noopener">Ask about this order</a>` : ''}
+        </div>`;
+      box.style.display = '';
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    mountWhatsApp();
+  </script>
+
+  <style>
+    .track-steps { margin: 1.2rem 0 0; padding: 0; }
+    .track-steps li {
+      display: flex; gap: .9rem; align-items: flex-start;
+      padding-bottom: 1.2rem; position: relative; list-style: none;
+    }
+    .track-steps li:not(:last-child)::before {
+      content: ''; position: absolute; left: 8px; top: 20px; bottom: 0;
+      width: 2px; background: var(--line);
+    }
+    .track-steps li.done:not(:last-child)::before { background: var(--forest); }
+    .track-steps .dot {
+      width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid var(--line); background: var(--surface); z-index: 1;
+    }
+    .track-steps li.done .dot { background: var(--forest); border-color: var(--forest); }
+    .track-steps li.now  .dot { background: var(--clay); border-color: var(--clay); box-shadow: 0 0 0 4px rgba(176,139,147,.22); }
+    .track-steps .lb b { display: block; font-size: .9rem; font-weight: 600; }
+    .track-steps .lb em { font-style: normal; font-size: .78rem; color: var(--ink-3); }
+    .track-steps li:not(.done):not(.now) .lb b { color: var(--ink-3); font-weight: 500; }
+    #result h3 {
+      font-family: var(--ui); font-size: .72rem; font-weight: 700;
+      letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
+      margin-bottom: .7rem;
+    }
+  </style>
+</body>
+</html>

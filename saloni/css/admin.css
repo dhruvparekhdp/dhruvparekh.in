@@ -39,7 +39,7 @@
 .side-brand sup { font-family: var(--ui); font-size: .45rem; font-weight: 600; color: var(--clay); }
 .side-tag {
   font-size: .58rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--clay); background: rgba(196,99,74,.16);
+  color: var(--clay); background: rgba(176,139,147,.16);
   padding: .18rem .5rem; border-radius: 100px;
 }
 .side-nav { flex: 1; padding: 1.2rem .65rem; display: grid; gap: .2rem; align-content: start; }
@@ -132,14 +132,14 @@
   padding: .26rem .7rem; border-radius: 100px;
   background: var(--muted-2); color: var(--ink-2);
 }
-.pay-paid      { background: rgba(47,93,69,.12);   color: var(--forest); }
-.pay-pending   { background: rgba(168,135,78,.15); color: #8A6D33; }
-.pay-failed    { background: rgba(196,99,74,.14);  color: var(--clay-deep); }
+.pay-paid      { background: rgba(85,117,106,.12);   color: var(--forest); }
+.pay-pending   { background: rgba(180,154,124,.20); color: #7A6446; }
+.pay-failed    { background: rgba(176,139,147,.14);  color: var(--clay-deep); }
 .st-placed     { background: rgba(29,58,87,.12);   color: #1D3A57; }
-.st-confirmed  { background: rgba(168,135,78,.15); color: #8A6D33; }
-.st-shipped    { background: rgba(90,53,39,.14);   color: #5A3527; }
-.st-delivered  { background: rgba(47,93,69,.12);   color: var(--forest); }
-.st-cancelled  { background: rgba(196,99,74,.14);  color: var(--clay-deep); }
+.st-confirmed  { background: rgba(180,154,124,.20); color: #7A6446; }
+.st-shipped    { background: rgba(92,74,75,.15);   color: #5C4A4B; }
+.st-delivered  { background: rgba(85,117,106,.12);   color: var(--forest); }
+.st-cancelled  { background: rgba(176,139,147,.14);  color: var(--clay-deep); }
 
 /* ─── ORDER DETAIL ───────────────────────────────────────────── */
 .od { padding: 1.5rem; }
@@ -183,12 +183,12 @@
 .t-nm { font-weight: 600; }
 .t-cat {
   font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--clay); background: rgba(196,99,74,.1);
+  color: var(--clay); background: rgba(176,139,147,.1);
   padding: .2rem .6rem; border-radius: 100px;
 }
 .t-pr { font-weight: 600; }
 .t-act { display: flex; gap: .4rem; }
-.btn-line.danger { color: var(--clay-deep); border-color: rgba(196,99,74,.3); }
+.btn-line.danger { color: var(--clay-deep); border-color: rgba(176,139,147,.3); }
 .btn-line.danger:hover { background: var(--clay-deep); border-color: var(--clay-deep); color: #fff; }
 .dash { color: var(--ink-3); }
 .tbl-empty { padding: 3rem 1.5rem; text-align: center; color: var(--ink-3); font-size: .88rem; }
@@ -326,3 +326,41 @@
 
 /* Keep the notice pinned so the fixed sidebar can sit below it. */
 .admin-body .setup { position: sticky; top: 0; z-index: 95; }
+
+/* ─── FIELD HINTS ────────────────────────────────────────────── */
+.fld-hint { font-size: .74rem; color: var(--ink-3); line-height: 1.55; margin: -.15rem 0 .1rem; }
+
+/* ─── SIZE MATRIX ────────────────────────────────────────────── */
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-sm); }
+.matrix { width: 100%; border-collapse: collapse; min-width: 460px; }
+.matrix th {
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-3); background: var(--muted); padding: .5rem .55rem; text-align: left;
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.matrix td { padding: .35rem .4rem; border-bottom: 1px solid var(--line); }
+.matrix tr:last-child td { border-bottom: 0; }
+.matrix td:first-child { padding-left: .7rem; font-size: .82rem; }
+.matrix .ta-c { text-align: center; }
+.matrix input[type="number"] {
+  width: 100%; min-width: 58px;
+  padding: .4rem .5rem; border: 1.5px solid transparent; border-radius: 6px;
+  background: var(--surface); font-size: .82rem; outline: none;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--t), background var(--t);
+}
+.matrix input[type="number"]:hover { background: var(--muted); }
+.matrix input[type="number"]:focus { border-color: var(--ink); background: var(--surface); }
+.matrix input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--clay-deep); cursor: pointer; }
+
+/* ─── ORDER: WHATSAPP ACTIONS ────────────────────────────────── */
+.od-wa { display: flex; gap: .5rem; flex-wrap: wrap; }
+.od-wa .btn { flex: 1; min-width: 140px; }
+.btn-wa {
+  background: #25D366; color: #fff;
+  padding: .7rem 1.2rem; border-radius: 100px;
+  font-size: .8rem; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  transition: background var(--t);
+}
+.btn-wa:hover { background: #1EB955; }

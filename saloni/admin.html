@@ -176,6 +176,20 @@
                 <label for="fDesc">Description <span class="req">*</span></label>
                 <textarea id="fDesc" rows="4" placeholder="Describe the fabric, fit and feel…" required></textarea>
               </div>
+              <div class="f-row-2">
+                <div class="field">
+                  <label for="fFabric">Fabric</label>
+                  <input id="fFabric" type="text" placeholder="e.g. Pure cotton mul" />
+                </div>
+                <div class="field">
+                  <label for="fCare">Wash Care</label>
+                  <input id="fCare" type="text" placeholder="e.g. Hand wash cold, dry in shade" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="fModelNote">Fit Note</label>
+                <input id="fModelNote" type="text" placeholder="e.g. Relaxed fit. Model is 5&#39;6&quot; and wears S" />
+              </div>
               <div class="field">
                 <label for="fTags">Tags</label>
                 <input id="fTags" type="text" placeholder="summer, handwoven, bestseller" />
@@ -238,6 +252,23 @@
                   <button type="button" class="btn btn-line btn-sm" onclick="addColor()">Add</button>
                 </div>
                 <div class="chips" id="chips"></div>
+              </div>
+
+              <div class="field">
+                <label class="chk">
+                  <input type="checkbox" id="fInStock" checked />
+                  <span class="chk-box"></span>
+                  In stock &mdash; customers can order this
+                </label>
+              </div>
+
+              <div class="field">
+                <label>Measurements &amp; Per-Size Stock</label>
+                <p class="fld-hint">Measure the garment flat, in inches. Blank cells are left out of the size guide. Tick a size to mark just that size sold out.</p>
+                <div class="matrix-wrap">
+                  <table class="matrix" id="szMatrix"></table>
+                </div>
+                <p class="fld-hint" id="szMatrixEmpty">Pick the available sizes above to fill this in.</p>
               </div>
             </div>
 

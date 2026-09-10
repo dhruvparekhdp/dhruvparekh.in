@@ -132,3 +132,21 @@
   .co-grid { grid-template-columns: 1fr; }
   .co-side { position: static; order: -1; }
 }
+
+/* ═══ ORDER STATUS (shared with track.html) ═════════════════════ */
+.od-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; padding-bottom: 1.2rem;
+}
+.od-date { font-size: .78rem; color: var(--ink-3); margin-top: .2rem; }
+.pill {
+  display: inline-block; white-space: nowrap; flex-shrink: 0;
+  font-size: .68rem; font-weight: 600; letter-spacing: .04em;
+  padding: .26rem .7rem; border-radius: 100px;
+  background: var(--muted-2); color: var(--ink-2);
+}
+.st-placed    { background: rgba(29,58,87,.10);    color: #1D3A57; }
+.st-confirmed { background: rgba(180,154,124,.20); color: #7A6446; }
+.st-shipped   { background: rgba(92,74,75,.15);    color: #5C4A4B; }
+.st-delivered { background: rgba(85,117,106,.14);  color: var(--forest); }
+.st-cancelled { background: rgba(176,139,147,.16); color: var(--clay-deep); }

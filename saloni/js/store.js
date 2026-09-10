@@ -164,6 +164,30 @@ async function updateOrder(id, patch) {
   return data;
 }
 
+
+/* Customer-facing order lookup. RLS blocks anonymous SELECT on orders,
+   so this goes through the track_order function, which requires BOTH the
+   order number and the phone the order was placed with. */
+async function trackOrder(orderNumber, phone) {
+  const num = String(orderNumber || '').trim();
+  const ph  = String(phone || '').replace(/\D/g, '');
+  if (!num || ph.length !== 10) return null;
+
+  if (!db) {
+    const list = _lsGet(LS_ORDERS);
+    return list.find(o =>
+      String(o.order_number).toUpperCase() === num.toUpperCase() &&
+      String(o.customer_phone) === ph) || null;
+  }
+
+  const { data, error } = await db.rpc('track_order', {
+    p_order_number: num,
+    p_phone: ph,
+  });
+  if (error) throw error;
+  return (data && data[0]) || null;
+}
+
 /* ═══ DERIVED ══════════════════════════════════════════════════ */
 function categoryCounts(list) {
   const m = {};

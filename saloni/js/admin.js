@@ -241,6 +241,45 @@ function viewOrder(id) {
         : ''}
 
       ${o.notes ? `<h4 class="od-h">Customer Note</h4><p class="od-addr">${escapeHtml(o.notes)}</p>` : ''}
+
+      <h4 class="od-h">Dispatch</h4>
+      <div class="form-grid">
+        <div class="f-row-2">
+          <div class="field">
+            <label for="odCourier">Courier</label>
+            <input id="odCourier" type="text" list="courierList" placeholder="e.g. Delhivery"
+                   value="${escapeHtml(o.courier || '')}" />
+            <datalist id="courierList">
+              <option value="Delhivery"></option>
+              <option value="Blue Dart"></option>
+              <option value="DTDC"></option>
+              <option value="Ekart"></option>
+              <option value="India Post"></option>
+              <option value="Shiprocket"></option>
+              <option value="Xpressbees"></option>
+            </datalist>
+          </div>
+          <div class="field">
+            <label for="odTrack">Tracking Number</label>
+            <input id="odTrack" type="text" placeholder="Consignment number"
+                   value="${escapeHtml(o.tracking_number || '')}" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="odUrl">Tracking Link</label>
+          <input id="odUrl" type="url" placeholder="https://… (optional)"
+                 value="${escapeHtml(o.tracking_url || '')}" />
+        </div>
+        <button class="btn btn-fill btn-block" onclick="saveDispatch('${escapeHtml(o.id)}')">
+          Save &amp; mark dispatched
+        </button>
+      </div>
+
+      <h4 class="od-h">Message Customer</h4>
+      <div class="od-wa">
+        <button class="btn btn-wa" onclick="waCustomer('${escapeHtml(o.id)}','confirm')">Confirm order</button>
+        <button class="btn btn-wa" onclick="waCustomer('${escapeHtml(o.id)}','dispatch')">Send tracking</button>
+      </div>
     </div>`;
   openDrawer('oDrawer');
 }
@@ -339,8 +378,10 @@ function newProduct() {
   document.getElementById('fSub').textContent   = 'Fill in the details below';
   document.getElementById('saveBtn').textContent = 'Add Product';
   clearImg();
+  MEASURE = {}; SOLD_OUT = [];
   setSizes([]);
   COLORS = []; renderChips();
+  document.getElementById('fInStock').checked = true;
 }
 
 function editProduct(id) {
@@ -356,7 +397,13 @@ function editProduct(id) {
   document.getElementById('fTags').value  = (p.tags || []).join(', ');
   document.getElementById('fBadge').value = p.badge || '';
   document.getElementById('fFeat').checked = Boolean(p.featured);
+  document.getElementById('fFabric').value    = p.fabric || '';
+  document.getElementById('fCare').value      = p.care || '';
+  document.getElementById('fModelNote').value = p.model_note || '';
+  document.getElementById('fInStock').checked = p.in_stock !== false;
   if (p.image_url) showImg(p.image_url, true); else clearImg();
+  MEASURE  = JSON.parse(JSON.stringify(p.measurements || {}));
+  SOLD_OUT = [...(p.sold_out_sizes || [])];
   setSizes(p.sizes || []);
   COLORS = [...(p.colors || [])]; renderChips();
   document.getElementById('fTitle').textContent = 'Edit Product';
@@ -369,6 +416,8 @@ async function saveProduct(e) {
   const btn = document.getElementById('saveBtn');
   const img = document.getElementById('fImg').value.trim();
   if (!img) { showToast('Please add a product image'); return; }
+
+  readMatrix();
 
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = 'Saving…';
@@ -389,9 +438,15 @@ async function saveProduct(e) {
       badge:          document.getElementById('fBadge').value.trim(),
       featured:       document.getElementById('fFeat').checked,
       image_url:      imageUrl,
-      sizes:          [...document.querySelectorAll('#sizeRow .opt-b.on')].map(b => b.dataset.size),
+      sizes:          selectedSizes(),
       colors:         [...COLORS],
       tags:           document.getElementById('fTags').value.split(',').map(t => t.trim()).filter(Boolean),
+      fabric:         document.getElementById('fFabric').value.trim() || null,
+      care:           document.getElementById('fCare').value.trim() || null,
+      model_note:     document.getElementById('fModelNote').value.trim() || null,
+      in_stock:       document.getElementById('fInStock').checked,
+      measurements:   cleanMeasurements(),
+      sold_out_sizes: SOLD_OUT.filter(sz => selectedSizes().includes(sz)),
     };
 
     const id = document.getElementById('editId').value;
@@ -406,6 +461,15 @@ async function saveProduct(e) {
   } finally {
     btn.disabled = false; btn.textContent = label;
   }
+}
+
+function cleanMeasurements() {
+  const out = {};
+  selectedSizes().forEach(sz => {
+    const row = MEASURE[sz] || {};
+    if (Object.keys(row).length) out[sz] = row;
+  });
+  return out;
 }
 
 /* ─── DELETE ─────────────────────────────────────────────────── */
@@ -438,16 +502,157 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modal) modal.addEventListener('click', e => { if (e.target === modal) closeDel(); });
 });
 
+
+/* ─── DISPATCH ───────────────────────────────────────────────── */
+async function saveDispatch(id) {
+  const courier = document.getElementById('odCourier').value.trim();
+  const number  = document.getElementById('odTrack').value.trim();
+  const url     = document.getElementById('odUrl').value.trim();
+
+  if (!courier || !number) {
+    showToast('Enter the courier and tracking number first');
+    return;
+  }
+
+  const patch = {
+    courier,
+    tracking_number: number,
+    tracking_url: url || null,
+    order_status: 'shipped',
+    dispatched_at: new Date().toISOString(),
+  };
+
+  try {
+    await updateOrder(id, patch);
+    const o = ORDERS.find(x => x.id === id);
+    if (o) Object.assign(o, patch);
+    showToast('Marked dispatched');
+    await loadOrders();
+    viewOrder(id);
+  } catch (e) {
+    showToast('Could not save: ' + e.message);
+  }
+}
+
+/* One tap to WhatsApp the customer with the right message already written. */
+function waCustomer(id, kind) {
+  const o = ORDERS.find(x => x.id === id);
+  if (!o) return;
+
+  const phone = String(o.customer_phone || '').replace(/\D/g, '');
+  if (phone.length !== 10) { showToast('No valid phone on this order'); return; }
+
+  const first = String(o.customer_name || '').trim().split(/\s+/)[0] || 'there';
+  const shop  = SHOP.name;
+
+  let msg;
+  if (kind === 'dispatch') {
+    if (!o.tracking_number) { showToast('Add a tracking number first'); return; }
+    msg = `Hi ${first}! Your ${shop} order ${o.order_number} has been dispatched.\n\n` +
+          `Courier: ${o.courier || 'Courier'}\n` +
+          `Tracking number: ${o.tracking_number}\n` +
+          (o.tracking_url ? `Track here: ${o.tracking_url}\n` : '') +
+          `\nIt should reach you in a few days. Do message if you need anything!`;
+  } else {
+    const items = (o.items || [])
+      .map(i => `- ${i.name}${i.size ? ' (' + i.size + ')' : ''} x${i.qty}`)
+      .join('\n');
+    msg = `Hi ${first}! Thank you for your order with ${shop}.\n\n` +
+          `Order ${o.order_number}\n${items}\n` +
+          `Total: ${inr(o.total)} (${o.payment_method === 'cod' ? 'Cash on Delivery' : 'Paid'})\n\n` +
+          `Just confirming the delivery address:\n${o.address_line}, ${o.city}, ${o.state} ${o.pincode}\n\n` +
+          `We will pack and dispatch within 2 working days.`;
+  }
+
+  window.open('https://wa.me/91' + phone + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+}
+
+/* ─── SIZE MATRIX ────────────────────────────────────────────────
+   One row per selected size: measurements in inches plus a per-size
+   sold-out tick. Rebuilt whenever the size selection changes, keeping
+   whatever was already typed. */
+const MEASURE_COLS = [
+  { key: 'bust',     label: 'Bust' },
+  { key: 'waist',    label: 'Waist' },
+  { key: 'hip',      label: 'Hip' },
+  { key: 'length',   label: 'Length' },
+  { key: 'shoulder', label: 'Shoulder' },
+];
+
+let MEASURE = {};      // { S: {bust: 36, ...}, ... }
+let SOLD_OUT = [];     // ['S', 'XL']
+
+function selectedSizes() {
+  return [...document.querySelectorAll('#sizeRow .opt-b.on')].map(b => b.dataset.size);
+}
+
+function readMatrix() {
+  const table = document.getElementById('szMatrix');
+  if (!table) return;
+  table.querySelectorAll('input[data-m]').forEach(inp => {
+    const [size, key] = inp.dataset.m.split('|');
+    const v = parseFloat(inp.value);
+    MEASURE[size] = MEASURE[size] || {};
+    if (Number.isFinite(v) && v > 0) MEASURE[size][key] = v;
+    else delete MEASURE[size][key];
+  });
+  SOLD_OUT = [...table.querySelectorAll('input[data-out]:checked')].map(c => c.dataset.out);
+}
+
+function renderMatrix() {
+  const table = document.getElementById('szMatrix');
+  const empty = document.getElementById('szMatrixEmpty');
+  if (!table) return;
+  const sizes = selectedSizes();
+
+  if (!sizes.length) {
+    table.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Size</th>
+        ${MEASURE_COLS.map(c => `<th>${c.label}</th>`).join('')}
+        <th class="ta-c">Sold&nbsp;out</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${sizes.map(sz => `
+        <tr>
+          <td><b>${escapeHtml(sz)}</b></td>
+          ${MEASURE_COLS.map(c => {
+            const v = ((MEASURE[sz] || {})[c.key]);
+            return `<td><input type="number" step="0.5" min="0" max="99"
+                      inputmode="decimal" placeholder="&mdash;"
+                      data-m="${escapeHtml(sz)}|${c.key}"
+                      value="${v === undefined ? '' : v}" /></td>`;
+          }).join('')}
+          <td class="ta-c">
+            <input type="checkbox" data-out="${escapeHtml(sz)}"
+                   ${SOLD_OUT.includes(sz) ? 'checked' : ''}
+                   aria-label="Mark size ${escapeHtml(sz)} sold out" />
+          </td>
+        </tr>`).join('')}
+    </tbody>`;
+
+  table.querySelectorAll('input').forEach(i => i.addEventListener('change', readMatrix));
+}
+
 /* ─── SIZES & COLOURS ────────────────────────────────────────── */
 function wireSizes() {
   document.querySelectorAll('#sizeRow .opt-b').forEach(b =>
-    b.addEventListener('click', () => b.classList.toggle('on'))
+    b.addEventListener('click', () => { b.classList.toggle('on'); renderMatrix(); })
   );
 }
 function setSizes(sizes) {
   document.querySelectorAll('#sizeRow .opt-b').forEach(b =>
     b.classList.toggle('on', (sizes || []).includes(b.dataset.size))
   );
+  renderMatrix();
 }
 function addColor() {
   const el = document.getElementById('colorIn');
