@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
 
+# Nothing useful for a crawler behind these
+Disallow: /saloni/admin.html
+Disallow: /saloni/checkout.html
+Disallow: /saloni/track.html
+Disallow: /saloni/themes.html
+
 Sitemap: https://dhruvparekh.in/sitemap.xml
+Sitemap: https://dhruvparekh.in/saloni/sitemap.xml

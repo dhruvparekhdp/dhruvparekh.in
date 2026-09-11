@@ -30,7 +30,12 @@
 }
 .pay-opt:hover { border-color: var(--ink-3); }
 .pay-opt.on { border-color: var(--ink); background: var(--muted); }
-.pay-opt input { display: none; }
+/* Hidden visually, not from assistive tech or the keyboard. */
+.pay-opt input {
+  position: absolute; opacity: 0;
+  width: 1px; height: 1px; margin: 0;
+}
+.pay-opt:has(input:focus-visible) { outline: 3px solid var(--clay-text); outline-offset: 2px; }
 .pay-dot {
   width: 19px; height: 19px; border-radius: 100px; flex-shrink: 0;
   border: 1.5px solid var(--line); margin-top: .12rem;
@@ -116,7 +121,7 @@
 .done-r b { font-weight: 600; text-align: right; }
 .done-no {
   font-family: var(--display); font-size: 1.5rem; font-weight: 700;
-  letter-spacing: .06em; color: var(--clay);
+  letter-spacing: .06em; color: var(--clay-text);
 }
 .done-cta { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
 
@@ -130,5 +135,24 @@
 
 @media (max-width: 980px) {
   .co-grid { grid-template-columns: 1fr; }
-  .co-side { position: static; order: -1; }
+  /* The form must come before the button that submits it. */
+  .co-side { position: static; order: 0; }
 }
+
+/* ═══ ORDER STATUS (shared with track.html) ═════════════════════ */
+.od-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; padding-bottom: 1.2rem;
+}
+.od-date { font-size: .78rem; color: var(--ink-3); margin-top: .2rem; }
+.pill {
+  display: inline-block; white-space: nowrap; flex-shrink: 0;
+  font-size: .68rem; font-weight: 600; letter-spacing: .04em;
+  padding: .26rem .7rem; border-radius: 100px;
+  background: var(--muted-2); color: var(--ink-2);
+}
+.st-placed    { background: rgba(29,58,87,.10);    color: #1D3A57; }
+.st-confirmed { background: rgba(180,154,124,.20); color: #7A6446; }
+.st-shipped   { background: rgba(92,74,75,.15);    color: #5C4A4B; }
+.st-delivered { background: rgba(85,117,106,.14);  color: var(--forest); }
+.st-cancelled { background: rgba(176,139,147,.16); color: var(--clay-deep); }

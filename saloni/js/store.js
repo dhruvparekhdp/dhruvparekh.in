@@ -138,9 +138,11 @@ async function insertOrder(row) {
     _lsSet(LS_ORDERS, list);
     return row;
   }
-  const { data, error } = await db.from('orders').insert([row]).select().single();
+  // No .select() here: anon has INSERT but deliberately NOT SELECT on
+  // orders, so asking for the row back makes the whole insert fail.
+  const { error } = await db.from('orders').insert([row]);
   if (error) throw error;
-  return data;
+  return row;
 }
 
 async function getOrders() {
@@ -162,6 +164,30 @@ async function updateOrder(id, patch) {
   const { data, error } = await db.from('orders').update(patch).eq('id', id).select().single();
   if (error) throw error;
   return data;
+}
+
+
+/* Customer-facing order lookup. RLS blocks anonymous SELECT on orders,
+   so this goes through the track_order function, which requires BOTH the
+   order number and the phone the order was placed with. */
+async function trackOrder(orderNumber, phone) {
+  const num = String(orderNumber || '').trim();
+  const ph  = String(phone || '').replace(/\D/g, '');
+  if (!num || ph.length !== 10) return null;
+
+  if (!db) {
+    const list = _lsGet(LS_ORDERS);
+    return list.find(o =>
+      String(o.order_number).toUpperCase() === num.toUpperCase() &&
+      String(o.customer_phone) === ph) || null;
+  }
+
+  const { data, error } = await db.rpc('track_order', {
+    p_order_number: num,
+    p_phone: ph,
+  });
+  if (error) throw error;
+  return (data && data[0]) || null;
 }
 
 /* ═══ DERIVED ══════════════════════════════════════════════════ */

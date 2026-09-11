@@ -2,6 +2,7 @@
    Requires: config.js → store.js → cart.js → app.js
    ═══════════════════════════════════════════════════════════════ */
 
+document.documentElement.classList.add('js');
 const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let PRODUCTS = [];
 
@@ -37,6 +38,15 @@ async function init() {
   initReveal();
   initParallax();
   initMagnetic();
+
+  mountWhatsApp();
+  applySeo({
+    title: `${SHOP.name} \u2014 Handcrafted Womenswear Online`,
+    description: `Shop handcrafted kurtas, sarees, anarkalis and co-ords from ${SHOP.name}. Small-batch pieces, honest fabrics, cash on delivery across India.`,
+    path: '/',
+  });
+  ldOrganization();
+  ldProducts(PRODUCTS);
 }
 
 /* ─── HEADER ─────────────────────────────────────────────────── */
@@ -150,10 +160,13 @@ function renderGrid(filter) {
 
   g.querySelectorAll('.p-card').forEach((el, i) => {
     const p = list[i];
-    el.addEventListener('click', ev => {
+    const open = ev => {
       if (ev.target.closest('.p-fav')) return;
       openProduct(p);
-    });
+    };
+    el.addEventListener('click', open);
+    // The button inside already fires click on Enter and Space.
+    el.querySelector('.p-open').addEventListener('click', ev => { ev.stopPropagation(); openProduct(p); });
     const fav = el.querySelector('.p-fav');
     if (fav) fav.addEventListener('click', ev => {
       ev.stopPropagation();
@@ -171,23 +184,24 @@ function renderGrid(filter) {
 function card(p, i) {
   const wide  = i % 7 === 2;
   const off   = discountPct(p);
+  const out   = isSoldOut(p);
   const tag   = p.badge ? `<span class="p-tag ${p.badge.toLowerCase() === 'sale' ? 'sale' : p.badge.toLowerCase() === 'new' ? 'new' : ''}">${escapeHtml(p.badge)}</span>` : '';
   const media = p.image_url
     ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy"
-           onerror="this.closest('.p-media').innerHTML='<div class=&quot;p-ph&quot;><b>✦</b><span>No image</span></div>'" />`
+           onerror="this.outerHTML='<div class=&quot;p-ph&quot;><b>✦</b><span>No image</span></div>'" />`
     : `<div class="p-ph"><b>✦</b><span>No image</span></div>`;
   const sizes = (p.sizes || []).slice(0, 5).map(s => `<span class="sz">${escapeHtml(s)}</span>`).join('');
 
   return `
-    <article class="p-card reveal ${wide ? 'wide' : ''} ${i < 4 ? 'd' + (i + 1) : ''}">
+    <article class="p-card reveal ${wide ? 'wide' : ''} ${out ? 'is-out' : ''} ${i < 4 ? 'd' + (i + 1) : ''}">
       <div class="p-media">
-        ${media}${tag}
+        ${media}${out ? '<div class="p-out">Sold out</div>' : tag}
         <button class="p-fav" aria-label="Save to wishlist">♡</button>
-        <div class="p-quick">Quick view</div>
+        <div class="p-quick" aria-hidden="true">${out ? 'View details' : 'Quick view'}</div>
       </div>
       <div class="p-body">
         <div class="p-cat">${escapeHtml(p.category)}</div>
-        <h3 class="p-name">${escapeHtml(p.name)}</h3>
+        <h3 class="p-name"><button type="button" class="p-open">${escapeHtml(p.name)}</button></h3>
         <p class="p-desc">${escapeHtml(p.description)}</p>
         <div class="p-foot">
           <span class="p-price">${inr(p.price)}</span>
@@ -238,19 +252,30 @@ function paintProductDrawer() {
   if (!p) return;
   const body = document.getElementById('pBody');
   const off  = discountPct(p);
+  const out  = isSoldOut(p);
 
   const media = p.image_url
     ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}"
-           onerror="this.closest('.dr-media').innerHTML='<div class=&quot;p-ph&quot; style=&quot;height:100%&quot;><b>✦</b><span>No image</span></div>'" />`
-    : `<div class="p-ph" style="height:100%"><b>✦</b><span>No image</span></div>`;
+           onerror="this.outerHTML='<div class=&quot;p-ph&quot; style=&quot;height:100%&quot;><b>\u2726</b><span>No image</span></div>'" />`
+    : `<div class="p-ph" style="height:100%"><b>\u2726</b><span>No image</span></div>`;
 
-  const sizeOpts = (p.sizes || []).map(s =>
-    `<button class="opt-b ${s === DSize ? 'on' : ''}" data-size="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
+  const sizeOpts = (p.sizes || []).map(s => {
+    const gone = sizeSoldOut(p, s);
+    return `<button class="opt-b ${s === DSize ? 'on' : ''} ${gone ? 'gone' : ''}"
+                    data-size="${escapeHtml(s)}" ${gone ? 'disabled aria-disabled="true"' : ''}
+                    title="${gone ? 'Sold out' : ''}">${escapeHtml(s)}</button>`;
+  }).join('');
+
   const colorOpts = (p.colors || []).map(c =>
     `<button class="opt-b ${c === DColor ? 'on' : ''}" data-color="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
 
+  const guide = sizeGuideHtml(p);
+
   body.innerHTML = `
-    <div class="dr-media">${media}${p.badge ? `<span class="p-tag ${p.badge.toLowerCase()==='sale'?'sale':p.badge.toLowerCase()==='new'?'new':''}" style="top:1rem;left:1rem">${escapeHtml(p.badge)}</span>` : ''}</div>
+    <div class="dr-media">${media}
+      ${out ? '<div class="dr-out">Sold out</div>' : ''}
+      ${p.badge && !out ? `<span class="p-tag ${p.badge.toLowerCase()==='sale'?'sale':p.badge.toLowerCase()==='new'?'new':''}" style="top:1rem;left:1rem">${escapeHtml(p.badge)}</span>` : ''}
+    </div>
     <div class="dr-info">
       <div class="dr-cat">${escapeHtml(p.category)}</div>
       <h2 class="dr-name">${escapeHtml(p.name)}</h2>
@@ -261,9 +286,19 @@ function paintProductDrawer() {
       </div>
       <p class="dr-desc">${escapeHtml(p.description)}</p>
 
+      ${(p.fabric || p.care || p.model_note) ? `<div class="spec">
+        ${p.fabric ? `<div class="spec-r"><span>Fabric</span><b>${escapeHtml(p.fabric)}</b></div>` : ''}
+        ${p.care ? `<div class="spec-r"><span>Care</span><b>${escapeHtml(p.care)}</b></div>` : ''}
+        ${p.model_note ? `<div class="spec-r"><span>Fit note</span><b>${escapeHtml(p.model_note)}</b></div>` : ''}
+      </div>` : ''}
+
       ${sizeOpts ? `<div class="opt">
-        <div class="opt-lab"><span>Size</span><span class="pick" id="pickSize">${DSize ? escapeHtml(DSize) : 'Select a size'}</span></div>
+        <div class="opt-lab">
+          <span>Size</span>
+          ${guide ? `<button class="lnk-sm" id="szToggle" type="button">Size guide</button>` : `<span class="pick" id="pickSize">${DSize ? escapeHtml(DSize) : 'Select a size'}</span>`}
+        </div>
         <div class="opt-row" id="sizeRow">${sizeOpts}</div>
+        ${guide ? `<div class="sz-guide" id="szGuide" hidden>${guide}</div>` : ''}
       </div>` : ''}
 
       ${colorOpts ? `<div class="opt">
@@ -274,37 +309,94 @@ function paintProductDrawer() {
       <div class="opt">
         <div class="opt-lab"><span>Quantity</span></div>
         <div class="qty">
-          <button id="qMinus" aria-label="Decrease quantity">−</button>
+          <button id="qMinus" type="button" aria-label="Decrease quantity">\u2212</button>
           <span id="qVal">${DQty}</span>
-          <button id="qPlus" aria-label="Increase quantity">+</button>
+          <button id="qPlus" type="button" aria-label="Increase quantity">+</button>
         </div>
       </div>
 
-      <div class="dr-meta">
-        <div class="dr-meta-r"><b>✦</b> ${SHOP.freeShippingAbove ? `Free shipping over ${inr(SHOP.freeShippingAbove)}` : `Flat ${inr(SHOP.shippingFlat)} shipping`}</div>
-        <div class="dr-meta-r"><b>◈</b> Cash on delivery available</div>
-        <div class="dr-meta-r"><b>❋</b> Handcrafted in small batches</div>
+      <div class="opt pin-box">
+        <div class="opt-lab"><span>Delivery</span></div>
+        <div class="pin-row">
+          <input type="text" id="pinIn" inputmode="numeric" maxlength="6"
+                 placeholder="Enter pincode" aria-label="Delivery pincode" />
+          <button type="button" class="btn btn-line btn-sm" id="pinGo">Check</button>
+        </div>
+        <p class="pin-out" id="pinOut"></p>
       </div>
+
+      <div class="dr-meta">
+        <div class="dr-meta-r"><b>\u2726</b> ${SHOP.freeShippingAbove ? `Free shipping over ${inr(SHOP.freeShippingAbove)}` : `Flat ${inr(SHOP.shippingFlat)} shipping`}</div>
+        <div class="dr-meta-r"><b>\u25c8</b> Cash on delivery available across India</div>
+        <div class="dr-meta-r"><b>\u274b</b> Handcrafted in small batches</div>
+      </div>
+
+      ${waAvailable() ? `<a class="btn btn-wa btn-block" href="${waProductLink(p)}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-1.6-.8-2.7-1.5-3.8-3.4-.3-.5.3-.4.8-1.4.1-.2 0-.4 0-.5s-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.4 1.9.8 2.6.9 3.5.8.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3Z"/></svg>
+        Ask about this piece
+      </a>` : ''}
     </div>`;
 
-  body.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => {
+  /* size + colour pickers */
+  body.querySelectorAll('[data-size]:not([disabled])').forEach(b => b.addEventListener('click', () => {
     DSize = b.dataset.size;
     body.querySelectorAll('[data-size]').forEach(x => x.classList.toggle('on', x === b));
-    document.getElementById('pickSize').textContent = DSize;
+    const pick = document.getElementById('pickSize');
+    if (pick) pick.textContent = DSize;
   }));
   body.querySelectorAll('[data-color]').forEach(b => b.addEventListener('click', () => {
     DColor = b.dataset.color;
     body.querySelectorAll('[data-color]').forEach(x => x.classList.toggle('on', x === b));
-    document.getElementById('pickColor').textContent = DColor;
+    const pick = document.getElementById('pickColor');
+    if (pick) pick.textContent = DColor;
   }));
+
+  /* quantity */
   document.getElementById('qMinus').addEventListener('click', () => {
     DQty = Math.max(1, DQty - 1);
     document.getElementById('qVal').textContent = DQty;
   });
   document.getElementById('qPlus').addEventListener('click', () => {
-    DQty = Math.min(99, DQty + 1);
+    DQty = Math.min(10, DQty + 1);
     document.getElementById('qVal').textContent = DQty;
   });
+
+  /* size guide */
+  const szToggle = document.getElementById('szToggle');
+  if (szToggle) szToggle.addEventListener('click', () => {
+    const g = document.getElementById('szGuide');
+    g.hidden = !g.hidden;
+    szToggle.textContent = g.hidden ? 'Size guide' : 'Hide guide';
+  });
+
+  /* pincode delivery estimate */
+  const pinIn = document.getElementById('pinIn');
+  const pinGo = document.getElementById('pinGo');
+  const pinOut = document.getElementById('pinOut');
+  const checkPin = () => {
+    const v = (pinIn.value || '').replace(/\D/g, '');
+    if (v.length !== 6) { pinOut.className = 'pin-out warn'; pinOut.textContent = 'Enter a 6-digit pincode'; return; }
+    const est = deliveryEstimate(v);
+    if (!est) { pinOut.className = 'pin-out warn'; pinOut.textContent = 'We could not read that pincode'; return; }
+    pinOut.className = 'pin-out ok';
+    pinOut.innerHTML = `Delivers to ${escapeHtml(est.label.toLowerCase())} by <b>${escapeHtml(est.from)} \u2013 ${escapeHtml(est.to)}</b>`;
+    try { localStorage.setItem('saloni_pin', v); } catch (e) {}
+  };
+  pinIn.addEventListener('input', () => { pinIn.value = pinIn.value.replace(/\D/g, '').slice(0, 6); });
+  pinIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkPin(); } });
+  pinGo.addEventListener('click', checkPin);
+  try {
+    const saved = localStorage.getItem('saloni_pin');
+    if (saved) { pinIn.value = saved; checkPin(); }
+  } catch (e) {}
+
+  /* add-to-bag reflects stock */
+  const addBtn = document.getElementById('pAdd');
+  if (addBtn) {
+    addBtn.disabled = out;
+    addBtn.textContent = out ? 'Sold out' : 'Add to Bag';
+  }
+
   body.scrollTop = 0;
 }
 
@@ -312,8 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const add = document.getElementById('pAdd');
   if (add) add.addEventListener('click', () => {
     if (!DP) return;
-    if ((DP.sizes || []).length && !DSize)   { showToast('Please choose a size');   return; }
-    if ((DP.colors || []).length && !DColor) { showToast('Please choose a colour'); return; }
+    if (isSoldOut(DP)) { showToast('This piece is sold out'); return; }
+    if (availableSizes(DP).length && !DSize)  { showToast('Please choose a size');   return; }
+    if (DSize && sizeSoldOut(DP, DSize))      { showToast('That size is sold out');  return; }
+    if ((DP.colors || []).length && !DColor)  { showToast('Please choose a colour'); return; }
     cartAdd(DP, { size: DSize, color: DColor, qty: DQty });
     closeDrawer('pDrawer');
     showToast(`${DP.name} added to your bag`);

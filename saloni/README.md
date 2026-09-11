@@ -7,7 +7,11 @@ Plain HTML, CSS and JavaScript — no build step. Backed by Supabase.
 saloni/
 ├── index.html          storefront (bento layout)
 ├── checkout.html       address + payment + confirmation
+├── track.html          customer order lookup
+├── policies.html       shipping, returns, privacy, grievance
 ├── admin.html          orders and product management
+├── og-cover.png        social share card (1200x630)
+├── robots.txt / sitemap.xml
 ├── css/
 │   ├── style.css       design tokens, bento grid, drawers, 3D motion
 │   ├── checkout.css    checkout-only styles
@@ -16,14 +20,17 @@ saloni/
 │   ├── config.js       ← your keys and shop settings live here
 │   ├── store.js        data layer (Supabase + localStorage fallback)
 │   ├── cart.js         cart state, money formatting, toasts
+│   ├── shop.js         WhatsApp links, delivery estimates, size guide, SEO
 │   ├── app.js          storefront rendering, drawers, motion
 │   ├── checkout.js     validation, COD/UPI, order creation
 │   └── admin.js        auth, orders, product CRUD
 ├── supabase/
 │   ├── schema.sql      products table + storage bucket
 │   ├── seed.sql        10 demo products
-│   └── orders.sql      orders table + RLS
-└── PAYMENTS.md         gateway comparison and Razorpay wiring
+│   ├── orders.sql      orders table + RLS
+│   └── migration-002.sql  product detail, stock, courier tracking
+├── PAYMENTS.md         gateway comparison and Razorpay wiring
+└── GO-LIVE.md          launch checklist and marketing playbook
 ```
 
 ## Setup
@@ -31,9 +38,10 @@ saloni/
 **1 — Database.** In Supabase → SQL Editor, run in order:
 
 ```
-supabase/schema.sql     products table, storage bucket, policies
-supabase/orders.sql     orders table, policies
-supabase/seed.sql       optional: 10 demo products
+supabase/schema.sql        products table, storage bucket, policies
+supabase/orders.sql        orders table, policies
+supabase/migration-002.sql product detail, stock, tracking, order lookup
+supabase/seed.sql          optional: 10 demo products
 ```
 
 **2 — Keys.** Supabase → Project Settings → API. Paste into `js/config.js`:

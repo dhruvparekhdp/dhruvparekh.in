@@ -23,7 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
   bindDigits('fPhone', 10);
   bindDigits('fPin', 6);
 
+  // live delivery estimate as soon as a full pincode is typed
+  const pin = document.getElementById('fPin');
+  pin.addEventListener('input', showEstimate);
+  try {
+    const saved = localStorage.getItem('saloni_pin');
+    if (saved && !pin.value) { pin.value = saved; showEstimate(); }
+  } catch (e) {}
+
   initMagnetic();
+  mountWhatsApp();
 });
 
 function bindDigits(id, max) {
@@ -36,6 +45,18 @@ function fillStates() {
   const sel = document.getElementById('fState');
   sel.innerHTML = '<option value="">Select</option>' +
     STATES.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+}
+
+function showEstimate() {
+  const pin = (document.getElementById('fPin').value || '').replace(/\D/g, '');
+  const box = document.getElementById('pinEst');
+  if (!box) return;
+  if (pin.length !== 6) { box.textContent = ''; box.className = 'pin-out'; return; }
+  const est = deliveryEstimate(pin);
+  if (!est) { box.className = 'pin-out warn'; box.textContent = 'We could not read that pincode'; return; }
+  box.className = 'pin-out ok';
+  box.innerHTML = `Expected delivery <b>${escapeHtml(est.from)} \u2013 ${escapeHtml(est.to)}</b>`;
+  try { localStorage.setItem('saloni_pin', pin); } catch (e) {}
 }
 
 /* ─── PAYMENT OPTIONS ────────────────────────────────────────── */
@@ -196,11 +217,13 @@ function onSubmit(e) {
 
 /* ─── UPI STEP ───────────────────────────────────────────────── */
 let PENDING_FORM = null;
+let PENDING_NUMBER = null;   // the number shown in the UPI note must be the one we save
 
 function showUpiStep(f) {
   PENDING_FORM = f;
   const { total } = cartTotals('upi');
-  const orderRef = draftOrderNumber();
+  PENDING_NUMBER = PENDING_NUMBER || draftOrderNumber();
+  const orderRef = PENDING_NUMBER;
 
   const link = 'upi://pay'
     + '?pa=' + encodeURIComponent(SHOP.upiId)
@@ -247,6 +270,9 @@ function draftOrderNumber() {
 }
 
 async function placeOrder(f, method, payStatus, payRef) {
+  // Reuse the number across retries so a timed-out first attempt cannot
+  // leave two different numbers for one payment.
+  PENDING_NUMBER = PENDING_NUMBER || draftOrderNumber();
   const btn = method === 'upi' ? document.getElementById('upiDone') : document.getElementById('placeBtn');
   const label = btn.textContent;
   btn.disabled = true;
@@ -254,7 +280,7 @@ async function placeOrder(f, method, payStatus, payRef) {
 
   const items = cartRead();
   const { subtotal, shipping, codFee, total } = cartTotals(method);
-  const orderNumber = draftOrderNumber();
+  const orderNumber = PENDING_NUMBER;
 
   const row = {
     order_number:   orderNumber,
@@ -282,6 +308,7 @@ async function placeOrder(f, method, payStatus, payRef) {
 
   try {
     await insertOrder(row);
+    PENDING_NUMBER = null;
     cartClear();
     showDone(row);
   } catch (err) {
@@ -300,13 +327,35 @@ function showDone(row) {
     ? 'Thank you. We\'ll call to confirm your order, then dispatch it within 2 working days.'
     : 'Thank you. We\'ll verify your payment and dispatch within 2 working days.';
 
+  const next = row.payment_method === 'cod'
+    ? 'We will call or WhatsApp you to confirm, then dispatch within 2 working days.'
+    : 'We will verify your payment and dispatch within 2 working days.';
+
   document.getElementById('doneBox').innerHTML = `
     <div class="done-r"><span>Order number</span><b class="done-no">${escapeHtml(row.order_number)}</b></div>
     <div class="done-r"><span>Total</span><b>${inr(row.total)}</b></div>
     <div class="done-r"><span>Payment</span><b>${escapeHtml(methodLabel)}</b></div>
     ${row.payment_ref ? `<div class="done-r"><span>UPI reference</span><b>${escapeHtml(row.payment_ref)}</b></div>` : ''}
     <div class="done-r"><span>Delivering to</span><b>${escapeHtml(row.customer_name)}<br/>${escapeHtml(row.city)}, ${escapeHtml(row.state)} ${escapeHtml(row.pincode)}</b></div>
-    ${SHOP.phone ? `<div class="done-r"><span>Questions?</span><b>${escapeHtml(SHOP.phone)}</b></div>` : ''}`;
+    ${SHOP.phone ? `<div class="done-r"><span>Questions?</span><b><a href="tel:${escapeHtml(SHOP.phone.replace(/\s/g,''))}">${escapeHtml(SHOP.phone)}</a></b></div>` : ''}
+    <div class="done-r"><span>What happens next</span><b style="font-weight:400;color:var(--ink-2)">${escapeHtml(next)}</b></div>`;
+
+  const cta = document.querySelector('.done-cta');
+  if (cta) {
+    cta.innerHTML =
+      `<a href="track.html" class="btn btn-fill mag">Track this order</a>` +
+      (waAvailable()
+        ? `<a href="${waOrderLink(row.order_number)}" class="btn btn-wa" target="_blank" rel="noopener">Message us on WhatsApp</a>`
+        : '') +
+      `<a href="index.html" class="btn btn-line mag">Continue shopping</a>`;
+  }
+
+  // Keep a copy locally so the customer can find the number again.
+  try {
+    const mine = JSON.parse(localStorage.getItem('saloni_my_orders') || '[]');
+    mine.unshift({ order_number: row.order_number, total: row.total, at: new Date().toISOString() });
+    localStorage.setItem('saloni_my_orders', JSON.stringify(mine.slice(0, 20)));
+  } catch (e) {}
 
   showStep('coDone');
   window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Checkout — Saloni Collection</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#FAF9F8" />
   <link rel="icon" href="../img/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -89,6 +91,7 @@
                       <span class="err"></span>
                     </div>
                   </div>
+                  <p class="pin-out" id="pinEst"></p>
                   <div class="field">
                     <label for="fNotes">Order Notes</label>
                     <textarea id="fNotes" rows="2" placeholder="Anything we should know? (optional)"></textarea>
@@ -98,7 +101,7 @@
 
               <div class="co-card">
                 <h3>Payment Method</h3>
-                <div class="pay-opts" id="payOpts"></div>
+                <div class="pay-opts" id="payOpts" role="radiogroup" aria-label="Payment method"></div>
               </div>
             </div>
 
@@ -110,6 +113,7 @@
                 <div class="sum" id="coSum"></div>
                 <button type="submit" class="btn btn-clay btn-block mag" id="placeBtn" style="margin-top:1.1rem">Place Order</button>
                 <p class="co-note" id="coNote"></p>
+                <p class="co-note"><a href="policies.html#returns" target="_blank">Shipping &amp; replacement policy</a></p>
               </div>
             </aside>
 
@@ -179,6 +183,7 @@
   <script src="js/config.js"></script>
   <script src="js/store.js"></script>
   <script src="js/cart.js"></script>
+  <script src="js/shop.js"></script>
   <script src="js/checkout.js"></script>
 </body>
 </html>

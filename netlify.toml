@@ -1,0 +1,41 @@
+# Netlify configuration for dhruvparekh.in
+
+[build]
+  publish = "."
+
+# Long-cache the fingerprint-free static assets that rarely change.
+[[headers]]
+  for = "/saloni/og-cover.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+# Never cache the config — it holds keys and shop settings that must
+# take effect the moment they are edited.
+[[headers]]
+  for = "/saloni/js/config.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/saloni/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
+
+# Friendly URLs for the pages customers are given by hand.
+[[redirects]]
+  from = "/shop"
+  to = "/saloni/"
+  status = 301
+
+[[redirects]]
+  from = "/track"
+  to = "/saloni/track.html"
+  status = 301
+
+[[redirects]]
+  from = "/saloni/sitemap.xml"
+  to = "/saloni/sitemap.xml"
+  status = 200
