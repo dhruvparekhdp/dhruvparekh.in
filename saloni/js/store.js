@@ -138,9 +138,11 @@ async function insertOrder(row) {
     _lsSet(LS_ORDERS, list);
     return row;
   }
-  const { data, error } = await db.from('orders').insert([row]).select().single();
+  // No .select() here: anon has INSERT but deliberately NOT SELECT on
+  // orders, so asking for the row back makes the whole insert fail.
+  const { error } = await db.from('orders').insert([row]);
   if (error) throw error;
-  return data;
+  return row;
 }
 
 async function getOrders() {

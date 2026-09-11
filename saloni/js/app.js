@@ -2,6 +2,7 @@
    Requires: config.js → store.js → cart.js → app.js
    ═══════════════════════════════════════════════════════════════ */
 
+document.documentElement.classList.add('js');
 const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let PRODUCTS = [];
 
@@ -159,10 +160,13 @@ function renderGrid(filter) {
 
   g.querySelectorAll('.p-card').forEach((el, i) => {
     const p = list[i];
-    el.addEventListener('click', ev => {
+    const open = ev => {
       if (ev.target.closest('.p-fav')) return;
       openProduct(p);
-    });
+    };
+    el.addEventListener('click', open);
+    // The button inside already fires click on Enter and Space.
+    el.querySelector('.p-open').addEventListener('click', ev => { ev.stopPropagation(); openProduct(p); });
     const fav = el.querySelector('.p-fav');
     if (fav) fav.addEventListener('click', ev => {
       ev.stopPropagation();
@@ -184,7 +188,7 @@ function card(p, i) {
   const tag   = p.badge ? `<span class="p-tag ${p.badge.toLowerCase() === 'sale' ? 'sale' : p.badge.toLowerCase() === 'new' ? 'new' : ''}">${escapeHtml(p.badge)}</span>` : '';
   const media = p.image_url
     ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy"
-           onerror="this.closest('.p-media').innerHTML='<div class=&quot;p-ph&quot;><b>✦</b><span>No image</span></div>'" />`
+           onerror="this.outerHTML='<div class=&quot;p-ph&quot;><b>✦</b><span>No image</span></div>'" />`
     : `<div class="p-ph"><b>✦</b><span>No image</span></div>`;
   const sizes = (p.sizes || []).slice(0, 5).map(s => `<span class="sz">${escapeHtml(s)}</span>`).join('');
 
@@ -193,11 +197,11 @@ function card(p, i) {
       <div class="p-media">
         ${media}${out ? '<div class="p-out">Sold out</div>' : tag}
         <button class="p-fav" aria-label="Save to wishlist">♡</button>
-        <div class="p-quick">${out ? 'View details' : 'Quick view'}</div>
+        <div class="p-quick" aria-hidden="true">${out ? 'View details' : 'Quick view'}</div>
       </div>
       <div class="p-body">
         <div class="p-cat">${escapeHtml(p.category)}</div>
-        <h3 class="p-name">${escapeHtml(p.name)}</h3>
+        <h3 class="p-name"><button type="button" class="p-open">${escapeHtml(p.name)}</button></h3>
         <p class="p-desc">${escapeHtml(p.description)}</p>
         <div class="p-foot">
           <span class="p-price">${inr(p.price)}</span>
@@ -252,7 +256,7 @@ function paintProductDrawer() {
 
   const media = p.image_url
     ? `<img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}"
-           onerror="this.closest('.dr-media').innerHTML='<div class=&quot;p-ph&quot; style=&quot;height:100%&quot;><b>\u2726</b><span>No image</span></div>'" />`
+           onerror="this.outerHTML='<div class=&quot;p-ph&quot; style=&quot;height:100%&quot;><b>\u2726</b><span>No image</span></div>'" />`
     : `<div class="p-ph" style="height:100%"><b>\u2726</b><span>No image</span></div>`;
 
   const sizeOpts = (p.sizes || []).map(s => {

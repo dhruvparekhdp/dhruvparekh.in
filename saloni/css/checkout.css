@@ -30,7 +30,12 @@
 }
 .pay-opt:hover { border-color: var(--ink-3); }
 .pay-opt.on { border-color: var(--ink); background: var(--muted); }
-.pay-opt input { display: none; }
+/* Hidden visually, not from assistive tech or the keyboard. */
+.pay-opt input {
+  position: absolute; opacity: 0;
+  width: 1px; height: 1px; margin: 0;
+}
+.pay-opt:has(input:focus-visible) { outline: 3px solid var(--clay-text); outline-offset: 2px; }
 .pay-dot {
   width: 19px; height: 19px; border-radius: 100px; flex-shrink: 0;
   border: 1.5px solid var(--line); margin-top: .12rem;
@@ -116,7 +121,7 @@
 .done-r b { font-weight: 600; text-align: right; }
 .done-no {
   font-family: var(--display); font-size: 1.5rem; font-weight: 700;
-  letter-spacing: .06em; color: var(--clay);
+  letter-spacing: .06em; color: var(--clay-text);
 }
 .done-cta { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
 
@@ -130,7 +135,8 @@
 
 @media (max-width: 980px) {
   .co-grid { grid-template-columns: 1fr; }
-  .co-side { position: static; order: -1; }
+  /* The form must come before the button that submits it. */
+  .co-side { position: static; order: 0; }
 }
 
 /* ═══ ORDER STATUS (shared with track.html) ═════════════════════ */

@@ -217,11 +217,13 @@ function onSubmit(e) {
 
 /* ─── UPI STEP ───────────────────────────────────────────────── */
 let PENDING_FORM = null;
+let PENDING_NUMBER = null;   // the number shown in the UPI note must be the one we save
 
 function showUpiStep(f) {
   PENDING_FORM = f;
   const { total } = cartTotals('upi');
-  const orderRef = draftOrderNumber();
+  PENDING_NUMBER = PENDING_NUMBER || draftOrderNumber();
+  const orderRef = PENDING_NUMBER;
 
   const link = 'upi://pay'
     + '?pa=' + encodeURIComponent(SHOP.upiId)
@@ -268,6 +270,9 @@ function draftOrderNumber() {
 }
 
 async function placeOrder(f, method, payStatus, payRef) {
+  // Reuse the number across retries so a timed-out first attempt cannot
+  // leave two different numbers for one payment.
+  PENDING_NUMBER = PENDING_NUMBER || draftOrderNumber();
   const btn = method === 'upi' ? document.getElementById('upiDone') : document.getElementById('placeBtn');
   const label = btn.textContent;
   btn.disabled = true;
@@ -275,7 +280,7 @@ async function placeOrder(f, method, payStatus, payRef) {
 
   const items = cartRead();
   const { subtotal, shipping, codFee, total } = cartTotals(method);
-  const orderNumber = draftOrderNumber();
+  const orderNumber = PENDING_NUMBER;
 
   const row = {
     order_number:   orderNumber,
@@ -303,6 +308,7 @@ async function placeOrder(f, method, payStatus, payRef) {
 
   try {
     await insertOrder(row);
+    PENDING_NUMBER = null;
     cartClear();
     showDone(row);
   } catch (err) {

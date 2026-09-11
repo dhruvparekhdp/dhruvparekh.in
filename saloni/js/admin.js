@@ -170,7 +170,7 @@ function renderOrders() {
 
 function payLabel(o) {
   const m = { cod: 'COD', upi: 'UPI', razorpay: 'Card' }[o.payment_method] || o.payment_method;
-  return `${m} · ${cap(o.payment_status)}`;
+  return `${escapeHtml(m)} · ${escapeHtml(cap(o.payment_status))}`;
 }
 
 async function setOrderStatus(id, patch) {
@@ -198,9 +198,9 @@ function viewOrder(id) {
         ${thumb}
         <div>
           <div class="nm">${escapeHtml(i.name)}</div>
-          <div class="vr">${variant ? escapeHtml(variant) + ' · ' : ''}Qty ${i.qty}</div>
+          <div class="vr">${variant ? escapeHtml(variant) + ' · ' : ''}Qty ${escapeHtml(String(Number(i.qty) || 1))}</div>
         </div>
-        <div class="pr">${inr(i.price * i.qty)}</div>
+        <div class="pr">${inr((Number(i.price) || 0) * (Number(i.qty) || 1))}</div>
       </div>`;
   }).join('');
 
@@ -211,7 +211,7 @@ function viewOrder(id) {
           <div class="od-no">${escapeHtml(o.order_number)}</div>
           <div class="od-date">${fmtDate(o.created_at, true)}</div>
         </div>
-        <span class="pill st-${escapeHtml(o.order_status)}">${cap(o.order_status)}</span>
+        <span class="pill st-${escapeHtml(o.order_status)}">${escapeHtml(cap(o.order_status))}</span>
       </div>
 
       <h4 class="od-h">Customer</h4>
@@ -235,7 +235,7 @@ function viewOrder(id) {
       <h4 class="od-h">Payment</h4>
       <div class="od-kv"><span>Method</span><b>${escapeHtml({ cod:'Cash on Delivery', upi:'UPI', razorpay:'Card / Netbanking' }[o.payment_method] || o.payment_method)}</b></div>
       ${o.payment_ref ? `<div class="od-kv"><span>Reference</span><b>${escapeHtml(o.payment_ref)}</b></div>` : ''}
-      <div class="od-kv"><span>Status</span><b>${cap(o.payment_status)}</b></div>
+      <div class="od-kv"><span>Status</span><b>${escapeHtml(cap(o.payment_status))}</b></div>
       ${o.payment_status !== 'paid'
         ? `<button class="btn btn-fill btn-block" style="margin-top:.8rem" onclick="markPaid('${escapeHtml(o.id)}')">Mark as Paid</button>`
         : ''}
