@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Dhruv Parekh — Resume</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --teal:#0d9488; --teal-dark:#134e4a;
+    --teal-soft:rgba(13,148,136,.35); --teal-faint:rgba(13,148,136,.07);
+    --ink:#0f172a; --muted:#374151; --subtle:#6b7280;
+    --card-bg:#0d1f1f; --card-key:#5eead4; --card-str:#f0fdfa; --card-punct:#4db6ac;
+  }
+  @page { size:A4; margin:0; }
+  body {
+    font-family:'Inter',-apple-system,sans-serif; color:var(--ink); background:#fff;
+    font-size:12px; line-height:1.45;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .sheet { width:794px; margin:0 auto; padding:34px 44px 48px; }
+
+  .header { display:grid; grid-template-columns:1fr 226px; gap:24px; align-items:start; margin-bottom:14px; }
+  .name { font-size:32px; font-weight:800; letter-spacing:-1px; line-height:1.04; }
+  .name .dot { color:var(--teal); }
+  .headline { margin-top:5px; font-size:12.8px; font-weight:600; color:var(--teal); }
+  .contact { margin-top:8px; font-family:'Space Mono',monospace; font-size:9.5px; color:var(--muted); line-height:1.7; }
+  .contact span + span::before { content:'·'; color:var(--teal); margin:0 6px; }
+  .contact a { color:var(--muted); text-decoration:none; }
+
+  .code-card { background:var(--card-bg); border:1px solid rgba(20,184,166,.3); border-radius:8px; overflow:hidden; }
+  .code-bar { display:flex; align-items:center; gap:5px; padding:6px 10px; border-bottom:1px solid rgba(20,184,166,.18); }
+  .tdot { width:6.5px; height:6.5px; border-radius:50%; }
+  .td-r{background:#ef4444}.td-y{background:#f59e0b}.td-g{background:#22c55e}
+  .code-file { margin-left:auto; font-family:'Space Mono',monospace; font-size:7.8px; color:var(--card-punct); }
+  .code-card pre { padding:8px 11px; font-family:'Space Mono',monospace; font-size:8.4px; line-height:1.6; color:var(--card-punct); }
+  .code-card .k{color:var(--card-key)} .code-card .s{color:var(--card-str)} .code-card .kw{color:#c4b5fd}
+
+  .ledger { display:grid; grid-template-columns:repeat(5,1fr);
+    border-top:1px solid var(--teal-soft); border-bottom:1px solid var(--teal-soft);
+    padding:9px 0; margin-bottom:15px; break-inside:avoid; }
+  .cell { padding:0 10px; }
+  .cell + .cell { border-left:1px solid rgba(13,148,136,.2); }
+  .cell .v { font-family:'Space Mono',monospace; font-weight:700; font-size:15.5px; color:var(--teal); line-height:1.1; }
+  .cell .l { margin-top:2px; font-size:8px; text-transform:uppercase; letter-spacing:.7px; color:var(--subtle); line-height:1.3; }
+
+  .eyebrow { font-family:'Space Mono',monospace; font-size:9px; color:var(--teal); letter-spacing:.4px; margin-bottom:2px; }
+  h2.sec { font-size:13.5px; font-weight:700; padding-bottom:3px;
+    border-bottom:1px solid var(--teal-soft); margin-bottom:9px; break-after:avoid; }
+  .section { margin-bottom:15px; }
+
+  .summary { font-size:12.2px; color:var(--muted); line-height:1.55; }
+  .summary strong { color:var(--ink); font-weight:600; }
+
+  .xp { position:relative; padding-left:20px; }
+  .xp::before { content:''; position:absolute; left:4px; top:6px; bottom:5px; width:1.5px; background:rgba(13,148,136,.3); }
+  .role { position:relative; margin-bottom:11px; break-inside:avoid; }
+  .role:last-child { margin-bottom:0; }
+  .role::before { content:''; position:absolute; left:-19.5px; top:4.5px; width:8px; height:8px;
+    border-radius:50%; background:var(--teal); box-shadow:0 0 0 2.5px #fff; }
+  .role.head::before { background:#fff; border:2px solid var(--teal); }
+  .role-line { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .role-title { font-size:12.8px; font-weight:700; }
+  .role-dates { font-family:'Space Mono',monospace; font-size:9px; color:var(--subtle); white-space:nowrap; }
+  .role-co { font-size:11px; font-weight:500; color:var(--teal); margin:0 0 3px; }
+  .role-co em { font-style:normal; color:var(--subtle); font-weight:400; }
+
+  ul.b { list-style:none; }
+  ul.b li { position:relative; padding-left:11px; font-size:11.3px; color:var(--muted); line-height:1.48; margin-bottom:1.5px; }
+  ul.b li::before { content:'▸'; position:absolute; left:0; top:0; color:var(--teal); font-size:8px; line-height:2; }
+  ul.b li strong { color:var(--ink); font-weight:600; }
+
+  .proj { margin-bottom:7px; break-inside:avoid; }
+  .proj-head { display:flex; align-items:baseline; gap:7px; }
+  .proj-name { font-size:11.8px; font-weight:700; }
+  .proj-tag { font-family:'Space Mono',monospace; font-size:8.2px; color:var(--teal);
+    border:1px solid var(--teal-soft); border-radius:3px; padding:.5px 5px; background:var(--teal-faint); }
+  .proj-desc { font-size:11.2px; color:var(--muted); line-height:1.48; margin-top:1px; }
+  .proj-desc strong { color:var(--ink); font-weight:600; }
+
+  .cols { display:grid; grid-template-columns:1.3fr 1fr; gap:22px; }
+  .sk-row { display:flex; align-items:baseline; margin-bottom:4.5px; }
+  .sk-key { font-family:'Space Mono',monospace; font-weight:700; font-size:9px; color:var(--teal); width:62px; flex-shrink:0; }
+  .sk-chips { display:flex; flex-wrap:wrap; gap:3px; }
+  .chip { font-family:'Space Mono',monospace; font-size:8.5px; padding:1px 5px;
+    border:1px solid var(--teal-soft); border-radius:3px; background:var(--teal-faint);
+    color:var(--teal-dark); white-space:nowrap; }
+  .edu { margin-bottom:6px; }
+  .edu-deg { font-size:11.5px; font-weight:700; }
+  .edu-sch { font-size:10.5px; color:var(--muted); }
+  .edu-yr { font-family:'Space Mono',monospace; font-size:9px; color:var(--subtle); }
+
+  .statusbar { display:flex; justify-content:space-between; align-items:center;
+    background:var(--card-bg); color:var(--card-key);
+    font-family:'Space Mono',monospace; font-size:8.5px; padding:7px 44px; }
+  .statusbar .r { color:var(--card-punct); }
+  @media print { .statusbar { position:fixed; bottom:0; left:0; right:0; } .sheet { padding-bottom:52px; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="header">
+    <div>
+      <div class="name">Dhruv Parekh<span class="dot">.</span></div>
+      <div class="headline">Senior Full-Stack Engineer — Angular · Node · Python</div>
+      <div class="contact">
+        <span>dhruvparekh.dp@gmail.com</span><span>+91 72084 50706</span><span>Mumbai</span><br/>
+        <span><a href="https://dhruvparekh.in">dhruvparekh.in</a></span><span><a href="https://linkedin.com/in/dhruvparekhdp">in/dhruvparekhdp</a></span><span><a href="https://github.com/dhruvparekhdp">github/dhruvparekhdp</a></span>
+      </div>
+    </div>
+    <div class="code-card" aria-hidden="true">
+      <div class="code-bar">
+        <span class="tdot td-r"></span><span class="tdot td-y"></span><span class="tdot td-g"></span>
+        <span class="code-file">dhruv.ts</span>
+      </div>
+      <pre><span class="kw">const</span> <span class="s">dhruv</span> = {
+  <span class="k">exp</span>: <span class="s">"8 yrs"</span>, <span class="k">level</span>: <span class="s">"Senior"</span>,
+  <span class="k">core</span>: [<span class="s">"Angular"</span>, <span class="s">"Node"</span>, <span class="s">"Mongo"</span>],
+  <span class="k">also</span>: [<span class="s">"Python"</span>, <span class="s">"AI agents"</span>],
+  <span class="k">built</span>: <span class="s">"NSEIndia.com"</span>,
+  <span class="k">notice</span>: <span class="s">"30 days"</span>,
+};</pre>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <div class="cell"><div class="v">8</div><div class="l">years</div></div>
+    <div class="cell"><div class="v">M+</div><div class="l">daily users, NSEIndia.com</div></div>
+    <div class="cell"><div class="v">15</div><div class="l">people led</div></div>
+    <div class="cell"><div class="v">16</div><div class="l">server locations</div></div>
+    <div class="cell"><div class="v">30d</div><div class="l">notice</div></div>
+  </div>
+
+  <div class="section">
+    <p class="summary">
+      8 years building web platforms. Built the <strong>NSEIndia.com</strong> revamp — India's stock
+      exchange, millions of visitors a day — and led the team of 15 that shipped it. <strong>MEAN stack</strong>
+      by trade, Angular is home. Fintech throughout. Build AI systems in Python on the side.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">// experience</div>
+    <h2 class="sec">Work</h2>
+    <div class="xp">
+
+      <div class="role head">
+        <div class="role-line">
+          <span class="role-title">Senior Software Engineer</span>
+          <span class="role-dates">[ aug 2023 — now · 3 yrs ]</span>
+        </div>
+        <div class="role-co">Volofin <em>· Singapore trade-finance NBFC · Mumbai</em></div>
+        <ul class="b">
+          <li>Building the backoffice for a cross-border trade-finance lender. Angular 15.</li>
+          <li>Shipped <strong>3 modules</strong> end to end — Sales, Credit, Insurance Underwriting.</li>
+          <li>Self-initiated a native <strong>iOS proof-of-concept</strong> — Swift/SwiftUI against live production APIs, multi-tenant account switching, financial dashboards. No prior mobile roadmap existed; wrote and got leadership sign-off on the platform strategy proposal.</li>
+          <li>Work straight with department heads. No one in between.</li>
+          <li><em>Payroll moved from sister company Aston Processors in Apr 2026. Same product throughout.</em></li>
+        </ul>
+      </div>
+
+      <div class="role">
+        <div class="role-line">
+          <span class="role-title">Associate System Analyst</span>
+          <span class="role-dates">[ dec 2021 — aug 2023 ]</span>
+        </div>
+        <div class="role-co">NSEIT <em>· National Stock Exchange of India · Mumbai</em></div>
+        <ul class="b">
+          <li>Architected the <strong>NSEIndia.com</strong> revamp. Live rates, charts, corporate actions, F&amp;O bhavcopy. Node, MongoDB, Cassandra.</li>
+          <li>Led <strong>15 people</strong> — 10 devs, 3 QA, 2 BAs. Worked directly with the CEO and CTO.</li>
+          <li>Real-time trading data into MongoDB. Replica sets. <strong>16 server locations</strong>, main and backup.</li>
+          <li>Compliance with <strong>SEBI, RBI and the Ministry of Finance</strong>.</li>
+        </ul>
+      </div>
+
+      <div class="role">
+        <div class="role-line">
+          <span class="role-title">Software Engineer</span>
+          <span class="role-dates">[ apr 2020 — dec 2021 ]</span>
+        </div>
+        <div class="role-co">Hurix Digital <em>· US K-5 ed-tech · Mumbai</em></div>
+        <ul class="b">
+          <li>Led <strong>5 frontend devs</strong> on Reading Ranger, a US learning app. Angular 8, WebGL animation.</li>
+          <li>Built the reading activities and <strong>4 mini-games</strong>. Owned delivery and the daily client call.</li>
+        </ul>
+      </div>
+
+      <div class="role">
+        <div class="role-line">
+          <span class="role-title">Front End Engineer</span>
+          <span class="role-dates">[ oct 2018 — apr 2020 ]</span>
+        </div>
+        <div class="role-co">Superwise <em>· construction project-management SaaS · Mumbai</em></div>
+        <ul class="b">
+          <li>Moved the product off <strong>.NET MVC onto Angular</strong> + PrimeNG.</li>
+          <li>Angular <strong>5 → 7 → 8</strong>, while shipping billing features on the same codebase.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="eyebrow">// side projects</div>
+    <h2 class="sec">Things I've Built</h2>
+
+    <div class="proj">
+      <div class="proj-head"><span class="proj-name">Jarvis</span><span class="proj-tag">Python · FastAPI</span></div>
+      <div class="proj-desc">
+        An AI assistant that runs on my own machines. Give it a goal — it splits the goal into tasks and
+        runs them. Asks before anything destructive. Survives a crash and picks up where it stopped.
+        Machines join by dialling out, so no open ports. <strong>176 tests.</strong>
+      </div>
+    </div>
+
+    <div class="proj">
+      <div class="proj-head"><span class="proj-name">Document Sorter</span><span class="proj-tag">Node.js · offline OCR</span></div>
+      <div class="proj-desc">
+        Drop in a pile of invoices and POs. It works out what each one is, pulls the company, date, amount
+        and number, then groups the related ones. Scanned files go through <strong>OCR that runs fully
+        offline</strong> — nothing leaves the machine.
+      </div>
+    </div>
+
+    <div class="proj">
+      <div class="proj-head"><span class="proj-name">Saloni Collection</span><span class="proj-tag">Supabase · Postgres</span></div>
+      <div class="proj-desc">
+        A full e-commerce platform — catalog, cart, checkout, order management, admin panel. UPI and
+        cash on delivery. Per-role access rules in the database. Built and feature-complete; soft
+        launch pending inventory.
+      </div>
+    </div>
+
+    <div class="proj">
+      <div class="proj-head"><span class="proj-name">Crypto Signal Engine</span><span class="proj-tag">Python · ML · Docker</span></div>
+      <div class="proj-desc">
+        Watches crypto markets live off Binance and CoinDCX. Runs <strong>5 signal checks</strong> — RSI
+        divergence, volume spikes, Bollinger squeeze, news sentiment, and confluence when several agree.
+        Every signal goes into a <strong>paper-trading simulator</strong> that tracks whether it would have
+        won or lost, and an <strong>ML model retrains on that history every 6 hours</strong>. No real money —
+        it's a research system.
+      </div>
+    </div>
+  </div>
+
+  <div class="cols section">
+    <div>
+      <div class="eyebrow">// skills</div>
+      <h2 class="sec">Stack</h2>
+      <div class="sk-row"><span class="sk-key">front:</span><span class="sk-chips"><span class="chip">Angular 4→15</span><span class="chip">TypeScript</span><span class="chip">RxJS</span><span class="chip">NgRx</span><span class="chip">SCSS</span><span class="chip">React</span></span></div>
+      <div class="sk-row"><span class="sk-key">mobile:</span><span class="sk-chips"><span class="chip">Swift</span><span class="chip">SwiftUI</span></span></div>
+      <div class="sk-row"><span class="sk-key">back:</span><span class="sk-chips"><span class="chip">Node.js</span><span class="chip">Express</span><span class="chip">NestJS</span><span class="chip">Python</span><span class="chip">FastAPI</span><span class="chip">REST</span></span></div>
+      <div class="sk-row"><span class="sk-key">data:</span><span class="sk-chips"><span class="chip">MongoDB</span><span class="chip">Cassandra</span><span class="chip">PostgreSQL</span><span class="chip">MySQL</span><span class="chip">Redis</span></span></div>
+      <div class="sk-row"><span class="sk-key">ai:</span><span class="sk-chips"><span class="chip">AI Agents</span><span class="chip">LangChain</span><span class="chip">RAG</span><span class="chip">OpenAI</span><span class="chip">Anthropic</span><span class="chip">Embeddings</span></span></div>
+      <div class="sk-row"><span class="sk-key">infra:</span><span class="sk-chips"><span class="chip">AWS</span><span class="chip">Docker</span><span class="chip">CI/CD</span><span class="chip">Nginx</span><span class="chip">Linux</span></span></div>
+      <div class="sk-row"><span class="sk-key">other:</span><span class="sk-chips"><span class="chip">System Design</span><span class="chip">Team Lead</span><span class="chip">Agile</span></span></div>
+    </div>
+    <div>
+      <div class="eyebrow">// education</div>
+      <h2 class="sec">Education</h2>
+      <div class="edu">
+        <div class="edu-deg">Master in Management Studies</div>
+        <div class="edu-sch">RPIMS College, University of Mumbai</div>
+        <div class="edu-yr">[ 2022 — 2024 ]</div>
+      </div>
+      <div class="edu">
+        <div class="edu-deg">B.Sc. Computer Science</div>
+        <div class="edu-sch">Shankar Narayan College, University of Mumbai</div>
+        <div class="edu-yr">[ 2014 — 2017 ]</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="statusbar">
+  <span>dhruv@mumbai:~$ open dhruvparekh.in</span>
+  <span class="r">30-day notice · dhruvparekh.dp@gmail.com · +91 72084 50706</span>
+</div>
+
+</body>
+</html>
