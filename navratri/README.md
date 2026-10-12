@@ -20,7 +20,7 @@ the server and kept in Blobs. To change the password without a code change, set 
 Only exceptions are stored. From 5 PM IST on each office day everyone who is not marked ✗ or absent
 automatically counts as ✓ (+1 for them and their team).
 
-**Team** = Σ members' ✓ + Snacks + Extra bonus − Penalties. Best possible 60.
+**Team** = Σ members' ✓ + Snacks + Extra bonus − Refused punishments − Penalties. Best possible 60.
 
 | | Points |
 | --- | --- |
@@ -28,6 +28,7 @@ automatically counts as ✓ (+1 for them and their team).
 | Not in colour ✗ | 0 (no negative marking) |
 | Snacks | 0–10, host team on its day |
 | Extra bonus | up to 8 per team for the whole festival, reason required |
+| Refused punishment | −1 to −5 for a person marked ✗ who won't take the office forfeit (person and team) |
 | Penalty | −1 to −15, reason required |
 
 ## Colour Police · daily attendance

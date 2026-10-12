@@ -30,6 +30,9 @@ scoreboard that lives in this repo. It is LIVE at https://dhruvparekh.in/navratr
 - Snacks: 0–10, only for that day's host team, once per day.
 - Extra bonus: 1–8, reason required, capped at 8 per team for the whole festival.
 - Penalty ("task not done"): −1 to −15, reason required.
+- Refused punishment (`refused`): −1 to −5 per person, only for someone marked ✗ that day; counts
+  for the person and the team; removing the ✗ removes it. Scores are shown out of the festival max
+  (team 60, person 6).
 - Two leaderboards: team total, and individual dress points out of 6.
 - Colour Police = daily attendance: ✓ by default (+1), scorekeeper marks only ✗ didn't (0, NO
   negative marking) / · absent (0). The forfeit wheel is hidden (`SHOW_FORFEIT_WHEEL = false`,

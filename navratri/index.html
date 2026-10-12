@@ -232,7 +232,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
 <main class="wrap">
 
-  <div id="offline" class="banner hidden">Live scores couldn’t be loaded right now — showing the last scores we had. Retrying automatically…</div>
+  <div id="offline" class="banner hidden">Live scores couldn’t be loaded right now — showing the last scores we had. Retrying automatically…<small id="offline-why"></small></div>
 
   <!-- TODAY -->
   <section class="panel" data-panel="today">
@@ -271,7 +271,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
     </div>
     <div class="card" id="lb-team">
       <div id="board"></div>
-      <p class="muted" style="margin-top:10px">Team score = dress code + snacks + extra bonus − penalties (if any). Tap ⓘ (or the team) to see its members and breakdown. <span id="updated"></span></p>
+      <p class="muted" style="margin-top:10px">Scores are out of the whole festival: max 60 per team (42 dress code + 10 snacks + 8 extra bonus). Tap ⓘ (or the team) to see its members and breakdown. <span id="updated"></span></p>
     </div>
     <div class="card hidden" id="lb-person">
       <p class="muted" style="margin-bottom:6px">+1 for every office day you wore the colour — 6 to collect. Everyone is ✓ by default from 5 PM unless the Colour Police mark them. Dots are the 6 days: filled = wore it, ✗ = didn’t, · = absent, empty = not yet.</p>
@@ -316,17 +316,19 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
           <tr><td>✓ Wore the day’s colour — automatic for everyone from 5 PM, unless marked ✗ or absent</td><td>+1</td></tr>
           <tr><td>✗ In office but not in the colour (Colour Police)</td><td>0</td></tr>
           <tr><td>· Absent / on leave</td><td>0</td></tr>
+          <tr><td>⛔ Marked ✗ and refused the punishment — minus for you <i>and</i> your team (judges decide)</td><td>−1 to −5</td></tr>
         </table>
-        <p class="formula"><b>Individual = number of days ✓</b><br>6 scoring days → 0 to 6. No minus points. Wore all 6 = 🌟</p>
+        <p class="formula"><b>Individual = number of days ✓ − refused punishments</b><br>6 scoring days → up to 6. Wore all 6 = 🌟</p>
 
         <h3 style="margin-top:16px">👥 Team score</h3>
         <table>
           <tr><td>👗 Dress code — sum of the 7 members’ ✓ (7 × 6 days)</td><td>up to +42</td></tr>
           <tr><td>🍿 Snacks — host team only, on its day, judged 0–10</td><td>up to +10</td></tr>
           <tr><td>🌟 Extra bonus — for something extraordinary, reason shown publicly (whole festival)</td><td>up to +8</td></tr>
+          <tr><td>⛔ Members who refused their punishment</td><td>−1 to −5 each</td></tr>
           <tr><td>⛔ Task not done — e.g. no snacks by 5 PM (−10), other misses; reason shown publicly</td><td>−1 to −15</td></tr>
         </table>
-        <p class="formula"><b>Team = Σ members’ ✓ + Snacks + Extra bonus − Penalties</b><br>Best possible: 42 + 10 + 8 = <b>60</b>. Colour Police ✗ = no point, never minus.</p>
+        <p class="formula"><b>Team = Σ members’ ✓ + Snacks + Extra bonus − Refused punishments − Penalties</b><br>Best possible: 42 + 10 + 8 = <b>60</b>. A ✗ alone is just no point; minus only if the punishment is refused.</p>
         <p class="muted" style="margin-top:8px">Ties share the same rank. Scoring days: Mon 12, Tue 13, Wed 14, Thu 15, Fri 16, Mon 19 Oct. Sun 11, Sat 17, Sun 18 = no points.</p>
       </div>
       <div class="grid">
@@ -461,7 +463,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 18;
+const APP_VERSION = 19;
 // The forfeit wheel is run offline in the office for now. Flip to true to bring it back;
 // the server side (spin / unspin) and any saved results are untouched.
 const SHOW_FORFEIT_WHEEL = false; // must match netlify/lib/navratri-core.mjs
@@ -477,6 +479,8 @@ const DAYS = [
   { n: 9, date: '2026-10-19', wd: 'Monday',    colour: 'Traditional Wear (Any Color)', hex: '#a4133c', ink: '#fff', host: 6, goddess: 'Maa Siddhidatri',   blessing: 'wisdom and fulfilment' },
 ];
 const OFFICE_DAYS = [2, 3, 4, 5, 6, 9];
+// Whole-festival maximums: 7 people × 6 days + snacks 10 + extra bonus 8
+const TEAM_MAX = 60, PERSON_MAX = 6;
 // Snack colour theme for each hosting day — the host team arranges food in this colour.
 const FOOD = {
   2: { colour: 'White',  hex: '#ffffff' },
@@ -509,7 +513,7 @@ const TEAMS = {
 // Each team gets a festive identity colour (independent of the day colours)
 const TEAM_COLOURS = { 1: '#e8590c', 2: '#d6336c', 3: '#1c7ed6', 4: '#f59f00', 5: '#2b8a3e', 6: '#0c8599' };
 const CAT_LABEL = {
-  colour: 'dress code', not_in_colour: 'not in colour', snack: 'snacks', extra_bonus: 'extra bonus', penalty: 'task not done',
+  colour: 'dress code', refused: 'refused punishment', not_in_colour: 'not in colour', snack: 'snacks', extra_bonus: 'extra bonus', penalty: 'task not done',
   // earlier categories, kept so any old entries still read well
   full_team: 'full-team bonus', extra_effort: 'extra colour effort', creativity: 'snack creativity',
   traditional: 'traditional wear', bingo: 'Bingo winner', other: 'judges’ special',
@@ -577,10 +581,11 @@ $('open-admin').onclick = () => { showTab('admin'); scrollTo({ top: 0 }); };
 let data = { entries: [], defaulters: [], absentees: [], audit: [], updated: null, ...(store.get('nv_cache') || {}) };
 let leaderBefore = null;
 
+let failures = 0, retryTimer = null;
 async function load() {
   try {
     const r = await fetch(API, { cache: 'no-store' });
-    if (!r.ok) throw new Error(r.status);
+    if (!r.ok) throw new Error('error ' + r.status);
     const fresh = await r.json();
     // the site was updated while this tab was open — reload to get the new page
     if (fresh.version !== APP_VERSION) {
@@ -588,9 +593,17 @@ async function load() {
     } else sessionStorage.removeItem('nv_reloaded');
     data = fresh;
     store.set('nv_cache', data);
+    failures = 0;
     $('offline').classList.add('hidden');
-  } catch {
-    $('offline').classList.remove('hidden');
+  } catch (err) {
+    // a single blip (e.g. while a new version deploys) retries quietly; only repeated failures show the banner
+    failures++;
+    if (failures >= 2) {
+      $('offline').classList.remove('hidden');
+      $('offline-why').textContent = ` (${err.message || 'network'})`;
+    }
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(load, failures < 4 ? 5000 : 30000);
   }
   renderAll();
 }
@@ -685,7 +698,6 @@ const openTeams = new Set();
 function renderBoard() {
   const rows = totals();
   const tally = dressTally();
-  const max = Math.max(1, ...rows.map(r => Math.abs(r.total)));
   const anyPoints = data.entries.some(e => !e.deleted);
   let lastScore = null, lastRank = 0;
   const ranked = rows.map((r, i) => { const rank = r.total === lastScore ? lastRank : i + 1; lastScore = r.total; lastRank = rank; return { ...r, rank }; });
@@ -696,7 +708,7 @@ function renderBoard() {
       <div>
         <div class="lb-name"><span class="swatch" style="background:${TEAM_COLOURS[r.team]}"></span>Team ${r.team}
           <button class="info" data-info="${r.team}" aria-expanded="${openTeams.has(r.team)}" aria-label="Show Team ${r.team} members" title="Team members">i</button></div>
-        <div class="bar"><i style="width:${Math.max(0, r.total) / max * 100}%;background:${TEAM_COLOURS[r.team]}"></i></div>
+        <div class="bar"><i style="width:${Math.min(100, Math.max(0, r.total) / TEAM_MAX * 100)}%;background:${TEAM_COLOURS[r.team]}"></i></div>
         <div class="details ${openTeams.has(r.team) ? '' : 'hidden'}">
           <div>${Object.entries(r.by).map(([c, p]) => `${esc(CAT_LABEL[c] || c)}: <b>${p > 0 ? '+' : ''}${p}</b>`).join(' · ') || 'No points yet'}</div>
           <ul class="members">${TEAMS[r.team].map(m => {
@@ -705,7 +717,7 @@ function renderBoard() {
           }).join('')}</ul>
         </div>
       </div>
-      <div class="score">${r.total}<small>${r.minus ? `<span class="pts plus">+${r.plus}</span> <span class="pts minus">${r.minus}</span>` : 'pts'}</small></div>
+      <div class="score">${r.total}<small>/ ${TEAM_MAX}${r.minus ? ` · <span class="pts minus">${r.minus}</span>` : ''}</small></div>
     </div>`).join('');
 
   $('mini-board').innerHTML = anyPoints
@@ -744,6 +756,7 @@ function dressTally() {
       else if (st[m] === 'absent') t[m].days[n] = 'absent';
     }
   }
+  for (const e of data.entries) if (!e.deleted && e.category === 'refused' && t[e.name]) { t[e.name].pts += e.points; t[e.name].refused = (t[e.name].refused || 0) + e.points; }
   return t;
 }
 function dotsHtml(days) {
@@ -767,7 +780,7 @@ function renderPeople() {
       <div class="rank">${anyPts && r.pts > 0 && r.rank <= 3 ? medals[r.rank - 1] : r.rank}</div>
       <div><b>${esc(r.name)}</b>${r.wore === 6 ? ' 🌟' : ''}<br><small class="muted"><span class="swatch" style="background:${TEAM_COLOURS[r.team]};width:10px;height:10px;vertical-align:middle"></span> Team ${r.team}</small></div>
       ${dotsHtml(r.days)}
-      <div class="score" style="font-size:1.15rem">${r.pts}<small>/ 6</small></div>
+      <div class="score" style="font-size:1.15rem${r.pts < 0 ? ';color:var(--bad)' : ''}">${r.pts}<small>/ ${PERSON_MAX}</small></div>
     </div>`).join('') || '<p class="muted">No one by that name.</p>';
 }
 $('lb-filter').addEventListener('input', renderPeople);
@@ -802,8 +815,9 @@ function groupFeed(entries) {
   const out = [];
   for (const e of entries) {
     const prev = out[out.length - 1];
-    if (e.name && !e.deleted && prev && prev.group && prev.day === e.day && prev.at === e.at) { prev.names.push(e.name); prev.points += e.points; continue; }
-    out.push(e.name && !e.deleted ? { ...e, group: true, names: [e.name] } : e);
+    const dress = e.category === 'colour' && e.name && !e.deleted;
+    if (dress && prev && prev.group && prev.day === e.day && prev.at === e.at) { prev.names.push(e.name); prev.points += e.points; continue; }
+    out.push(dress ? { ...e, group: true, names: [e.name] } : e);
   }
   return out;
 }
@@ -1072,11 +1086,11 @@ function renderDeskEntries() {
   const d = adDay();
   if (!d) return;
   const list = data.entries.filter(e => e.day === d.n && !e.deleted);
-  const people = list.filter(e => e.name), other = list.filter(e => !e.name);
+  const people = list.filter(e => e.category === 'colour' && e.name), other = list.filter(e => !(e.category === 'colour' && e.name));
   const peopleHtml = people.length ? `<div class="tline" style="display:block"><b>👗 Dress code (+1 each)</b><div class="chips" style="margin-top:6px">${people.map(e =>
     `<span class="pill">${esc(shortName(e.name))} <button class="btn alt small" style="padding:0 6px" data-remove="${esc(e.id)}" aria-label="Remove ${esc(e.name)}">✕</button></span>`).join('')}</div></div>` : '';
   $('ad-entries').innerHTML = (peopleHtml + other.map(e => `
-      <div class="tline"><span><b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category] || e.category)} <b class="pts ${e.points >= 0 ? 'plus' : 'minus'}">${e.points > 0 ? '+' : ''}${e.points}</b>${e.note ? ` · <i>${esc(e.note)}</i>` : ''}<br><small class="muted">${fmtTime(e.at)}</small></span>
+      <div class="tline"><span><b>${e.name ? esc(e.name) + ' · ' : ''}Team ${e.team}</b> · ${esc(CAT_LABEL[e.category] || e.category)} <b class="pts ${e.points >= 0 ? 'plus' : 'minus'}">${e.points > 0 ? '+' : ''}${e.points}</b>${e.note ? ` · <i>${esc(e.note)}</i>` : ''}<br><small class="muted">${fmtTime(e.at)}</small></span>
       <button class="btn alt small" data-remove="${esc(e.id)}">Remove</button></div>`).join('')) || '<p class="muted">No entries for this day yet.</p>';
   renderAdPolice();
   renderBonusLeft();
@@ -1156,10 +1170,16 @@ const PUNISHMENTS = [
   'Give a 20-second speech thanking your chai/coffee ☕',
   'Act like a celebrity being interviewed about office life 🎥',
 ];
+function refusalOf(x) {
+  return data.entries.find(e => !e.deleted && e.category === 'refused' && e.day === x.day && e.name === x.name);
+}
 function policeItem(x, admin) {
-  const action = !SHOW_FORFEIT_WHEEL ? '<span class="muted">✗ no point</span>' : x.punishment
+  const r = refusalOf(x);
+  const refusal = r ? ` <span class="pts minus" title="Refused punishment">⛔ ${r.points}</span>`
+    : admin ? ` <button class="btn alt small" data-refuse="${esc(x.id)}" title="Minus points for them and their team">⛔ Refused punishment</button>` : '';
+  const action = (!SHOW_FORFEIT_WHEEL ? '<span class="muted">✗ no point</span>' : x.punishment
     ? `<span class="forfeit">🎡 ${esc(x.punishment)}</span>${admin ? ` <button class="btn alt small" data-unspin="${esc(x.id)}" title="Undo this spin so it can be spun again">↩ Undo</button>` : ''}`
-    : admin ? `<button class="btn small" data-spin="${esc(x.id)}">🎡 Spin</button>` : '<span class="muted">wheel pending… 🎡</span>';
+    : admin ? `<button class="btn small" data-spin="${esc(x.id)}">🎡 Spin</button>` : '<span class="muted">wheel pending… 🎡</span>') + refusal;
   return `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
     <span style="text-align:right">${action}${admin ? ` <button class="btn alt small" data-unpolice="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">✕</button>` : ''}</span></li>`;
 }
@@ -1192,7 +1212,13 @@ function renderPolice() {
       return `<span class="mark ${s}">${s === 'wore' ? '✓' : s === 'missed' ? '✗' : '·'} ${esc(shortName(m))}</span>`;
     }).join('')}</div></div>`).join('');
   const forfeits = (data.defaulters || []).filter(x => x.day === d.n);
-  if (!SHOW_FORFEIT_WHEEL) { $('police').innerHTML = ''; return; }
+  if (!SHOW_FORFEIT_WHEEL) {
+    const refused = forfeits.filter(refusalOf);
+    $('police').innerHTML = refused.length
+      ? `<li style="border:0;padding-bottom:0"><b>⛔ Refused the punishment:</b></li>` + refused.map(x => `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span><span class="pts minus">${refusalOf(x).points}</span></li>`).join('')
+      : '';
+    return;
+  }
   $('police').innerHTML = forfeits.length
     ? `<li style="border:0;padding-bottom:0"><b>🎡 The wheel has spoken:</b></li>` + forfeits.map(x => policeItem(x, false)).join('')
     : '<li class="muted">Everyone present was in colour — love to see it! 🌈</li>';
@@ -1204,7 +1230,7 @@ function renderAdPolice() {
   const away = (data.absentees || []).filter(x => x.day === d.n);
   if (!SHOW_FORFEIT_WHEEL) {
     $('ad-wheel').querySelector('h3').textContent = '✗ Not in colour · Absent';
-    $('ad-wheel').querySelector('p').textContent = 'Saved exceptions for this day (no point). Marked someone by mistake? Press ✕ (with a reason — logged publicly); they go back to ✓.';
+    $('ad-wheel').querySelector('p').textContent = 'Saved exceptions for this day (no point). Didn’t take their punishment? Press ⛔ to take 1–5 points from them and their team. Marked someone by mistake? Press ✕ (with a reason — logged publicly); they go back to ✓.';
   }
   const awayHtml = away.map(x => `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
     <span><span class="muted">· absent</span> <button class="btn alt small" data-unabsent="${esc(x.id)}" aria-label="Remove ${esc(x.name)} from absent">✕</button></span></li>`).join('');
@@ -1217,6 +1243,20 @@ $('ad-police').addEventListener('click', async e => {
     if (!reason || reason.trim().length < 3) return;
     try { await api({ action: 'unspin', id: un.dataset.unspin, reason: reason.trim() }); await load(); renderDeskDay(); }
     catch (err) { alert(err.message); }
+    return;
+  }
+  const rf = e.target.closest('[data-refuse]');
+  if (rf) {
+    const x = (data.defaulters || []).find(d => d.id === rf.dataset.refuse);
+    if (!x) return;
+    const n = prompt(`${x.name} refused the punishment.\nHow many points to take away from them and Team ${x.team}? (1 to 5)`, '1');
+    if (n === null) return;
+    const pts = parseInt(n, 10);
+    if (!(pts >= 1 && pts <= 5)) { alert('Enter a number from 1 to 5.'); return; }
+    try {
+      await api({ action: 'add', awards: [{ day: x.day, team: x.team, category: 'refused', points: -pts, name: x.name, note: 'Didn’t take the punishment' }] });
+      await load(); renderDeskDay();
+    } catch (err) { alert(err.message); }
     return;
   }
   const ua = e.target.closest('[data-unabsent]');

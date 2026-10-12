@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 18;
+export const APP_VERSION = 19;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
@@ -65,6 +65,8 @@ export const RULES = {
   snack:       { label: 'Snacks',        min: 0,   max: 10, once: true, hostOnly: true },
   extra_bonus: { label: 'Extra bonus',   min: 1,   max: EXTRA_BONUS_CAP, noteRequired: true },
   penalty:     { label: 'Task not done', min: -15, max: -1, noteRequired: true },
+  // A person marked ✗ who refuses the office forfeit: minus for them and their team.
+  refused:     { label: 'Refused punishment', min: -5, max: -1, perPerson: true },
 };
 // Earlier categories stay readable so any entries made before the change still show.
 const LEGACY_LABELS = {
@@ -209,11 +211,14 @@ export function validateAward(state, a, today) {
   if (note === null) return 'Note must be text';
   if (rule.noteRequired && note.length < 3) return `${rule.label} needs a short reason`;
   const live = state.entries.filter(e => !e.deleted);
-  if (rule.perPerson) {
+  const policed = (state.defaulters || []).some(d => !d.deleted && d.day === day && d.name === a.name);
+  if (category === 'colour') {
     if (live.some(e => e.day === day && e.category === category && e.name === a.name)) return `${a.name} already has the Day ${day} dress-code point`;
-    if ((state.defaulters || []).some(d => !d.deleted && d.day === day && d.name === a.name)) {
-      return `${a.name} is on the Day ${day} Colour Police list — remove them there first`;
-    }
+    if (policed) return `${a.name} is on the Day ${day} Colour Police list — remove them there first`;
+  }
+  if (category === 'refused') {
+    if (!policed) return `${a.name} isn’t marked ✗ on Day ${day} — only people not in colour can refuse a punishment`;
+    if (live.some(e => e.day === day && e.category === category && e.name === a.name)) return `${a.name} already has a refused-punishment mark for Day ${day} — remove it first to change it`;
   }
   if (rule.once && live.some(e => e.day === day && e.team === team && e.category === category)) {
     return `Team ${team} already has “${rule.label}” for Day ${day}. Remove the old entry first.`;
@@ -297,9 +302,9 @@ export function createHandler({ store, env, now = () => Date.now() }) {
           s.entries.push(e); added.push(e);
           }
         // one audit line per batch keeps the log readable for 42-person roll-calls
-        const people = added.filter(e => e.name);
+        const people = added.filter(e => e.category === 'colour');
         if (people.length) pushAudit(s, t, 'add', `Day ${people[0].day} · Dress code +1 each: ${people.map(e => e.name).join(', ')}`);
-        for (const e of added.filter(e => !e.name)) pushAudit(s, t, 'add', `Day ${e.day} · Team ${e.team} · ${labelOf(e.category)} ${e.points > 0 ? '+' : ''}${e.points}${e.note ? ` (${e.note})` : ''}`);
+        for (const e of added.filter(e => e.category !== 'colour')) pushAudit(s, t, 'add', `Day ${e.day} · Team ${e.team}${e.name ? ` · ${e.name}` : ''} · ${labelOf(e.category)} ${e.points > 0 ? '+' : ''}${e.points}${e.note ? ` (${e.note})` : ''}`);
         s.updated = new Date(t).toISOString();
         return { added };
       });
@@ -412,6 +417,13 @@ export function createHandler({ store, env, now = () => Date.now() }) {
         d.deleted = { at: new Date(t).toISOString(), reason };
         s.updated = d.deleted.at;
         pushAudit(s, t, 'remove', `Removed ${d.name} from Day ${d.day} colour defaulters — ${reason}`);
+        // a refused-punishment minus only exists because of the ✗
+        for (const e of s.entries) {
+          if (!e.deleted && e.category === 'refused' && e.day === d.day && e.name === d.name) {
+            e.deleted = { at: d.deleted.at, reason: 'The ✗ was removed' };
+            pushAudit(s, t, 'remove', `Removed Day ${e.day} · ${e.name} · Refused punishment ${e.points} — the ✗ was removed`);
+          }
+        }
         return { ok: true };
       });
       if (out.error) return json(422, { error: out.error });

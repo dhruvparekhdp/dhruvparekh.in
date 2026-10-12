@@ -129,3 +129,22 @@ test('absent marks: exclusive with ✗ and ✓, removable with a reason', { skip
   assert.equal((await call({ action: 'absent_remove', id, reason: 'she came in late' }, { token })).status, 200);
   assert.deepEqual((await get()).absentees.map(a => a.name), ['Varsha Bagul']);
 });
+
+test('refused punishment: only for ✗ people, minus for person and team, removed with the ✗', { skip: needsPassword }, async () => {
+  const { call, get, login } = setup();
+  const token = await login();
+  const refuse = (name, team, points = -2) => call({ action: 'add', awards: [{ day: 3, team, category: 'refused', points, name }] }, { token });
+  assert.match((await refuse('Jatin Chugh', 2)).body.error, /isn’t marked ✗/);
+  assert.equal((await call({ action: 'defaulters_add', day: 3, names: ['Jatin Chugh'] }, { token })).status, 200);
+  assert.match((await refuse('Jatin Chugh', 2, -6)).body.error, /-5 to -1/);
+  assert.match((await refuse('Jatin Chugh', 2, 1)).body.error, /-5 to -1/);
+  assert.equal((await refuse('Jatin Chugh', 2)).status, 200);
+  assert.match((await refuse('Jatin Chugh', 2)).body.error, /already has/);
+  let g = await get();
+  const e = g.entries.find(x => x.category === 'refused');
+  assert.equal(e.name, 'Jatin Chugh'); assert.equal(e.team, 2); assert.equal(e.points, -2);
+  const id = g.defaulters[0].id;
+  assert.equal((await call({ action: 'defaulter_remove', id, reason: 'was in colour' }, { token })).status, 200);
+  g = await get();
+  assert.ok(g.entries.find(x => x.category === 'refused').deleted, 'refusal removed with the ✗');
+});
