@@ -116,6 +116,7 @@ h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .star-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; font-size: .88rem; }
 .dots { display: flex; gap: 3px; flex: none; }
 .dots i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #e2d5c3; display: grid; place-items: center; font-size: 8px; font-style: normal; color: var(--bad); }
+.food { margin-top: 6px; font-size: .85rem; }
 .formula { background: #f6efe6; border-radius: 12px; padding: 10px 12px; margin-top: 8px; font-size: .9rem; }
 .struck { text-decoration: line-through; opacity: .55; }
 
@@ -448,7 +449,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 8; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 9; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -458,9 +459,19 @@ const DAYS = [
   { n: 6, date: '2026-10-16', wd: 'Friday',    colour: 'Green',         hex: '#2e9e4f', ink: '#fff', host: 5, goddess: 'Maa Katyayani',     blessing: 'victory over obstacles' },
   { n: 7, date: '2026-10-17', wd: 'Saturday',  colour: 'Grey',          hex: '#7a7f8c', ink: '#fff', host: 0, goddess: 'Maa Kalaratri',     blessing: 'fearlessness' },
   { n: 8, date: '2026-10-18', wd: 'Sunday',    colour: 'Purple',        hex: '#7b2cbf', ink: '#fff', host: 0, goddess: 'Maa Mahagauri',     blessing: 'peace and purity' },
-  { n: 9, date: '2026-10-19', wd: 'Monday',    colour: 'Traditional Wear', hex: '#a4133c', ink: '#fff', host: 6, goddess: 'Maa Siddhidatri',   blessing: 'wisdom and fulfilment' },
+  { n: 9, date: '2026-10-19', wd: 'Monday',    colour: 'Traditional Wear (Any Color)', hex: '#a4133c', ink: '#fff', host: 6, goddess: 'Maa Siddhidatri',   blessing: 'wisdom and fulfilment' },
 ];
 const OFFICE_DAYS = [2, 3, 4, 5, 6, 9];
+// Snack colour theme for each hosting day — the host team arranges food in this colour.
+const FOOD = {
+  2: { colour: 'White',  hex: '#ffffff', ideas: 'idli, white dhokla, rasgulla, coconut barfi, curd rice' },
+  3: { colour: 'Red',    hex: '#e02424', ideas: 'beetroot tikki, red sauce pasta, strawberry, watermelon, red velvet' },
+  4: { colour: 'Royal Blue', hex: '#2557d6', ideas: 'blueberry muffins, blueberry cheesecake, blue lagoon mocktail' },
+  5: { colour: 'Yellow', hex: '#f5c518', ideas: 'khaman dhokla, poha, banana chips, besan ladoo, mango lassi' },
+  6: { colour: 'Green',  hex: '#2e9e4f', ideas: 'hara bhara kabab, green chutney sandwich, pista barfi, mint mojito' },
+  9: { colour: 'Orange', hex: '#f26b21', ideas: 'jalebi, gajar halwa, motichoor ladoo, kesar peda, orange juice',
+       note: 'Friday was green, so let’s switch it up — orange snacks for the finale! 🧡' },
+};
 const RITUALS = {
   1: 'Navratri begins! Wear orange this weekend and share a photo in the group.',
   2: 'White is for peace and purity. Team 1 opens the snack season at 5 PM — come hungry!',
@@ -599,7 +610,9 @@ function renderToday() {
   else head = `Day ${d.n} · ${d.wd}`;
   if (!cur.after && d.host) {
     const members = TEAMS[d.host].map(firstName).join(', ');
-    hostHtml = `<div class="host">🍿 <b>Team ${d.host}</b> is hosting snacks today at 5 PM<br><small>${esc(members)}</small></div>`;
+    const f = FOOD[d.n];
+    hostHtml = `<div class="host">🍿 <b>Team ${d.host}</b> is hosting <b>${esc(f.colour.toLowerCase())} snacks</b> today at 5 PM<br><small>${esc(members)}</small>
+      <br><small>Ideas: ${esc(f.ideas)}…</small>${f.note ? `<br><small>${esc(f.note)}</small>` : ''}</div>`;
   } else if (!cur.after) {
     hostHtml = `<div class="host">🏖️ No office snacks today — wear ${esc(d.colour.toLowerCase())} anyway and share a picture!</div>`;
   }
@@ -753,7 +766,7 @@ function renderTeams(highlight) {
     const hd = hostDay(+t);
     return `<div class="card team" style="--tc:${TEAM_COLOURS[t]}">
       <h3>Team ${t}</h3>
-      <span class="pill"><span class="swatch" style="background:${hd.hex}"></span>Snacks: ${hd.wd} ${+hd.date.slice(8)} Oct · ${hd.colour}</span>
+      <span class="pill"><span class="swatch" style="background:${hd.hex}"></span>Snacks: ${hd.wd} ${+hd.date.slice(8)} Oct · ${FOOD[hd.n].colour} food</span>
       <ul>${members.map(m => `<li class="${m === highlight ? 'me' : ''}">${esc(m)}</li>`).join('')}</ul>
     </div>`;
   }).join('');
@@ -772,7 +785,7 @@ function search(q) {
   const mates = TEAMS[t].filter(m => m !== name).map(firstName).join(', ');
   $('found').innerHTML = `<div class="card" style="border-left:6px solid ${TEAM_COLOURS[t]}">
     <h3>🎉 ${esc(firstName(name))}, you’re in Team ${t}!</h3>
-    <p>Your team hosts snacks on <b>${hd.wd}, ${+hd.date.slice(8)} Oct</b> — colour <b>${hd.colour}</b> <span class="swatch" style="background:${hd.hex};vertical-align:middle"></span></p>
+    <p>Your team hosts snacks on <b>${hd.wd}, ${+hd.date.slice(8)} Oct</b> — <b>${FOOD[hd.n].colour} food</b> <span class="swatch" style="background:${FOOD[hd.n].hex};vertical-align:middle"></span></p>
     <p>👗 Your points: <b>${dressTally()[name].pts}</b> <small class="muted">(+${dressTally()[name].wore} wore · −${dressTally()[name].missed} missed)</small> ${dotsHtml(dressTally()[name].days)}</p>
     <p class="muted">Your teammates: ${esc(mates)}</p></div>`;
   renderTeams(name);
@@ -789,7 +802,8 @@ function renderSchedule() {
   $('sched').innerHTML = DAYS.map(d => `
     <div class="sday ${d.date === t ? 'now' : d.date < t ? 'past' : ''}">
       <div class="dot" style="background:${d.hex};color:${d.ink}">Day ${d.n}</div>
-      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 9 ? ' · 👗 Traditional Day · 🪔 Aarti & Prasad · 🎯 Bingo & fun activities' : ''}</small></div>
+      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 9 ? ' · 👗 Traditional Day · 🪔 Aarti & Prasad · 🎯 Bingo & fun activities' : ''}</small>
+        ${FOOD[d.n] ? `<div class="food"><span class="swatch" style="background:${FOOD[d.n].hex};width:12px;height:12px;vertical-align:middle"></span> <b>${esc(FOOD[d.n].colour)} snacks</b> · <span class="muted">${esc(FOOD[d.n].ideas)}…</span>${FOOD[d.n].note ? `<br><span class="muted">${esc(FOOD[d.n].note)}</span>` : ''}</div>` : ''}</div>
       <div>${d.host ? `<span class="pill">🍿 Team ${d.host}</span>` : '<span class="pill">🏖️ Off</span>'}</div>
     </div>`).join('');
 }
