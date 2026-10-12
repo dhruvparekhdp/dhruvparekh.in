@@ -291,7 +291,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
   <section class="panel hidden" data-panel="schedule">
     <h2>9 Days · 9 Colours</h2>
     <div class="sched" id="sched"></div>
-    <p class="muted" style="margin-top:12px">🍿 Snack time is 5 PM every office day. Food ideas are only examples — each host team picks anything they like in their snack colour: hot or cold, sweet or savoury, traditional or something fun. Weekend colours are just for the joy of it — post your look in the group!</p>
+    <p class="muted" style="margin-top:12px">🍿 Snack time is 5 PM every office day. Each host team picks anything they like in their snack colour — hot or cold, sweet or savoury, traditional or something fun. Weekend colours are just for the joy of it — post your look in the group!</p>
   </section>
 
   <!-- RULES -->
@@ -445,7 +445,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 12;
+const APP_VERSION = 13;
 // The forfeit wheel is run offline in the office for now. Flip to true to bring it back;
 // the server side (spin / unspin) and any saved results are untouched.
 const SHOW_FORFEIT_WHEEL = false; // must match netlify/lib/navratri-core.mjs
@@ -463,12 +463,12 @@ const DAYS = [
 const OFFICE_DAYS = [2, 3, 4, 5, 6, 9];
 // Snack colour theme for each hosting day — the host team arranges food in this colour.
 const FOOD = {
-  2: { colour: 'White',  hex: '#ffffff', ideas: 'idli, white dhokla, rasgulla, coconut barfi, curd rice' },
-  3: { colour: 'Red',    hex: '#e02424', ideas: 'beetroot tikki, red sauce pasta, strawberry, watermelon, red velvet' },
-  4: { colour: 'Royal Blue', hex: '#2557d6', ideas: 'blueberry muffins, blueberry cheesecake, blue lagoon mocktail' },
-  5: { colour: 'Yellow', hex: '#f5c518', ideas: 'khaman dhokla, poha, banana chips, besan ladoo, mango lassi' },
-  6: { colour: 'Green',  hex: '#2e9e4f', ideas: 'hara bhara kabab, green chutney sandwich, pista barfi, mint mojito' },
-  9: { colour: 'Orange', hex: '#f26b21', ideas: 'jalebi, gajar halwa, motichoor ladoo, kesar peda, orange juice',
+  2: { colour: 'White',  hex: '#ffffff' },
+  3: { colour: 'Red',    hex: '#e02424' },
+  4: { colour: 'Royal Blue', hex: '#2557d6' },
+  5: { colour: 'Yellow', hex: '#f5c518' },
+  6: { colour: 'Green',  hex: '#2e9e4f' },
+  9: { colour: 'Orange', hex: '#f26b21',
        note: 'Friday was green, so let’s switch it up — orange snacks for the finale! 🧡' },
 };
 const RITUALS = {
@@ -611,7 +611,7 @@ function renderToday() {
     const members = TEAMS[d.host].map(firstName).join(', ');
     const f = FOOD[d.n];
     hostHtml = `<div class="host">🍿 <b>Team ${d.host}</b> is hosting <b>${esc(f.colour.toLowerCase())} snacks</b> today at 5 PM<br><small>${esc(members)}</small>
-      <br><small>Example ideas (team’s choice!): ${esc(f.ideas)}…</small>${f.note ? `<br><small>${esc(f.note)}</small>` : ''}</div>`;
+${f.note ? `<br><small>${esc(f.note)}</small>` : ''}</div>`;
   } else if (!cur.after) {
     hostHtml = `<div class="host">🏖️ No office snacks today — wear ${esc(d.colour.toLowerCase())} anyway and share a picture!</div>`;
   }
@@ -803,7 +803,7 @@ function renderSchedule() {
     <div class="sday ${d.date === t ? 'now' : d.date < t ? 'past' : ''}">
       <div class="dot" style="background:${d.hex};color:${d.ink}">Day ${d.n}</div>
       <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 9 ? ' · 👗 Traditional Day · 🪔 Aarti & Prasad · 🎯 Bingo & fun activities' : ''}</small>
-        ${FOOD[d.n] ? `<div class="food"><span class="swatch" style="background:${FOOD[d.n].hex};width:12px;height:12px;vertical-align:middle"></span> <b>${esc(FOOD[d.n].colour)} snacks</b> · <span class="muted">e.g. ${esc(FOOD[d.n].ideas)} — just examples, the team’s choice!</span>${FOOD[d.n].note ? `<br><span class="muted">${esc(FOOD[d.n].note)}</span>` : ''}</div>` : ''}</div>
+        ${FOOD[d.n] ? `<div class="food"><span class="swatch" style="background:${FOOD[d.n].hex};width:12px;height:12px;vertical-align:middle"></span> <b>${esc(FOOD[d.n].colour)} snacks</b>${FOOD[d.n].note ? `<br><span class="muted">${esc(FOOD[d.n].note)}</span>` : ''}</div>` : ''}</div>
       <div>${d.host ? `<span class="pill">🍿 Team ${d.host}</span>` : '<span class="pill">🏖️ Off</span>'}</div>
     </div>`).join('');
 }
