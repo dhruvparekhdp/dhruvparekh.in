@@ -13,11 +13,22 @@ of it (`netlify/lib/navratri-core.mjs`). Sessions last 4 hours. The signing secr
 the server and kept in Blobs. To change the password without a code change, set the
 `NAVRATRI_ADMIN_PASSWORD` env var in Netlify and redeploy.
 
-## Colour Police
+## Scoring
 
-The scorekeeper ticks who didn't wear the day's colour; the roll-call fills in 7 minus defaulters.
-Each defaulter gets one spin of the forfeit wheel. The server picks the forfeit at random, it can't
-be re-spun, and the result is public on the Today tab and in the Transparency log.
+| | Points |
+| --- | --- |
+| Dress code | 1 per person per office day (6 days → 6 per person, 42 per team) |
+| Snacks | 0–10, host team on its day |
+| Extra bonus | up to 10 per team for the whole festival, reason required |
+| Penalty | −1 to −15, reason required |
+
+Two leaderboards: team (sum of the above) and individual (dress-code points out of 6).
+
+## Colour Police · daily attendance
+
+At 5 PM the scorekeeper marks every person ✓ wore the colour / ✗ didn't / · absent. ✓ gives the
+dress-code point; ✗ puts them on the forfeit wheel. The server picks each forfeit at random, it
+can't be re-spun, and the day's attendance and forfeits are public on the Today tab.
 
 ## Anti-cheating checks (all enforced on the server)
 
@@ -28,9 +39,8 @@ be re-spun, and the result is public on the Today tab and in the Transparency lo
   "Sign out all devices" invalidates every session immediately.
 - Only same-site JSON requests are accepted (blocks scripts on other sites).
 - Every award is validated: day must be an office day that has already happened, points must be in
-  range for the category, snack points only for that day's host team, no double scoring, full-team
-  bonus only after a 7/7 colour count, traditional wear and bingo only on Friday, penalties need a reason.
+  range, names must be on the team list, one dress-code point per person per day, snack points only
+  for that day's host team, extra bonus capped at 10 per team, penalties need a reason.
 - Removals are soft deletes with a public reason; every change is in the public Transparency log.
-- Cheers are public but rate-limited and never affect points.
 
 If the password leaks: set `NAVRATRI_ADMIN_PASSWORD` in Netlify, redeploy, then press "Sign out all devices".

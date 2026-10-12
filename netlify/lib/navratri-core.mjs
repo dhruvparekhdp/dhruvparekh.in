@@ -53,25 +53,30 @@ export const PUNISHMENTS = [
 ];
 export const TEAM_SIZE = 7;
 
-// Allowed points per category. `once` = at most one live entry per team per day.
+// Scoring agreed by the cultural team (whiteboard, Day 2):
+//   Dress code  1 point per person per office day → 6 per person, 42 per team
+//   Snacks      0–10, host team on its day
+//   Extra bonus up to 10 per team for the whole festival (for something extraordinary)
+//   Penalty     minus points for not doing the task, with a public reason
+export const EXTRA_BONUS_CAP = 10;
 export const RULES = {
-  colour:       { label: 'Wore the colour (1 per member)', min: 1,   max: TEAM_SIZE, once: true },
-  full_team:    { label: 'Full-team colour bonus',          min: 5,   max: 5,         once: true },
-  extra_effort: { label: 'Extra colour effort',             min: 1,   max: 5,         once: true },
-  snack:        { label: 'Snack presentation',              min: 0,   max: 10,        once: true, hostOnly: true },
-  creativity:   { label: 'Snack creativity',                min: 0,   max: 5,         once: true, hostOnly: true },
-  traditional:  { label: 'Traditional wear (2 per member)', min: 2,   max: 2 * TEAM_SIZE, once: true, dayOnly: TRADITIONAL_DAY, step: 2 },
-  bingo:        { label: 'Bingo winner',                    allowed: [10, 6, 3], dayOnly: TRADITIONAL_DAY },
-  penalty:      { label: 'Task not done',                   min: -15, max: -1, noteRequired: true },
-  other:        { label: 'Judges’ special',            min: -5,  max: 5,  noteRequired: true },
+  colour:      { label: 'Dress code',    min: 1,   max: 1,  perPerson: true },
+  snack:       { label: 'Snacks',        min: 0,   max: 10, once: true, hostOnly: true },
+  extra_bonus: { label: 'Extra bonus',   min: 1,   max: EXTRA_BONUS_CAP, noteRequired: true },
+  penalty:     { label: 'Task not done', min: -15, max: -1, noteRequired: true },
 };
+// Earlier categories stay readable so any entries made before the change still show.
+const LEGACY_LABELS = {
+  full_team: 'Full-team colour bonus', extra_effort: 'Extra colour effort', creativity: 'Snack creativity',
+  traditional: 'Traditional wear', bingo: 'Bingo winner', other: 'Judges’ special',
+};
+const labelOf = (cat) => (RULES[cat] && RULES[cat].label) || LEGACY_LABELS[cat] || cat;
 
 const SESSION_TTL_MS = 4 * 60 * 60 * 1000;
 const FAIL_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILS_PER_IP = 5;
 const MAX_FAILS_GLOBAL = 30;
-const CHEERS_PER_IP_PER_MIN = 30; // office shares one IP, so keep it generous
-const MAX_BODY_BYTES = 4096;
+const MAX_BODY_BYTES = 16384;
 const AUDIT_KEEP = 500;
 
 const json = (status, body, extra = {}) => new Response(JSON.stringify(body), {
@@ -89,7 +94,7 @@ export function todayIST(now = Date.now()) {
 }
 
 function emptyState() {
-  return { entries: [], defaulters: [], cheers: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }, audit: [], epoch: 1, cheerLimits: {}, updated: null };
+  return { entries: [], defaulters: [], audit: [], epoch: 1, updated: null };
 }
 
 const ADMIN_USER = 'dhruv';
@@ -157,13 +162,12 @@ async function mutate(store, key, init, fn) {
 function publicView(state, now) {
   return {
     entries: state.entries.map(e => ({
-      id: e.id, day: e.day, team: e.team, category: e.category, points: e.points,
+      id: e.id, day: e.day, team: e.team, name: e.name || null, category: e.category, points: e.points,
       note: e.note || '', at: e.at, deleted: e.deleted ? { at: e.deleted.at, reason: e.deleted.reason } : null,
     })),
     defaulters: (state.defaulters || []).filter(d => !d.deleted).map(d => ({
       id: d.id, day: d.day, name: d.name, team: d.team, punishment: d.punishment || null, at: d.at,
     })),
-    cheers: state.cheers,
     audit: state.audit.slice(-60).map(a => ({ at: a.at, action: a.action, detail: a.detail })),
     updated: state.updated,
     today: todayIST(now),
@@ -180,33 +184,39 @@ function cleanNote(s) {
 // Strict validation of one award. Returns an error string or null.
 export function validateAward(state, a, today) {
   if (!a || typeof a !== 'object') return 'Bad request';
-  const { day, team, category, points } = a;
+  const { day, category, points } = a;
   if (!Number.isInteger(day) || day < 1 || day > 9) return 'Day must be 1–9';
-  if (!Number.isInteger(team) || !TEAMS.includes(team)) return 'Team must be 1–6';
   const rule = RULES[category];
   if (!rule) return 'Unknown category';
+  if (rule.perPerson) {
+    if (typeof a.name !== 'string' || !teamOfName(a.name)) return 'Only names from the team list are allowed';
+    if (a.team !== teamOfName(a.name)) return `${a.name} is in Team ${teamOfName(a.name)}`;
+  }
+  const team = a.team;
+  if (!Number.isInteger(team) || !TEAMS.includes(team)) return 'Team must be 1–6';
   if (!Number.isInteger(points)) return 'Points must be a whole number';
   if (!OFFICE_DAYS.includes(day)) return `Day ${day} is not an office day`;
   if (DAY_DATES[day] > today) return `Day ${day} hasn’t happened yet — no advance scoring`;
-  if (rule.allowed ? !rule.allowed.includes(points) : (points < rule.min || points > rule.max)) {
-    return `${rule.label}: points must be ${rule.allowed ? rule.allowed.join(' / ') : `${rule.min} to ${rule.max}`}`;
+  if (points < rule.min || points > rule.max) {
+    return `${rule.label}: points must be ${rule.min === rule.max ? rule.min : `${rule.min} to ${rule.max}`}`;
   }
-  if (rule.step && points % rule.step !== 0) return `${rule.label}: must be a multiple of ${rule.step}`;
-  if (rule.dayOnly && day !== rule.dayOnly) return `${rule.label} only counts on Day ${rule.dayOnly}`;
   if (rule.hostOnly && HOST[day] !== team) return `${rule.label} is only for the hosting team (Team ${HOST[day]} on Day ${day})`;
   const note = cleanNote(a.note);
   if (note === null) return 'Note must be text';
   if (rule.noteRequired && note.length < 3) return `${rule.label} needs a short reason`;
-  const live = state.entries.filter(e => !e.deleted && e.day === day);
-  if (rule.once && live.some(e => e.team === team && e.category === category)) {
+  const live = state.entries.filter(e => !e.deleted);
+  if (rule.perPerson) {
+    if (live.some(e => e.day === day && e.category === category && e.name === a.name)) return `${a.name} already has the Day ${day} dress-code point`;
+    if ((state.defaulters || []).some(d => !d.deleted && d.day === day && d.name === a.name)) {
+      return `${a.name} is on the Day ${day} Colour Police list — remove them there first`;
+    }
+  }
+  if (rule.once && live.some(e => e.day === day && e.team === team && e.category === category)) {
     return `Team ${team} already has “${rule.label}” for Day ${day}. Remove the old entry first.`;
   }
-  if (category === 'full_team' && !live.some(e => e.team === team && e.category === 'colour' && e.points === TEAM_SIZE)) {
-    return 'Full-team bonus needs all 7 members scored under “Wore the colour” first';
-  }
-  if (category === 'bingo') {
-    if (live.some(e => e.category === 'bingo' && e.points === points)) return 'That bingo place is already awarded';
-    if (live.some(e => e.category === 'bingo' && e.team === team)) return `Team ${team} already has a bingo award`;
+  if (category === 'extra_bonus') {
+    const used = live.filter(e => e.team === team && e.category === 'extra_bonus').reduce((n, e) => n + e.points, 0);
+    if (used + points > EXTRA_BONUS_CAP) return `Team ${team} has ${EXTRA_BONUS_CAP - used} extra-bonus points left (max ${EXTRA_BONUS_CAP} for the festival)`;
   }
   return null;
 }
@@ -236,24 +246,6 @@ export function createHandler({ store, env, now = () => Date.now() }) {
     let body;
     try { body = JSON.parse(raw); } catch { return json(400, { error: 'Bad JSON' }); }
     if (!body || typeof body !== 'object') return json(400, { error: 'Bad request' });
-
-    // ── cheers: public, rate limited, never affect points ──
-    if (body.action === 'cheer') {
-      const team = body.team;
-      if (!Number.isInteger(team) || !TEAMS.includes(team)) return json(400, { error: 'Unknown team' });
-      const minute = Math.floor(t / 60000);
-      const out = await mutate(store, 'state', emptyState, (s) => {
-        s.cheerLimits = s.cheerLimits || {};
-        for (const k of Object.keys(s.cheerLimits)) if (s.cheerLimits[k].m !== minute) delete s.cheerLimits[k];
-        const lim = s.cheerLimits[ipId] || { m: minute, n: 0 };
-        if (lim.n >= CHEERS_PER_IP_PER_MIN) return { abort: true, limited: true };
-        lim.n++; s.cheerLimits[ipId] = lim;
-        s.cheers[team] = (s.cheers[team] || 0) + 1;
-        return { count: s.cheers[team] };
-      });
-      if (out.limited) return json(429, { error: 'Easy there! Cheers are limited — try again in a minute 🙂' });
-      return json(200, out);
-    }
 
     // ── login: brute-force protected ──
     if (body.action === 'login') {
@@ -291,15 +283,19 @@ export function createHandler({ store, env, now = () => Date.now() }) {
     if (body.action === 'add') {
       const out = await mutate(store, 'state', emptyState, (s) => {
         const items = Array.isArray(body.awards) ? body.awards : [body.award];
-        if (!items.length || items.length > 12) return { abort: true, error: 'Send 1–12 awards at a time' };
+        if (!items.length || items.length > 50) return { abort: true, error: 'Send 1–50 awards at a time' };
         const added = [];
         for (const a of items) {
           const err = validateAward(s, a, today);
           if (err) return { abort: true, error: err };
           const e = { id: b64u(crypto.randomBytes(8)), day: a.day, team: a.team, category: a.category, points: a.points, note: cleanNote(a.note), at: new Date(t).toISOString() };
+          if (RULES[a.category].perPerson) e.name = a.name;
           s.entries.push(e); added.push(e);
-          pushAudit(s, t, 'add', `Day ${e.day} · Team ${e.team} · ${RULES[e.category].label} ${e.points > 0 ? '+' : ''}${e.points}${e.note ? ` (${e.note})` : ''}`);
-        }
+          }
+        // one audit line per batch keeps the log readable for 42-person roll-calls
+        const people = added.filter(e => e.name);
+        if (people.length) pushAudit(s, t, 'add', `Day ${people[0].day} · Dress code +1 each: ${people.map(e => e.name).join(', ')}`);
+        for (const e of added.filter(e => !e.name)) pushAudit(s, t, 'add', `Day ${e.day} · Team ${e.team} · ${labelOf(e.category)} ${e.points > 0 ? '+' : ''}${e.points}${e.note ? ` (${e.note})` : ''}`);
         s.updated = new Date(t).toISOString();
         return { added };
       });
@@ -315,13 +311,13 @@ export function createHandler({ store, env, now = () => Date.now() }) {
         if (!e || e.deleted) return { abort: true, error: 'Entry not found' };
         e.deleted = { at: new Date(t).toISOString(), reason };
         s.updated = e.deleted.at;
-        pushAudit(s, t, 'remove', `Removed Day ${e.day} · Team ${e.team} · ${RULES[e.category].label} ${e.points} — ${reason}`);
+        pushAudit(s, t, 'remove', `Removed Day ${e.day} · Team ${e.team}${e.name ? ` · ${e.name}` : ''} · ${labelOf(e.category)} ${e.points} — ${reason}`);
         // the full-team bonus only exists because of a 7/7 colour entry
         if (e.category === 'colour') {
           for (const b of s.entries) {
             if (!b.deleted && b.category === 'full_team' && b.day === e.day && b.team === e.team) {
               b.deleted = { at: e.deleted.at, reason: 'Colour count was removed' };
-              pushAudit(s, t, 'remove', `Removed Day ${b.day} · Team ${b.team} · ${RULES.full_team.label} ${b.points} — colour count was removed`);
+              pushAudit(s, t, 'remove', `Removed Day ${b.day} · Team ${b.team} · ${labelOf('full_team')} ${b.points} — colour count was removed`);
             }
           }
         }
@@ -341,6 +337,8 @@ export function createHandler({ store, env, now = () => Date.now() }) {
       if (names.some(n => typeof n !== 'string' || !teamOfName(n))) return json(422, { error: 'Only names from the team list are allowed' });
       const out = await mutate(store, 'state', emptyState, (s) => {
         s.defaulters = s.defaulters || [];
+        const scored = names.find(n => s.entries.some(e => !e.deleted && e.day === day && e.category === 'colour' && e.name === n));
+        if (scored) return { abort: true, error: `${scored} already has the Day ${day} dress-code point — remove it first` };
         const added = [];
         for (const name of new Set(names)) {
           if (s.defaulters.some(d => !d.deleted && d.day === day && d.name === name)) continue;
@@ -351,6 +349,7 @@ export function createHandler({ store, env, now = () => Date.now() }) {
         s.updated = new Date(t).toISOString();
         return { added: added.length };
       });
+      if (out.error) return json(422, { error: out.error });
       return json(200, out);
     }
 

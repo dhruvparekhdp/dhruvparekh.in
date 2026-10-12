@@ -100,13 +100,22 @@ h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .bar i { display: block; height: 100%; border-radius: 99px; transition: width .8s cubic-bezier(.2,.8,.2,1); }
 .score { font-size: 1.5rem; font-weight: 700; text-align: right; min-width: 56px; }
 .score small { display: block; font-size: .68rem; color: var(--muted); font-weight: 500; }
-.cheer { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 2px 10px; font-size: .78rem; font-weight: 600; }
-.cheer:active { transform: scale(.94); }
 .details { font-size: .85rem; color: var(--muted); margin-top: 6px; }
 .feed li { list-style: none; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; }
 .feed li:last-child { border-bottom: 0; }
 .pts { font-weight: 700; white-space: nowrap; }
 .pts.plus { color: var(--ok); } .pts.minus { color: var(--bad); }
+.seg { display: inline-flex; background: #f3e9dc; border-radius: 999px; padding: 4px; margin-bottom: 12px; }
+.seg button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-weight: 600; color: var(--muted); }
+.seg button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.p-row { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .92rem; }
+.p-row:last-child { border-bottom: 0; }
+.p-row .rank { font-size: 1.05rem; }
+.p-row.me { background: #fff3c4; border-radius: 10px; }
+@media (max-width: 480px) { .p-row { grid-template-columns: 30px 1fr auto; } .p-row .dots { grid-column: 2; grid-row: 2; } .p-row .score { grid-column: 3; grid-row: 1 / span 2; } .p-row .rank { grid-row: 1 / span 2; } }
+.star-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; font-size: .88rem; }
+.dots { display: flex; gap: 3px; flex: none; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #e2d5c3; display: grid; place-items: center; font-size: 8px; font-style: normal; color: var(--bad); }
 .struck { text-decoration: line-through; opacity: .55; }
 
 /* teams */
@@ -166,6 +175,11 @@ label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted)
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips label { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 10px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-size: .82rem; font-weight: 500; color: var(--ink); cursor: pointer; }
 .chips input { accent-color: var(--bad); }
+.mark { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font-size: .84rem; font-weight: 500; }
+.mark.wore { background: #e3f6e8; border-color: #8fd1a2; color: #145c2a; font-weight: 600; }
+.mark.missed { background: #fde8e8; border-color: #f5b5b5; color: var(--bad); font-weight: 600; }
+.mark.locked { opacity: .7; cursor: default; }
+.pick-team h4 .btn { padding: 2px 10px; font-size: .75rem; }
 .chips label:has(input:checked) { background: #fde8e8; border-color: #f5b5b5; }
 .chips label:has(input:disabled) { opacity: .6; cursor: default; }
 .spin-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(43, 26, 61, .75); display: grid; place-items: center; padding: 16px; }
@@ -213,7 +227,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
         <div class="card">
           <h3>🏆 Top of the table</h3>
           <div id="mini-board"></div>
-          <button class="btn alt small" data-goto="board" style="margin-top:10px">Full leaderboard →</button>
+          <button class="btn alt small" data-goto="board" style="margin-top:10px">Team & individual leaderboards →</button>
         </div>
         <div class="card">
           <h3>📣 Latest from the judges</h3>
@@ -222,9 +236,10 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
       </div>
     </div>
     <div class="card" style="margin-top:14px">
-      <h3>🚨 Colour Police</h3>
-      <p class="muted" id="police-sub">Didn’t wear the colour? The forfeit wheel decides your fate 🎡</p>
-      <ul class="police" id="police"></ul>
+      <h3>🚨 Colour Police · Daily attendance</h3>
+      <p class="muted" id="police-sub"></p>
+      <div id="attendance"></div>
+      <ul class="police" id="police" style="margin-top:8px"></ul>
     </div>
     <div class="card" style="margin-top:14px">
       <h3>✨ Today’s little ritual</h3>
@@ -235,9 +250,18 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
   <!-- LEADERBOARD -->
   <section class="panel hidden" data-panel="board">
     <h2>Leaderboard</h2>
-    <div class="card">
+    <div class="seg" role="tablist" aria-label="Leaderboard type">
+      <button role="tab" data-lb="team" aria-selected="true">👥 Team</button>
+      <button role="tab" data-lb="person" aria-selected="false">👤 Individual</button>
+    </div>
+    <div class="card" id="lb-team">
       <div id="board"></div>
-      <p class="muted" style="margin-top:10px">Tap a team to see where their points came from. Cheers are just for love — they don’t change the score. <span id="updated"></span></p>
+      <p class="muted" style="margin-top:10px">Team score = dress code + snacks + extra bonus − penalties. Tap a team to see the breakdown. <span id="updated"></span></p>
+    </div>
+    <div class="card hidden" id="lb-person">
+      <p class="muted" style="margin-bottom:6px">1 point for every office day you wore the colour — 6 to collect. Dots are the 6 days: filled = wore it, ✗ = didn’t (Colour Police), empty = absent or not yet.</p>
+      <input class="search" id="lb-filter" placeholder="Find a name…" autocomplete="off" aria-label="Filter names" style="margin-bottom:6px">
+      <div id="people"></div>
     </div>
     <div class="grid two" style="margin-top:14px">
       <div class="card">
@@ -273,34 +297,26 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
     <h2>How scoring works</h2>
     <div class="grid two">
       <div class="card rules">
-        <h3>🎨 Colour of the day — every team, every office day</h3>
+        <h3>🏆 Team score — max 62 points</h3>
         <table>
-          <tr><td>Each member wearing the day’s colour</td><td>+1</td></tr>
-          <tr><td>Full-team bonus — all 7 in colour</td><td>+5</td></tr>
-          <tr><td>Extra effort — accessories, props, matching desk, coordinated look</td><td>up to +5</td></tr>
+          <tr><td>👗 <b>Dress code</b> — 1 point per person per office day.<br><small class="muted">6 office days × 7 people</small></td><td>42</td></tr>
+          <tr><td>🍿 <b>Snacks</b> — host team, judged on the day</td><td>10</td></tr>
+          <tr><td>🌟 <b>Extra bonus</b> — for something truly extraordinary (whole festival)</td><td>10</td></tr>
         </table>
-        <h3 style="margin-top:16px">🍿 Snack hosting — host team only</h3>
-        <table>
-          <tr><td>Presentation (how it looks, how it’s served)</td><td>0 – 10</td></tr>
-          <tr><td>Creativity (something different, themed to the colour)</td><td>0 – 5</td></tr>
-        </table>
-        <h3 style="margin-top:16px">⛔ Minus points</h3>
+        <h3 style="margin-top:16px">👤 Your own score — max 6</h3>
+        <p class="muted">Every day you wear the colour you earn 1 point for yourself <i>and</i> your team. Check the Dress-code stars on the leaderboard!</p>
+        <h3 style="margin-top:16px">⛔ Minus points & forfeits</h3>
         <table>
           <tr><td>Hosting team doesn’t arrange snacks by 5 PM</td><td>−10</td></tr>
-          <tr><td>Not in the colour of the day? No point for the team <i>and</i> a random forfeit from the 🎡 wheel (sing, dance, serve snacks…)</td><td>🎡</td></tr>
-          <tr><td>Snacks very late / task half-done</td><td>−3 to −5</td></tr>
-          <tr><td>Other rule-breaking (judges decide, reason shown publicly)</td><td>up to −15</td></tr>
+          <tr><td>Other task not done (judges decide, reason shown publicly)</td><td>up to −15</td></tr>
+          <tr><td>Not in the colour? No point — and a random forfeit from the 🎡 wheel</td><td>🎡</td></tr>
         </table>
       </div>
       <div class="grid">
         <div class="callout">
           <h3>👗 Friday 16th Oct — Traditional Day (clarified)</h3>
-          <p style="font-size:.92rem">It’s <b>Green</b> day <i>and</i> Traditional Indian Wear day. Wear any traditional outfit — saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti — all count.</p>
-          <ul style="font-size:.92rem;margin:8px 0 0 18px">
-            <li><b>+2</b> per member in traditional wear</li>
-            <li>Traditional <b>in green</b>? You also earn the colour point (+1) — so it stacks to +3 each</li>
-            <li>Bingo in the evening: 🥇 +10 · 🥈 +6 · 🥉 +3 to the winner’s team</li>
-          </ul>
+          <p style="font-size:.92rem">It’s <b>Green</b> day <i>and</i> Traditional Indian Wear day. Wear a traditional outfit — saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti — <b>in green</b> to earn your dress-code point.</p>
+          <p style="font-size:.92rem;margin-top:6px">Bingo in the evening is for fun 🎯 — a stand-out performance can earn the team an extra bonus.</p>
         </div>
         <div class="card">
           <h3>⚖️ Fair play</h3>
@@ -321,7 +337,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
   <section class="panel hidden" data-panel="bingo">
     <h2>Festive Find-Someone Bingo</h2>
     <div class="card">
-      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Show your screen to the cultural team to claim points for your team.</p>
+      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Show your screen to the cultural team for bragging rights — a stand-out win may earn your team an extra bonus!</p>
       <div class="row" style="margin-top:12px">
         <div><label for="bingo-name">Your name</label><input class="input" id="bingo-name" placeholder="Your full name" autocomplete="off"></div>
         <div style="flex:0 0 auto"><button class="btn" id="bingo-go">Get my card</button></div>
@@ -360,68 +376,47 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
         <p class="muted" id="ad-session" style="margin-top:6px"></p>
       </div>
 
-      <div class="grid two">
-        <div class="card">
-          <h3>🎨 Colour roll-call</h3>
-          <p class="muted">How many members of each team are wearing <b id="ad-colour"></b>? 7/7 adds the +5 full-team bonus automatically.</p>
-          <div id="ad-roll"></div>
-          <button class="btn" id="ad-roll-save" style="margin-top:10px">Save roll-call</button>
-          <div class="msg" id="ad-roll-msg"></div>
+      <div class="card">
+        <h3>🚨 Colour Police · Daily attendance — <span id="ad-colour"></span></h3>
+        <p class="muted">Take attendance at 5 PM. Tap each person: <b>✓</b> wore the colour (+1 for them and their team) → <b>✗</b> didn’t (forfeit wheel 🎡) → <b>·</b> absent / on leave. Saved people are locked; to fix one, remove the entry below.</p>
+        <div id="ad-roll"></div>
+        <button class="btn" id="ad-roll-save" style="margin-top:12px">Save attendance</button>
+        <div class="msg" id="ad-roll-msg"></div>
+      </div>
+
+      <div class="grid two" style="margin-top:14px">
+        <div class="card" id="ad-snack-card">
+          <h3>🍿 Snacks — <span id="ad-host"></span></h3>
+          <div class="row">
+            <div><label for="ad-pres">Snack score (0–10)</label><input class="input" id="ad-pres" type="number" min="0" max="10" step="1" inputmode="numeric"></div>
+            <div><label for="ad-snack-note">What did they serve?</label><input class="input" id="ad-snack-note" maxlength="120" placeholder="e.g. Sabudana vada & chai"></div>
+          </div>
+          <button class="btn" id="ad-snack-save" style="margin-top:10px">Save snack score</button>
+          <div class="msg" id="ad-snack-msg"></div>
         </div>
 
-        <div class="grid">
-          <div class="card" id="ad-snack-card">
-            <h3>🍿 Snack — <span id="ad-host"></span></h3>
-            <div class="row">
-              <div><label for="ad-pres">Presentation (0–10)</label><input class="input" id="ad-pres" type="number" min="0" max="10" step="1" inputmode="numeric"></div>
-              <div><label for="ad-crea">Creativity (0–5)</label><input class="input" id="ad-crea" type="number" min="0" max="5" step="1" inputmode="numeric"></div>
-            </div>
-            <div class="row" style="margin-top:8px">
-              <div><label for="ad-snack-note">What did they serve?</label><input class="input" id="ad-snack-note" maxlength="120" placeholder="e.g. Sabudana vada & chai"></div>
-            </div>
-            <button class="btn" id="ad-snack-save" style="margin-top:10px">Save snack score</button>
-            <div class="msg" id="ad-snack-msg"></div>
+        <div class="card">
+          <h3>🌟 Extra bonus / ⛔ penalty</h3>
+          <div class="row">
+            <div><label for="ad-x-team">Team</label><select class="input" id="ad-x-team"></select></div>
+            <div><label for="ad-x-cat">Type</label>
+              <select class="input" id="ad-x-cat">
+                <option value="extra_bonus">Extra bonus (+1…+10)</option>
+                <option value="penalty">Task not done (−1…−15)</option>
+              </select></div>
+            <div><label for="ad-x-pts">Points</label><input class="input" id="ad-x-pts" type="number" step="1" inputmode="numeric"></div>
           </div>
-
-          <div class="card">
-            <h3>✨ Extra effort / penalty / special</h3>
-            <div class="row">
-              <div><label for="ad-x-team">Team</label><select class="input" id="ad-x-team"></select></div>
-              <div><label for="ad-x-cat">Type</label>
-                <select class="input" id="ad-x-cat">
-                  <option value="extra_effort">Extra colour effort (+1…+5)</option>
-                  <option value="penalty">Task not done (−1…−15)</option>
-                  <option value="other">Judges’ special (−5…+5)</option>
-                </select></div>
-              <div><label for="ad-x-pts">Points</label><input class="input" id="ad-x-pts" type="number" step="1" inputmode="numeric"></div>
-            </div>
-            <div style="margin-top:8px"><label for="ad-x-note">Reason (shown publicly)</label><input class="input" id="ad-x-note" maxlength="120"></div>
-            <button class="btn" id="ad-x-save" style="margin-top:10px">Save</button>
-            <div class="msg" id="ad-x-msg"></div>
-          </div>
+          <p class="muted" id="ad-x-left" style="margin-top:6px"></p>
+          <div style="margin-top:8px"><label for="ad-x-note">Reason (shown publicly)</label><input class="input" id="ad-x-note" maxlength="120" placeholder="e.g. Live dhol at snack time!"></div>
+          <button class="btn" id="ad-x-save" style="margin-top:10px">Save</button>
+          <div class="msg" id="ad-x-msg"></div>
         </div>
       </div>
 
       <div class="card" style="margin-top:14px">
-        <h3>🚨 Colour Police — who didn’t wear <span id="ad-colour2"></span>?</h3>
-        <p class="muted">Tick everyone who isn’t in the colour and save. The roll-call above fills in automatically (7 minus defaulters). Then spin the forfeit wheel for each person — the server picks at random and it can’t be re-spun.</p>
-        <div id="ad-pick"></div>
-        <button class="btn" id="ad-pick-save" style="margin-top:12px">Save defaulters</button>
-        <div class="msg" id="ad-pick-msg"></div>
-        <ul class="police" id="ad-police" style="margin-top:10px"></ul>
-      </div>
-
-      <div class="card" id="ad-friday" style="margin-top:14px">
-        <h3>👗 Friday: traditional wear & bingo</h3>
-        <p class="muted">Members in traditional wear (×2 points each). Give green outfits their colour point in the roll-call too.</p>
-        <div id="ad-trad"></div>
-        <div class="row" style="margin-top:12px">
-          <div><label for="ad-b1">🥇 Bingo 1st (+10)</label><select class="input" id="ad-b1"></select></div>
-          <div><label for="ad-b2">🥈 2nd (+6)</label><select class="input" id="ad-b2"></select></div>
-          <div><label for="ad-b3">🥉 3rd (+3)</label><select class="input" id="ad-b3"></select></div>
-        </div>
-        <button class="btn" id="ad-fri-save" style="margin-top:10px">Save Friday scores</button>
-        <div class="msg" id="ad-fri-msg"></div>
+        <h3>🎡 Forfeit wheel</h3>
+        <p class="muted">Everyone marked ✗ in attendance lands here. The server picks the forfeit at random, and it can’t be re-spun.</p>
+        <ul class="police" id="ad-police" style="margin-top:6px"></ul>
       </div>
 
       <div class="card" style="margin-top:14px">
@@ -477,9 +472,10 @@ const TEAMS = {
 // Each team gets a festive identity colour (independent of the day colours)
 const TEAM_COLOURS = { 1: '#e8590c', 2: '#d6336c', 3: '#1c7ed6', 4: '#f59f00', 5: '#2b8a3e', 6: '#0c8599' };
 const CAT_LABEL = {
-  colour: 'wore the colour', full_team: 'full-team bonus', extra_effort: 'extra colour effort',
-  snack: 'snack presentation', creativity: 'snack creativity', traditional: 'traditional wear',
-  bingo: 'Bingo winner', penalty: 'task not done', other: 'judges’ special',
+  colour: 'dress code', snack: 'snacks', extra_bonus: 'extra bonus', penalty: 'task not done',
+  // earlier categories, kept so any old entries still read well
+  full_team: 'full-team bonus', extra_effort: 'extra colour effort', creativity: 'snack creativity',
+  traditional: 'traditional wear', bingo: 'Bingo winner', other: 'judges’ special',
 };
 
 /* ================================================================
@@ -541,7 +537,7 @@ $('open-admin').onclick = () => { showTab('admin'); scrollTo({ top: 0 }); };
 /* ================================================================
  * Live data
  * ================================================================ */
-let data = store.get('nv_cache') || { entries: [], defaulters: [], cheers: {}, audit: [], updated: null };
+let data = store.get('nv_cache') || { entries: [], defaulters: [], audit: [], updated: null };
 let leaderBefore = null;
 
 async function load() {
@@ -626,10 +622,9 @@ function renderBoard() {
     <div class="lb-row" data-team="${r.team}">
       <div class="rank">${anyPoints && r.rank <= 3 && r.total > 0 ? medals[r.rank - 1] : r.rank}</div>
       <div>
-        <div class="lb-name"><span class="swatch" style="background:${TEAM_COLOURS[r.team]}"></span>Team ${r.team}
-          <button class="cheer" data-cheer="${r.team}" aria-label="Cheer for Team ${r.team}">👏 ${data.cheers[r.team] || 0}</button></div>
+        <div class="lb-name"><span class="swatch" style="background:${TEAM_COLOURS[r.team]}"></span>Team ${r.team}</div>
         <div class="bar"><i style="width:${Math.max(0, r.total) / max * 100}%;background:${TEAM_COLOURS[r.team]}"></i></div>
-        <div class="details hidden">${Object.entries(r.by).map(([c, p]) => `${esc(CAT_LABEL[c])}: <b>${p > 0 ? '+' : ''}${p}</b>`).join(' · ') || 'No points yet'}
+        <div class="details hidden">${Object.entries(r.by).map(([c, p]) => `${esc(CAT_LABEL[c] || c)}: <b>${p > 0 ? '+' : ''}${p}</b>`).join(' · ') || 'No points yet'}
           <br>${TEAMS[r.team].map(firstName).join(', ')}</div>
       </div>
       <div class="score">${r.total}<small>pts</small></div>
@@ -638,6 +633,11 @@ function renderBoard() {
   $('mini-board').innerHTML = anyPoints
     ? ranked.slice(0, 3).map(r => `<div class="tline"><span>${r.total > 0 ? medals[r.rank - 1] : r.rank} Team ${r.team}</span><b>${r.total} pts</b></div>`).join('')
     : '<p class="muted">No points yet — the race begins at 5 PM! 🏁</p>';
+  const tally = dressTally(), best = Math.max(0, ...Object.values(tally).map(x => x.pts));
+  if (best > 0) {
+    const stars = Object.keys(tally).filter(n => tally[n].pts === best).map(shortName);
+    $('mini-board').innerHTML += `<p class="muted" style="margin-top:8px">🌟 Top individuals (${best}/6): ${esc(stars.slice(0, 8).join(', '))}${stars.length > 8 ? ` +${stars.length - 8} more` : ''}</p>`;
+  }
   $('updated').textContent = data.updated ? `Last update: ${fmtTime(data.updated)}.` : '';
 
   const leader = anyPoints ? ranked[0].team : null;
@@ -645,34 +645,76 @@ function renderBoard() {
   leaderBefore = leader;
 }
 $('board').addEventListener('click', e => {
-  const c = e.target.closest('[data-cheer]');
-  if (c) { cheer(+c.dataset.cheer, c); return; }
   const row = e.target.closest('.lb-row');
   if (row) row.querySelector('.details').classList.toggle('hidden');
 });
 
-async function cheer(team, btn) {
-  btn.disabled = true;
-  celebrate([TEAM_COLOURS[team], '#ffffff']);
-  try {
-    const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'cheer', team }) });
-    const j = await r.json();
-    if (r.ok) { data.cheers[team] = j.count; btn.textContent = `👏 ${j.count}`; }
-    else alert(j.error);
-  } catch {}
-  setTimeout(() => { btn.disabled = false; }, 1500);
+// person -> { pts, days: {dayNum: 'wore' | 'missed'} }
+function dressTally() {
+  const t = {};
+  for (const n of Object.values(TEAMS).flat()) t[n] = { pts: 0, days: {} };
+  for (const e of data.entries) if (!e.deleted && e.category === 'colour' && e.name && t[e.name]) { t[e.name].pts += e.points; t[e.name].days[e.day] = 'wore'; }
+  for (const x of data.defaulters || []) if (t[x.name] && !t[x.name].days[x.day]) t[x.name].days[x.day] = 'missed';
+  return t;
 }
+function dotsHtml(days) {
+  return `<span class="dots">${OFFICE_DAYS.map(n => {
+    const d = DAYS[n - 1], st = days[n];
+    const bg = st === 'wore' ? `background:${d.hex};border-color:${d.hex === '#ffffff' ? '#c9bba8' : d.hex}` : '';
+    return `<i style="${bg}" title="Day ${n} · ${d.colour}${st ? ' · ' + (st === 'wore' ? 'wore it' : 'missed') : ''}">${st === 'missed' ? '✗' : ''}</i>`;
+  }).join('')}</span>`;
+}
+function renderPeople() {
+  const t = dressTally();
+  const anyPts = Object.values(t).some(x => x.pts > 0);
+  const rows = Object.keys(t).map(n => ({ name: n, team: teamOf(n), ...t[n] }))
+    .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+  let last = null, lastRank = 0;
+  rows.forEach((r, i) => { r.rank = r.pts === last ? lastRank : i + 1; last = r.pts; lastRank = r.rank; });
+  const q = ($('lb-filter').value || '').trim().toLowerCase();
+  const me = store.get('nv_me');
+  $('people').innerHTML = rows.filter(r => !q || r.name.toLowerCase().includes(q)).map(r => `
+    <div class="p-row ${r.name === me ? 'me' : ''}">
+      <div class="rank">${anyPts && r.pts > 0 && r.rank <= 3 ? medals[r.rank - 1] : r.rank}</div>
+      <div><b>${esc(r.name)}</b>${r.pts === 6 ? ' 🌟' : ''}<br><small class="muted"><span class="swatch" style="background:${TEAM_COLOURS[r.team]};width:10px;height:10px;vertical-align:middle"></span> Team ${r.team}</small></div>
+      ${dotsHtml(r.days)}
+      <div class="score" style="font-size:1.15rem">${r.pts}<small>/ 6</small></div>
+    </div>`).join('') || '<p class="muted">No one by that name.</p>';
+}
+$('lb-filter').addEventListener('input', renderPeople);
+document.querySelector('.seg').addEventListener('click', e => {
+  const b = e.target.closest('[data-lb]');
+  if (!b) return;
+  document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-selected', x === b));
+  $('lb-team').classList.toggle('hidden', b.dataset.lb !== 'team');
+  $('lb-person').classList.toggle('hidden', b.dataset.lb !== 'person');
+});
 
 function feedItem(e) {
   const d = DAYS[e.day - 1];
   const cls = e.points >= 0 ? 'plus' : 'minus';
+  if (e.group && e.names.length > 1) {
+    return `<li><span><span class="swatch" style="background:${d.hex};width:12px;height:12px"></span>
+      <b>👗 Dress code</b> — ${e.names.length} people in ${esc(d.colour)}: ${esc(e.names.map(shortName).join(', '))}
+      <br><small class="muted">Day ${e.day} · ${fmtTime(e.at)} · +1 each</small></span><span class="pts plus">+${e.points}</span></li>`;
+  }
   return `<li class="${e.deleted ? 'struck' : ''}"><span><span class="swatch" style="background:${d.hex};width:12px;height:12px"></span>
-    <b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category])}${e.note ? ` — <i>${esc(e.note)}</i>` : ''}
+    <b>${e.name ? esc(shortName(e.name)) + ' · ' : ''}Team ${e.team}</b> · ${esc(CAT_LABEL[e.category] || e.category)}${e.note ? ` — <i>${esc(e.note)}</i>` : ''}
     <br><small class="muted">Day ${e.day} · ${fmtTime(e.at)}${e.deleted ? ` · removed: ${esc(e.deleted.reason)}` : ''}</small></span>
     <span class="pts ${cls}">${e.points > 0 ? '+' : ''}${e.points}</span></li>`;
 }
+// One dress-code roll-call becomes one feed line instead of up to 42.
+function groupFeed(entries) {
+  const out = [];
+  for (const e of entries) {
+    const prev = out[out.length - 1];
+    if (e.name && !e.deleted && prev && prev.group && prev.day === e.day && prev.at === e.at) { prev.names.push(e.name); prev.points += e.points; continue; }
+    out.push(e.name && !e.deleted ? { ...e, group: true, names: [e.name] } : e);
+  }
+  return out;
+}
 function renderFeeds() {
-  const list = [...data.entries].reverse();
+  const list = groupFeed([...data.entries].reverse());
   $('feed').innerHTML = list.length ? list.map(feedItem).join('') : '<li class="muted">Nothing yet.</li>';
   const live = list.filter(e => !e.deleted).slice(0, 4);
   $('mini-feed').innerHTML = live.length ? live.map(feedItem).join('') : '<li class="muted">Judges are warming up… 🧐</li>';
@@ -711,6 +753,7 @@ function search(q) {
   $('found').innerHTML = `<div class="card" style="border-left:6px solid ${TEAM_COLOURS[t]}">
     <h3>🎉 ${esc(firstName(name))}, you’re in Team ${t}!</h3>
     <p>Your team hosts snacks on <b>${hd.wd}, ${+hd.date.slice(8)} Oct</b> — colour <b>${hd.colour}</b> <span class="swatch" style="background:${hd.hex};vertical-align:middle"></span></p>
+    <p>👗 Your dress-code points: <b>${dressTally()[name].pts}/6</b> ${dotsHtml(dressTally()[name].days)}</p>
     <p class="muted">Your teammates: ${esc(mates)}</p></div>`;
   renderTeams(name);
   store.set('nv_me', name);
@@ -844,27 +887,45 @@ $('ad-export').onclick = () => busy($('ad-export'), async () => {
   } catch (err) { alert(err.message); }
 });
 
-const teamOpts = (blank) => (blank ? `<option value="">— none —</option>` : '') + [1, 2, 3, 4, 5, 6].map(t => `<option value="${t}">Team ${t}</option>`).join('');
+const teamOpts = () => [1, 2, 3, 4, 5, 6].map(t => `<option value="${t}">Team ${t}</option>`).join('');
 $('ad-x-team').innerHTML = teamOpts();
-['ad-b1', 'ad-b2', 'ad-b3'].forEach(id => $(id).innerHTML = teamOpts(true));
 
 function scorableDays() { const t = todayStr(); return DAYS.filter(d => OFFICE_DAYS.includes(d.n) && d.date <= t); }
 function adDay() { return DAYS[+$('ad-day').value - 1]; }
-const counts = { roll: {}, trad: {} };
 
-function stepperRows(target, kind, max) {
-  $(target).innerHTML = [1, 2, 3, 4, 5, 6].map(t => `
-    <div class="tline"><span><span class="swatch" style="background:${TEAM_COLOURS[t]};vertical-align:middle"></span> Team ${t}</span>
-      <div class="stepper"><button type="button" data-k="${kind}" data-t="${t}" data-d="-1" aria-label="fewer">−</button>
-      <output id="${kind}-${t}">${counts[kind][t] || 0}</output>
-      <button type="button" data-k="${kind}" data-t="${t}" data-d="1" aria-label="more">+</button><small class="muted">/ ${max}</small></div></div>`).join('');
+// Roll-call marks not yet saved: name -> 'wore' | 'missed'
+let rollMarks = {};
+function savedStatus(day) {
+  const st = {};
+  for (const e of data.entries) if (!e.deleted && e.day === day && e.category === 'colour' && e.name) st[e.name] = 'wore';
+  for (const x of data.defaulters || []) if (x.day === day) st[x.name] = 'missed';
+  return st;
 }
-document.addEventListener('click', e => {
-  const b = e.target.closest('.stepper button[data-k]');
-  if (!b) return;
-  const { k, t, d } = b.dataset;
-  counts[k][t] = Math.min(7, Math.max(0, (counts[k][t] || 0) + +d));
-  $(`${k}-${t}`).textContent = counts[k][t];
+function renderRoll() {
+  const d = adDay();
+  if (!d) return;
+  const saved = savedStatus(d.n);
+  $('ad-roll').innerHTML = Object.entries(TEAMS).map(([t, members]) => `
+    <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}
+      <button type="button" class="btn alt small" data-allwore="${t}" style="margin-left:auto">All ✓</button></h4>
+    <div class="chips">${members.map(m => {
+      const st = saved[m] || rollMarks[m] || '';
+      const icon = st === 'wore' ? '✓' : st === 'missed' ? '✗' : '·';
+      return `<button type="button" class="mark ${st}${saved[m] ? ' locked' : ''}" data-mark="${esc(m)}" ${saved[m] ? 'disabled' : ''} aria-label="${esc(m)}: ${st || 'not marked'}">${icon} ${esc(shortName(m))}</button>`;
+    }).join('')}</div></div>`).join('');
+}
+$('ad-roll').addEventListener('click', e => {
+  const all = e.target.closest('[data-allwore]');
+  if (all) {
+    const saved = savedStatus(adDay().n);
+    TEAMS[all.dataset.allwore].forEach(m => { if (!saved[m]) rollMarks[m] = 'wore'; });
+    renderRoll(); return;
+  }
+  const b = e.target.closest('[data-mark]');
+  if (!b || b.disabled) return;
+  const m = b.dataset.mark;
+  rollMarks[m] = rollMarks[m] === 'wore' ? 'missed' : rollMarks[m] === 'missed' ? '' : 'wore';
+  renderRoll();
 });
 
 function renderDesk() {
@@ -883,36 +944,37 @@ function renderDesk() {
 }
 function renderDeskDay() {
   const d = adDay();
-  ['ad-roll-save', 'ad-snack-save', 'ad-x-save', 'ad-fri-save'].forEach(id => $(id).disabled = !d);
+  ['ad-roll-save', 'ad-snack-save', 'ad-x-save'].forEach(id => $(id).disabled = !d);
   if (!d) return;
-  const live = data.entries.filter(e => !e.deleted && e.day === d.n);
-  counts.roll = {}; counts.trad = {};
-  const dayDefaulters = (data.defaulters || []).filter(x => x.day === d.n);
-  if (dayDefaulters.length) for (const t of [1, 2, 3, 4, 5, 6]) counts.roll[t] = 7 - dayDefaulters.filter(x => x.team === t).length;
-  live.forEach(e => { if (e.category === 'colour') counts.roll[e.team] = e.points; if (e.category === 'traditional') counts.trad[e.team] = e.points / 2; });
-  $('ad-colour').textContent = d.colour;
-  $('ad-colour2').textContent = d.colour;
-  renderPick();
-  stepperRows('ad-roll', 'roll', 7);
-  stepperRows('ad-trad', 'trad', 7);
+  $('ad-colour').textContent = `${d.colour}, Day ${d.n}`;
   $('ad-host').textContent = d.host ? `Team ${d.host} hosting` : 'no host today';
   $('ad-snack-card').classList.toggle('hidden', !d.host);
-  $('ad-friday').classList.toggle('hidden', d.n !== 6);
+  renderRoll();
   renderDeskEntries();
 }
-// Refreshes only the entry list, so polling never wipes half-entered counts.
+function bonusLeft(team) {
+  return 10 - data.entries.filter(e => !e.deleted && e.team === team && e.category === 'extra_bonus').reduce((n, e) => n + e.points, 0);
+}
+function renderBonusLeft() {
+  const t = +$('ad-x-team').value;
+  $('ad-x-left').textContent = $('ad-x-cat').value === 'extra_bonus' ? `Team ${t} has ${bonusLeft(t)} of 10 extra-bonus points left for the festival.` : '';
+}
+$('ad-x-team').onchange = $('ad-x-cat').onchange = renderBonusLeft;
+// Refreshes only the entry list, so polling never wipes half-entered marks.
 function renderDeskEntries() {
   const d = adDay();
   if (!d) return;
   const list = data.entries.filter(e => e.day === d.n && !e.deleted);
-  $('ad-entries').innerHTML = list.length
-    ? list.map(e => `
-      <div class="tline"><span><b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category])} <b class="pts ${e.points >= 0 ? 'plus' : 'minus'}">${e.points > 0 ? '+' : ''}${e.points}</b>${e.note ? ` · <i>${esc(e.note)}</i>` : ''}<br><small class="muted">${fmtTime(e.at)}</small></span>
-      <button class="btn alt small" data-remove="${esc(e.id)}">Remove</button></div>`).join('')
-    : '<p class="muted">No entries for this day yet.</p>';
+  const people = list.filter(e => e.name), other = list.filter(e => !e.name);
+  const peopleHtml = people.length ? `<div class="tline" style="display:block"><b>👗 Dress code (+1 each)</b><div class="chips" style="margin-top:6px">${people.map(e =>
+    `<span class="pill">${esc(shortName(e.name))} <button class="btn alt small" style="padding:0 6px" data-remove="${esc(e.id)}" aria-label="Remove ${esc(e.name)}">✕</button></span>`).join('')}</div></div>` : '';
+  $('ad-entries').innerHTML = (peopleHtml + other.map(e => `
+      <div class="tline"><span><b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category] || e.category)} <b class="pts ${e.points >= 0 ? 'plus' : 'minus'}">${e.points > 0 ? '+' : ''}${e.points}</b>${e.note ? ` · <i>${esc(e.note)}</i>` : ''}<br><small class="muted">${fmtTime(e.at)}</small></span>
+      <button class="btn alt small" data-remove="${esc(e.id)}">Remove</button></div>`).join('')) || '<p class="muted">No entries for this day yet.</p>';
   renderAdPolice();
+  renderBonusLeft();
 }
-$('ad-day').onchange = renderDeskDay;
+$('ad-day').onchange = () => { rollMarks = {}; renderDeskDay(); };
 
 async function addAwards(awards, msgId, btn) {
   await busy(btn, async () => {
@@ -924,42 +986,30 @@ async function addAwards(awards, msgId, btn) {
     } catch (err) { setMsg(msgId, err.message); }
   });
 }
-$('ad-roll-save').onclick = () => {
-  const d = adDay(), live = data.entries.filter(e => !e.deleted && e.day === d.n);
-  const awards = [];
-  for (const t of [1, 2, 3, 4, 5, 6]) {
-    const n = counts.roll[t] || 0;
-    const existing = live.find(e => e.team === t && e.category === 'colour');
-    if (existing && existing.points !== n) { setMsg('ad-roll-msg', `Team ${t} already has ${existing.points} for colour — remove that entry below first to change it.`); return; }
-    if (!existing && n > 0) awards.push({ day: d.n, team: t, category: 'colour', points: n, note: `${n}/7 in ${d.colour}` });
-    if (n === 7 && !live.some(e => e.team === t && e.category === 'full_team')) awards.push({ day: d.n, team: t, category: 'full_team', points: 5, note: 'All 7 in colour!' });
-  }
-  addAwards(awards, 'ad-roll-msg', $('ad-roll-save'));
-};
+$('ad-roll-save').onclick = () => busy($('ad-roll-save'), async () => {
+  const d = adDay(), saved = savedStatus(d.n);
+  const wore = Object.keys(rollMarks).filter(m => rollMarks[m] === 'wore' && !saved[m]);
+  const missed = Object.keys(rollMarks).filter(m => rollMarks[m] === 'missed' && !saved[m]);
+  if (!wore.length && !missed.length) { setMsg('ad-roll-msg', 'Tap names to mark them first.'); return; }
+  try {
+    if (wore.length) await api({ action: 'add', awards: wore.map(name => ({ day: d.n, team: teamOf(name), category: 'colour', points: 1, name })) });
+    if (missed.length) await api({ action: 'defaulters_add', day: d.n, names: missed });
+    rollMarks = {};
+    setMsg('ad-roll-msg', `Saved ✓ ${wore.length} in colour, ${missed.length} not in colour${missed.length ? ' — spin the forfeit wheel below!' : ''}`, true);
+    await load(); renderDeskDay();
+  } catch (err) { setMsg('ad-roll-msg', err.message); await load(); renderDeskDay(); }
+});
 $('ad-snack-save').onclick = () => {
-  const d = adDay(), awards = [], note = $('ad-snack-note').value.trim();
-  const p = $('ad-pres').value, c = $('ad-crea').value;
-  if (p !== '') awards.push({ day: d.n, team: d.host, category: 'snack', points: +p, note });
-  if (c !== '') awards.push({ day: d.n, team: d.host, category: 'creativity', points: +c, note });
-  addAwards(awards, 'ad-snack-msg', $('ad-snack-save')).then(() => { $('ad-pres').value = ''; $('ad-crea').value = ''; });
+  const d = adDay(), p = $('ad-pres').value;
+  if (p === '') { setMsg('ad-snack-msg', 'Enter a score from 0 to 10.'); return; }
+  addAwards([{ day: d.n, team: d.host, category: 'snack', points: +p, note: $('ad-snack-note').value.trim() }], 'ad-snack-msg', $('ad-snack-save'))
+    .then(() => { $('ad-pres').value = ''; $('ad-snack-note').value = ''; });
 };
 $('ad-x-save').onclick = () => {
   const d = adDay(), pts = $('ad-x-pts').value;
   if (pts === '') { setMsg('ad-x-msg', 'Enter points.'); return; }
   addAwards([{ day: d.n, team: +$('ad-x-team').value, category: $('ad-x-cat').value, points: +pts, note: $('ad-x-note').value.trim() }], 'ad-x-msg', $('ad-x-save'))
     .then(() => { $('ad-x-pts').value = ''; $('ad-x-note').value = ''; });
-};
-$('ad-fri-save').onclick = () => {
-  const d = adDay(), live = data.entries.filter(e => !e.deleted && e.day === d.n), awards = [];
-  for (const t of [1, 2, 3, 4, 5, 6]) {
-    const n = counts.trad[t] || 0;
-    if (n > 0 && !live.some(e => e.team === t && e.category === 'traditional')) awards.push({ day: d.n, team: t, category: 'traditional', points: n * 2, note: `${n}/7 in traditional` });
-  }
-  [['ad-b1', 10, '1st'], ['ad-b2', 6, '2nd'], ['ad-b3', 3, '3rd']].forEach(([id, pts, place]) => {
-    const t = $(id).value;
-    if (t && !live.some(e => e.category === 'bingo' && e.points === pts)) awards.push({ day: d.n, team: +t, category: 'bingo', points: pts, note: `Bingo ${place} place` });
-  });
-  addAwards(awards, 'ad-fri-msg', $('ad-fri-save'));
 };
 $('ad-entries').addEventListener('click', e => {
   const b = e.target.closest('[data-remove]');
@@ -1000,28 +1050,38 @@ function policeItem(x, admin) {
   return `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
     <span style="text-align:right">${action}${admin ? ` <button class="btn alt small" data-unpolice="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">✕</button>` : ''}</span></li>`;
 }
-function renderPolice() {
-  const list = data.defaulters || [];
-  // show today if it's an office day, otherwise the latest day that has defaulters
+// Today's attendance if taken, otherwise the most recent day that has any.
+function attendanceDay() {
   const t = todayStr();
-  const todays = list.filter(x => DAYS[x.day - 1].date === t);
-  const shown = todays.length ? todays : list.filter(x => x.day === Math.max(0, ...list.map(y => y.day)));
-  if (!shown.length) {
-    $('police-sub').textContent = 'Didn’t wear the colour? The forfeit wheel decides your fate 🎡';
-    $('police').innerHTML = '<li class="muted">Everyone’s in colour so far — love to see it! 🌈</li>';
+  const days = new Set([
+    ...data.entries.filter(e => !e.deleted && e.category === 'colour' && e.name).map(e => e.day),
+    ...(data.defaulters || []).map(x => x.day),
+  ]);
+  const todayDay = DAYS.find(d => d.date === t);
+  if (todayDay && days.has(todayDay.n)) return todayDay;
+  const latest = Math.max(0, ...days);
+  return latest ? DAYS[latest - 1] : null;
+}
+function renderPolice() {
+  const d = attendanceDay();
+  if (!d) {
+    $('police-sub').textContent = 'Attendance is taken at 5 PM every office day. Wear the colour — or face the forfeit wheel 🎡';
+    $('attendance').innerHTML = '';
+    $('police').innerHTML = '';
     return;
   }
-  const d = DAYS[shown[0].day - 1];
-  $('police-sub').innerHTML = `Not in <b>${esc(d.colour)}</b> on Day ${d.n} — and the wheel has spoken:`;
-  $('police').innerHTML = shown.map(x => policeItem(x, false)).join('');
-}
-function renderPick() {
-  const d = adDay();
-  if (!d) return;
-  const marked = new Set((data.defaulters || []).filter(x => x.day === d.n).map(x => x.name));
-  $('ad-pick').innerHTML = Object.entries(TEAMS).map(([t, members]) => `
-    <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}</h4>
-    <div class="chips">${members.map(m => `<label><input type="checkbox" value="${esc(m)}" ${marked.has(m) ? 'checked disabled' : ''}>${esc(shortName(m))}</label>`).join('')}</div></div>`).join('');
+  const st = savedStatus(d.n);
+  const all = Object.values(TEAMS).flat();
+  const wore = all.filter(n => st[n] === 'wore').length, missed = all.filter(n => st[n] === 'missed').length;
+  $('police-sub').innerHTML = `<b>${esc(d.colour)}</b> · Day ${d.n} — ✓ ${wore} wore it · ✗ ${missed} didn’t · ${all.length - wore - missed} absent`;
+  $('attendance').innerHTML = Object.entries(TEAMS).map(([t, members]) => `
+    <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}
+      <small class="muted" style="margin-left:auto">${members.filter(m => st[m] === 'wore').length}/7</small></h4>
+    <div class="chips">${members.map(m => `<span class="mark ${st[m] || ''}">${st[m] === 'wore' ? '✓' : st[m] === 'missed' ? '✗' : '·'} ${esc(shortName(m))}</span>`).join('')}</div></div>`).join('');
+  const forfeits = (data.defaulters || []).filter(x => x.day === d.n);
+  $('police').innerHTML = forfeits.length
+    ? `<li style="border:0;padding-bottom:0"><b>🎡 The wheel has spoken:</b></li>` + forfeits.map(x => policeItem(x, false)).join('')
+    : '<li class="muted">Everyone present was in colour — love to see it! 🌈</li>';
 }
 function renderAdPolice() {
   const d = adDay();
@@ -1029,16 +1089,6 @@ function renderAdPolice() {
   const list = (data.defaulters || []).filter(x => x.day === d.n);
   $('ad-police').innerHTML = list.length ? list.map(x => policeItem(x, true)).join('') : '<li class="muted">No defaulters recorded for this day.</li>';
 }
-$('ad-pick-save').onclick = () => busy($('ad-pick-save'), async () => {
-  const d = adDay();
-  const names = [...document.querySelectorAll('#ad-pick input:checked:not(:disabled)')].map(i => i.value);
-  if (!names.length) { setMsg('ad-pick-msg', 'Tick at least one new person.'); return; }
-  try {
-    const j = await api({ action: 'defaulters_add', day: d.n, names });
-    setMsg('ad-pick-msg', `Saved ${j.added} ✓ — now spin the wheel for each!`, true);
-    await load(); renderDeskDay();
-  } catch (err) { setMsg('ad-pick-msg', err.message); }
-});
 $('ad-police').addEventListener('click', async e => {
   const rm = e.target.closest('[data-unpolice]');
   if (rm) {
@@ -1082,7 +1132,8 @@ $('ad-police').addEventListener('click', async e => {
  * Boot
  * ================================================================ */
 function renderAll() {
-  renderBoard(); renderFeeds(); renderPolice();
+  renderBoard(); renderFeeds(); renderPolice(); renderPeople();
+  const q = $('search').value; if (q) search(q);
   if (session.get() && !$('desk').classList.contains('hidden')) renderDeskEntries();
 }
 renderToday(); renderSchedule(); renderTeams();
