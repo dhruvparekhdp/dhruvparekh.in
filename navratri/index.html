@@ -320,14 +320,10 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
       </div>
       <div class="grid">
         <div class="callout">
-          <h3>👗 Friday 16th Oct — Traditional Day (clarified)</h3>
-          <p style="font-size:.92rem">It’s <b>Green</b> day <i>and</i> Traditional Indian Wear day. Wear a traditional outfit — saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti — <b>in green</b> to earn your dress-code point.</p>
-          <p style="font-size:.92rem;margin-top:6px">Bingo in the evening is for fun 🎯 — a stand-out performance can earn the team an extra bonus.</p>
-        </div>
-        <div class="callout">
           <h3>🪔 Monday 19th Oct — Traditional Day finale</h3>
-          <p style="font-size:.92rem">No colour this day — wear <b>any traditional Indian outfit, in any colour</b>, to earn your dress-code point. Not in traditional = ✗ (−1 and the forfeit wheel).</p>
-          <p style="font-size:.92rem;margin-top:6px">Aarti & Prasad, Bingo 🎯 and fun activities in the office, then the winners are announced 🏆</p>
+          <p style="font-size:.92rem">No colour this day — wear <b>any traditional Indian outfit, in any colour</b> (saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti…) to earn your dress-code point. Not in traditional = ✗ (−1 and the forfeit wheel).</p>
+          <p style="font-size:.92rem;margin-top:6px">🪔 Aarti & Prasad, 🎯 Bingo and fun activities in the office, then the winners are announced 🏆</p>
+          <p style="font-size:.92rem;margin-top:6px">Friday 16th is a regular <b>Green</b> day — no traditional wear or Bingo that day.</p>
         </div>
         <div class="card">
           <h3>⚖️ Fair play</h3>
@@ -348,7 +344,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
   <section class="panel hidden" data-panel="bingo">
     <h2>Festive Find-Someone Bingo</h2>
     <div class="card">
-      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Play it on Friday 16th and at the Monday 19th finale. Show your screen to the cultural team for bragging rights — a stand-out win may earn your team an extra bonus!</p>
+      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Play it at the Monday 19th finale. Show your screen to the cultural team for bragging rights — a stand-out win may earn your team an extra bonus!</p>
       <div class="row" style="margin-top:12px">
         <div><label for="bingo-name">Your name</label><input class="input" id="bingo-name" placeholder="Your full name" autocomplete="off"></div>
         <div style="flex:0 0 auto"><button class="btn" id="bingo-go">Get my card</button></div>
@@ -449,7 +445,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 9; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 10; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -478,7 +474,7 @@ const RITUALS = {
   3: 'Red is the colour of courage. Compliment someone’s outfit today — it costs nothing and makes their day.',
   4: 'Royal Blue Wednesday: midweek energy! Grab a team photo at snack time.',
   5: 'Yellow brings sunshine. Bring someone from another team to the snack table and say hello.',
-  6: 'Big Friday! Green + traditional wear. Team photos, Bingo in the evening — come dressed in your festive best.',
+  6: 'Green Friday! Go green head-to-toe, grab a team photo at snack time, and get ready for Monday’s traditional finale.',
   7: 'Weekend! Grey day — garba night anyone? Share your dandiya moments.',
   8: 'Purple Sunday. Rest your feet for the grand finale tomorrow.',
   9: 'Grand finale — Traditional Day! Come in your best traditional outfit. We seek Maa Durga’s blessings with a small Aarti and Prasad, then Bingo 🎯 and fun activities in the office. Team 6 closes the snack season and the winners are announced 🏆',
@@ -802,7 +798,7 @@ function renderSchedule() {
   $('sched').innerHTML = DAYS.map(d => `
     <div class="sday ${d.date === t ? 'now' : d.date < t ? 'past' : ''}">
       <div class="dot" style="background:${d.hex};color:${d.ink}">Day ${d.n}</div>
-      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 9 ? ' · 👗 Traditional Day · 🪔 Aarti & Prasad · 🎯 Bingo & fun activities' : ''}</small>
+      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 9 ? ' · 👗 Traditional Day · 🪔 Aarti & Prasad · 🎯 Bingo & fun activities' : ''}</small>
         ${FOOD[d.n] ? `<div class="food"><span class="swatch" style="background:${FOOD[d.n].hex};width:12px;height:12px;vertical-align:middle"></span> <b>${esc(FOOD[d.n].colour)} snacks</b> · <span class="muted">${esc(FOOD[d.n].ideas)}…</span>${FOOD[d.n].note ? `<br><span class="muted">${esc(FOOD[d.n].note)}</span>` : ''}</div>` : ''}</div>
       <div>${d.host ? `<span class="pill">🍿 Team ${d.host}</span>` : '<span class="pill">🏖️ Off</span>'}</div>
     </div>`).join('');

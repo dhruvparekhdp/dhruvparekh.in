@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 9;
+export const APP_VERSION = 10;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
@@ -23,7 +23,6 @@ export const DAY_DATES = {
   1: '2026-10-11', 2: '2026-10-12', 3: '2026-10-13', 4: '2026-10-14', 5: '2026-10-15',
   6: '2026-10-16', 7: '2026-10-17', 8: '2026-10-18', 9: '2026-10-19',
 };
-export const TRADITIONAL_DAY = 6;
 export const ROSTER = {
   1: ['Jagjit Singh Vasir', 'Gautam Pandurang Murkunde', 'Nikunj Kapri', 'Shobha Das', 'Soniya Singh', 'Jayashree Khade', 'Chrisann Fernandes'],
   2: ['Jatin Chugh', 'Jyoti Dattatraya Nanaware', 'Vaishnavi Dattatray Devgire', 'Kuriakose T Babu', 'Varsha Bagul', 'Ramjeet Yadav', 'Divya Ghatkar'],
