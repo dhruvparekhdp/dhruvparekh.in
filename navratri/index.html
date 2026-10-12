@@ -321,7 +321,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
       <div class="grid">
         <div class="callout">
           <h3>🪔 Monday 19th Oct — Traditional Day finale</h3>
-          <p style="font-size:.92rem">No colour this day — wear <b>any traditional Indian outfit, in any colour</b> (saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti…) to earn your dress-code point. Not in traditional = ✗ (−1 and the forfeit wheel).</p>
+          <p style="font-size:.92rem">No colour this day — wear <b>any traditional Indian outfit, in any colour</b> (saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti…) to earn your dress-code point. Not in traditional = ✗ (−1).</p>
           <p style="font-size:.92rem;margin-top:6px">🪔 Aarti & Prasad, 🎯 Bingo and fun activities in the office, then the winners are announced 🏆</p>
           <p style="font-size:.92rem;margin-top:6px">Friday 16th is a regular <b>Green</b> day — no traditional wear or Bingo that day.</p>
         </div>
@@ -385,7 +385,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
       <div class="card">
         <h3>🚨 Colour Police · Daily attendance — <span id="ad-colour"></span></h3>
-        <p class="muted">Take attendance at 5 PM. Tap each person: <b>✓</b> wore the colour (+1 for them and their team) → <b>✗</b> didn’t (−1 for them and their team + forfeit wheel 🎡) → <b>·</b> absent / on leave. Saved people are locked; to fix one, remove the entry below.</p>
+        <p class="muted">Take attendance at 5 PM. Tap each person: <b>✓</b> wore the colour (+1 for them and their team) → <b>✗</b> didn’t (−1 for them and their team) → <b>·</b> absent / on leave. Saved people are locked; to fix one, remove the entry below.</p>
         <div id="ad-roll"></div>
         <button class="btn" id="ad-roll-save" style="margin-top:12px">Save attendance</button>
         <div class="msg" id="ad-roll-msg"></div>
@@ -420,7 +420,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
         </div>
       </div>
 
-      <div class="card" style="margin-top:14px">
+      <div class="card" id="ad-wheel" style="margin-top:14px">
         <h3>🎡 Forfeit wheel</h3>
         <p class="muted">Everyone marked ✗ in attendance lands here. The server picks the forfeit at random. Made a mistake or were testing? Press ↩ Undo (with a reason — it’s logged publicly) and spin again.</p>
         <ul class="police" id="ad-police" style="margin-top:6px"></ul>
@@ -445,7 +445,10 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 11; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 12;
+// The forfeit wheel is run offline in the office for now. Flip to true to bring it back;
+// the server side (spin / unspin) and any saved results are untouched.
+const SHOW_FORFEIT_WHEEL = false; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -748,8 +751,9 @@ function renderFeeds() {
   const live = list.filter(e => !e.deleted).slice(0, 4);
   $('mini-feed').innerHTML = live.length ? live.map(feedItem).join('') : '<li class="muted">Judges are warming up… 🧐</li>';
   const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒', defaulter: '🚨', spin: '🎡', unspin: '↩️' };
-  $('audit').innerHTML = data.audit.length
-    ? [...data.audit].reverse().slice(0, 30).map(a => `<li><span>${icon[a.action] || '•'} ${esc(a.detail)}<br><small class="muted">${fmtTime(a.at)}</small></span></li>`).join('')
+  const audit = data.audit.filter(a => SHOW_FORFEIT_WHEEL || (a.action !== 'spin' && a.action !== 'unspin'));
+  $('audit').innerHTML = audit.length
+    ? [...audit].reverse().slice(0, 30).map(a => `<li><span>${icon[a.action] || '•'} ${esc(a.detail)}<br><small class="muted">${fmtTime(a.at)}</small></span></li>`).join('')
     : '<li class="muted">No activity yet.</li>';
 }
 
@@ -1026,7 +1030,7 @@ $('ad-roll-save').onclick = () => busy($('ad-roll-save'), async () => {
     if (wore.length) await api({ action: 'add', awards: wore.map(name => ({ day: d.n, team: teamOf(name), category: 'colour', points: 1, name })) });
     if (missed.length) await api({ action: 'defaulters_add', day: d.n, names: missed });
     rollMarks = {};
-    setMsg('ad-roll-msg', `Saved ✓ ${wore.length} in colour, ${missed.length} not in colour${missed.length ? ' — spin the forfeit wheel below!' : ''}`, true);
+    setMsg('ad-roll-msg', `Saved ✓ ${wore.length} in colour, ${missed.length} not in colour${missed.length && SHOW_FORFEIT_WHEEL ? ' — spin the forfeit wheel below!' : ''}`, true);
     await load(); renderDeskDay();
   } catch (err) { setMsg('ad-roll-msg', err.message); await load(); renderDeskDay(); }
 });
@@ -1075,7 +1079,7 @@ const PUNISHMENTS = [
   'Act like a celebrity being interviewed about office life 🎥',
 ];
 function policeItem(x, admin) {
-  const action = x.punishment
+  const action = !SHOW_FORFEIT_WHEEL ? '<span class="pts minus">−1</span>' : x.punishment
     ? `<span class="forfeit">🎡 ${esc(x.punishment)}</span>${admin ? ` <button class="btn alt small" data-unspin="${esc(x.id)}" title="Undo this spin so it can be spun again">↩ Undo</button>` : ''}`
     : admin ? `<button class="btn small" data-spin="${esc(x.id)}">🎡 Spin</button>` : '<span class="muted">wheel pending… 🎡</span>';
   return `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
@@ -1096,7 +1100,7 @@ function attendanceDay() {
 function renderPolice() {
   const d = attendanceDay();
   if (!d) {
-    $('police-sub').textContent = 'Attendance is taken at 5 PM every office day. Wear the colour — or face the forfeit wheel 🎡';
+    $('police-sub').textContent = 'Attendance is taken at 5 PM every office day. Wear the colour — every ✓ counts!';
     $('attendance').innerHTML = '';
     $('police').innerHTML = '';
     return;
@@ -1110,6 +1114,7 @@ function renderPolice() {
       <small class="muted" style="margin-left:auto">${members.filter(m => st[m] === 'wore').length}/7</small></h4>
     <div class="chips">${members.map(m => `<span class="mark ${st[m] || ''}">${st[m] === 'wore' ? '✓' : st[m] === 'missed' ? '✗' : '·'} ${esc(shortName(m))}</span>`).join('')}</div></div>`).join('');
   const forfeits = (data.defaulters || []).filter(x => x.day === d.n);
+  if (!SHOW_FORFEIT_WHEEL) { $('police').innerHTML = ''; return; }
   $('police').innerHTML = forfeits.length
     ? `<li style="border:0;padding-bottom:0"><b>🎡 The wheel has spoken:</b></li>` + forfeits.map(x => policeItem(x, false)).join('')
     : '<li class="muted">Everyone present was in colour — love to see it! 🌈</li>';
@@ -1118,7 +1123,11 @@ function renderAdPolice() {
   const d = adDay();
   if (!d) return;
   const list = (data.defaulters || []).filter(x => x.day === d.n);
-  $('ad-police').innerHTML = list.length ? list.map(x => policeItem(x, true)).join('') : '<li class="muted">No defaulters recorded for this day.</li>';
+  if (!SHOW_FORFEIT_WHEEL) {
+    $('ad-wheel').querySelector('h3').textContent = '✗ Not in colour';
+    $('ad-wheel').querySelector('p').textContent = 'Everyone marked ✗ in attendance (−1 each). Marked someone by mistake? Press ✕ (with a reason — logged publicly) and mark them again above.';
+  }
+  $('ad-police').innerHTML = list.length ? list.map(x => policeItem(x, true)).join('') : '<li class="muted">No one marked ✗ for this day.</li>';
 }
 $('ad-police').addEventListener('click', async e => {
   const un = e.target.closest('[data-unspin]');
