@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 6;
+export const APP_VERSION = 7;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
@@ -58,9 +58,9 @@ export const TEAM_SIZE = 7;
 // Scoring agreed by the cultural team (whiteboard, Day 2):
 //   Dress code  1 point per person per office day → 6 per person, 42 per team
 //   Snacks      0–10, host team on its day
-//   Extra bonus up to 10 per team for the whole festival (for something extraordinary)
+//   Extra bonus up to 8 per team for the whole festival (for something extraordinary)
 //   Penalty     minus points for not doing the task, with a public reason
-export const EXTRA_BONUS_CAP = 10;
+export const EXTRA_BONUS_CAP = 8;
 export const RULES = {
   colour:      { label: 'Dress code',    min: 1,   max: 1,  perPerson: true },
   snack:       { label: 'Snacks',        min: 0,   max: 10, once: true, hostOnly: true },

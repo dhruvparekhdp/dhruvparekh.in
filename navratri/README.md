@@ -18,14 +18,14 @@ the server and kept in Blobs. To change the password without a code change, set 
 **Individual** = days wore the colour (+1 each) − days in office but not in colour (−1 each). Absent = 0.
 Range −6 to +6 over the 6 scoring days.
 
-**Team** = Σ members' ✓ + Snacks + Extra bonus − Σ members' ✗ − Penalties. Best possible 62.
+**Team** = Σ members' ✓ + Snacks + Extra bonus − Σ members' ✗ − Penalties. Best possible 60.
 
 | | Points |
 | --- | --- |
 | Dress code ✓ | +1 per person per office day (max 42 per team) |
 | Not in colour ✗ | −1 per person per day, for the person and the team |
 | Snacks | 0–10, host team on its day |
-| Extra bonus | up to 10 per team for the whole festival, reason required |
+| Extra bonus | up to 8 per team for the whole festival, reason required |
 | Penalty | −1 to −15, reason required |
 
 ## Colour Police · daily attendance
@@ -44,7 +44,7 @@ can't be re-spun, and the day's attendance and forfeits are public on the Today 
 - Only same-site JSON requests are accepted (blocks scripts on other sites).
 - Every award is validated: day must be an office day that has already happened, points must be in
   range, names must be on the team list, one dress-code point per person per day, snack points only
-  for that day's host team, extra bonus capped at 10 per team, penalties need a reason.
+  for that day's host team, extra bonus capped at 8 per team, penalties need a reason.
 - Removals are soft deletes with a public reason; every change is in the public Transparency log.
 
 If the password leaks: set `NAVRATRI_ADMIN_PASSWORD` in Netlify, redeploy, then press "Sign out all devices".

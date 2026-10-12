@@ -84,7 +84,7 @@ test('scoring rules', { skip: needsPassword }, async () => {
   assert.match((await add({ day: 2, team: 1, category: 'snack', points: 11 })).body.error, /0 to 10/);
 
   assert.equal((await add({ day: 3, team: 4, category: 'extra_bonus', points: 7, note: 'Live dhol' })).status, 200);
-  assert.match((await add({ day: 2, team: 4, category: 'extra_bonus', points: 4, note: 'Rangoli' })).body.error, /3 extra-bonus points left/);
+  assert.match((await add({ day: 2, team: 4, category: 'extra_bonus', points: 2, note: 'Rangoli' })).body.error, /1 extra-bonus points left/);
   assert.match((await add({ day: 2, team: 5, category: 'extra_bonus', points: 3 })).body.error, /reason/);
 
   const g = await get();

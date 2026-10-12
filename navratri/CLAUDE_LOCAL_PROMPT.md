@@ -27,7 +27,7 @@ scoreboard that lives in this repo. It is LIVE at https://dhruvparekh.in/navratr
 - Dress code: 1 point per PERSON per office day (max 6 per person, 42 per team). Stored as one
   entry per person (`category: 'colour'`, `name`, `points: 1`).
 - Snacks: 0–10, only for that day's host team, once per day.
-- Extra bonus: 1–10, reason required, capped at 10 per team for the whole festival.
+- Extra bonus: 1–8, reason required, capped at 8 per team for the whole festival.
 - Penalty ("task not done"): −1 to −15, reason required.
 - Two leaderboards: team total, and individual dress points out of 6.
 - Colour Police = daily attendance: each person ✓ wore / ✗ didn't / · absent. ✗ people go on the

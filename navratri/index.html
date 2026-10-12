@@ -310,11 +310,11 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
         <table>
           <tr><td>👗 Dress code — sum of the 7 members’ ✓ (7 × 6 days)</td><td>up to +42</td></tr>
           <tr><td>🍿 Snacks — host team only, on its day, judged 0–10</td><td>up to +10</td></tr>
-          <tr><td>🌟 Extra bonus — for something extraordinary, reason shown publicly (whole festival)</td><td>up to +10</td></tr>
+          <tr><td>🌟 Extra bonus — for something extraordinary, reason shown publicly (whole festival)</td><td>up to +8</td></tr>
           <tr><td>✗ Not in colour — −1 for every ✗ of a member</td><td>−1 each</td></tr>
           <tr><td>⛔ Task not done — e.g. no snacks by 5 PM (−10), other misses; reason shown publicly</td><td>−1 to −15</td></tr>
         </table>
-        <p class="formula"><b>Team = Σ members’ ✓ + Snacks + Extra bonus − Σ members’ ✗ − Penalties</b><br>Best possible: 42 + 10 + 10 = <b>62</b>. Leaderboard shows <span class="pts plus">+earned</span> and <span class="pts minus">−negative</span> separately.</p>
+        <p class="formula"><b>Team = Σ members’ ✓ + Snacks + Extra bonus − Σ members’ ✗ − Penalties</b><br>Best possible: 42 + 10 + 8 = <b>60</b>. Leaderboard shows <span class="pts plus">+earned</span> and <span class="pts minus">−negative</span> separately.</p>
         <p class="muted" style="margin-top:8px">Ties share the same rank. Scoring days: Mon 12, Tue 13, Wed 14, Thu 15, Fri 16, Mon 19 Oct. Sun 11, Sat 17, Sun 18 = no points.</p>
       </div>
       <div class="grid">
@@ -406,7 +406,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
             <div><label for="ad-x-team">Team</label><select class="input" id="ad-x-team"></select></div>
             <div><label for="ad-x-cat">Type</label>
               <select class="input" id="ad-x-cat">
-                <option value="extra_bonus">Extra bonus (+1…+10)</option>
+                <option value="extra_bonus">Extra bonus (+1…+8)</option>
                 <option value="penalty">Task not done (−1…−15)</option>
               </select></div>
             <div><label for="ad-x-pts">Points</label><input class="input" id="ad-x-pts" type="number" step="1" inputmode="numeric"></div>
@@ -443,7 +443,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 6; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 7; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -967,12 +967,13 @@ function renderDeskDay() {
   renderRoll();
   renderDeskEntries();
 }
+const BONUS_CAP = 8; // must match EXTRA_BONUS_CAP on the server
 function bonusLeft(team) {
-  return 10 - data.entries.filter(e => !e.deleted && e.team === team && e.category === 'extra_bonus').reduce((n, e) => n + e.points, 0);
+  return BONUS_CAP - data.entries.filter(e => !e.deleted && e.team === team && e.category === 'extra_bonus').reduce((n, e) => n + e.points, 0);
 }
 function renderBonusLeft() {
   const t = +$('ad-x-team').value;
-  $('ad-x-left').textContent = $('ad-x-cat').value === 'extra_bonus' ? `Team ${t} has ${bonusLeft(t)} of 10 extra-bonus points left for the festival.` : '';
+  $('ad-x-left').textContent = $('ad-x-cat').value === 'extra_bonus' ? `Team ${t} has ${bonusLeft(t)} of ${BONUS_CAP} extra-bonus points left for the festival.` : '';
 }
 $('ad-x-team').onchange = $('ad-x-cat').onchange = renderBonusLeft;
 // Refreshes only the entry list, so polling never wipes half-entered marks.
