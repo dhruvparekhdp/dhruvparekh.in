@@ -39,3 +39,8 @@
   from = "/saloni/sitemap.xml"
   to = "/saloni/sitemap.xml"
   status = 200
+
+[[redirects]]
+  from = "/garba"
+  to = "/navratri/"
+  status = 301

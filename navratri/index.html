@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navratri at VoloFin 🪔</title>
+<meta name="description" content="9 days · 9 colours · 1 team. Live team scoreboard, colour of the day, snack hosts and festive bingo for Navratri at VoloFin.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#d81b60">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪔</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@400;500;600;700&family=Kalam:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+:root {
+  --day: #f26b21;          /* replaced with today's colour by script */
+  --day-ink: #fff;
+  --ink: #2b1a3d;
+  --muted: #6b5a7a;
+  --bg: #fff8ef;
+  --card: #ffffff;
+  --line: #f0e2cf;
+  --pink: #d81b60;
+  --navy: #1f2a6b;
+  --gold: #f5b400;
+  --ok: #1e8e3e;
+  --bad: #c62828;
+  --radius: 18px;
+  --shadow: 0 6px 24px rgba(80, 40, 20, .08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--day) 18%, transparent) 0, transparent 40%),
+    radial-gradient(circle at 100% 30%, rgba(216, 27, 96, .08) 0, transparent 35%);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+.hidden { display: none !important; }
+
+/* bunting */
+.bunting { display: flex; height: 26px; overflow: hidden; }
+.bunting span { flex: 1; clip-path: polygon(0 0, 100% 0, 50% 100%); margin: 0 2px; }
+
+/* hero */
+header.hero { text-align: center; padding: 18px 0 8px; }
+.hero h1 { font-family: 'Yatra One', serif; font-size: clamp(2.3rem, 8vw, 3.6rem); line-height: 1.05; color: var(--pink); }
+.hero h1 b { color: var(--navy); font-weight: 400; display: block; }
+.ribbon { display: inline-block; margin-top: 10px; background: var(--gold); color: var(--ink); font-weight: 700; letter-spacing: .06em; font-size: .85rem; padding: 6px 18px; border-radius: 999px; }
+.tagline { font-family: 'Kalam', cursive; color: var(--muted); margin-top: 8px; font-size: 1.05rem; }
+
+/* tabs */
+nav.tabs { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); margin-top: 10px; }
+nav.tabs .wrap { display: flex; gap: 6px; overflow-x: auto; padding-top: 8px; padding-bottom: 8px; scrollbar-width: none; }
+nav.tabs .wrap::-webkit-scrollbar { display: none; }
+nav.tabs button { flex: none; border: 0; background: transparent; padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: .92rem; color: var(--muted); white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { background: var(--day); color: var(--day-ink); box-shadow: 0 2px 8px color-mix(in srgb, var(--day) 40%, transparent); }
+
+main { padding: 18px 0 40px; }
+section.panel { animation: fade .35s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+h2 { font-family: 'Yatra One', serif; font-weight: 400; font-size: 1.6rem; color: var(--navy); margin-bottom: 10px; }
+h3 { font-size: 1.05rem; margin-bottom: 6px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+.grid { display: grid; gap: 14px; }
+@media (min-width: 720px) { .grid.two { grid-template-columns: 1fr 1fr; } .grid.three { grid-template-columns: repeat(3, 1fr); } }
+.muted { color: var(--muted); font-size: .9rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #f6efe6; }
+.swatch { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(0,0,0,.12); display: inline-block; flex: none; }
+
+/* today */
+.today { position: relative; overflow: hidden; background: var(--day); color: var(--day-ink); border: 0; }
+.today::after { content: '🪔'; position: absolute; right: -10px; bottom: -24px; font-size: 7rem; opacity: .18; }
+.today .daynum { font-weight: 700; letter-spacing: .1em; font-size: .8rem; opacity: .9; text-transform: uppercase; }
+.today .colour { font-family: 'Yatra One', serif; font-size: clamp(2rem, 7vw, 2.8rem); line-height: 1.1; margin: 4px 0; }
+.today .goddess { font-size: .95rem; opacity: .95; }
+.today .host { margin-top: 12px; background: rgba(255,255,255,.18); border-radius: 12px; padding: 10px 12px; font-size: .92rem; }
+.today.light { color: var(--ink); }
+.today.light .host { background: rgba(0,0,0,.05); }
+.countdown { display: flex; gap: 10px; margin-top: 12px; }
+.countdown div { background: rgba(255,255,255,.2); border-radius: 12px; padding: 8px 10px; text-align: center; min-width: 64px; }
+.today.light .countdown div { background: rgba(0,0,0,.06); }
+.countdown b { display: block; font-size: 1.5rem; line-height: 1; }
+.countdown small { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+
+/* leaderboard */
+.lb-row { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.lb-row:last-child { border-bottom: 0; }
+.rank { font-size: 1.4rem; text-align: center; font-weight: 700; color: var(--muted); }
+.lb-name { font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bar { height: 10px; background: #f3e9dc; border-radius: 99px; margin-top: 6px; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.score { font-size: 1.5rem; font-weight: 700; text-align: right; min-width: 56px; }
+.score small { display: block; font-size: .68rem; color: var(--muted); font-weight: 500; }
+.cheer { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 2px 10px; font-size: .78rem; font-weight: 600; }
+.cheer:active { transform: scale(.94); }
+.details { font-size: .85rem; color: var(--muted); margin-top: 6px; }
+.feed li { list-style: none; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9rem; display: flex; gap: 10px; justify-content: space-between; }
+.feed li:last-child { border-bottom: 0; }
+.pts { font-weight: 700; white-space: nowrap; }
+.pts.plus { color: var(--ok); } .pts.minus { color: var(--bad); }
+.struck { text-decoration: line-through; opacity: .55; }
+
+/* teams */
+.team { border-top: 6px solid var(--tc); }
+.team ul { list-style: none; margin-top: 8px; }
+.team li { padding: 3px 0; font-size: .92rem; }
+.team li.me { background: #fff3c4; border-radius: 6px; padding: 3px 6px; font-weight: 600; }
+.search { width: 100%; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: 1rem; }
+.search:focus { outline: none; border-color: var(--day); }
+.found { margin-top: 12px; }
+
+/* schedule */
+.sched { display: grid; gap: 8px; }
+.sday { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: #fff; border: 1px solid var(--line); }
+.sday.now { outline: 3px solid var(--day); }
+.sday.past { opacity: .6; }
+.sday .dot { width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; font-weight: 700; font-size: .8rem; border: 2px solid rgba(0,0,0,.08); }
+
+/* rules */
+.rules table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.rules td, .rules th { padding: 8px 6px; border-bottom: 1px dashed var(--line); text-align: left; vertical-align: top; }
+.rules td:last-child, .rules th:last-child { text-align: right; white-space: nowrap; font-weight: 700; }
+.callout { background: #fff3c4; border-radius: 14px; padding: 14px; border: 1px solid #f3dd8a; }
+
+/* bingo */
+.bingo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 12px; }
+.bingo button { min-height: 72px; border: 2px solid var(--line); background: #fff; border-radius: 12px; font-size: clamp(.58rem, 2.4vw, .8rem); line-height: 1.2; padding: 4px; display: flex; align-items: center; justify-content: center; text-align: center; transition: transform .15s, background .2s; }
+@media (min-width: 560px) { .bingo button { aspect-ratio: 1; min-height: 0; } }
+.bingo button.on { background: var(--day); color: var(--day-ink); border-color: transparent; transform: rotate(-2deg); }
+.bingo button.free { background: var(--gold); border-color: transparent; font-weight: 700; }
+.bingo button.win { box-shadow: 0 0 0 3px var(--pink); }
+
+/* forms / admin */
+label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.input, select.input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; }
+.btn { border: 0; border-radius: 12px; padding: 11px 18px; font-weight: 600; background: var(--pink); color: #fff; }
+.btn.alt { background: #fff; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.small { padding: 6px 12px; font-size: .82rem; border-radius: 10px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.row > * { flex: 1 1 140px; }
+.msg { font-size: .88rem; margin-top: 8px; min-height: 1.2em; }
+.msg.err { color: var(--bad); } .msg.ok { color: var(--ok); }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper button { width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; font-weight: 700; }
+.stepper output { min-width: 26px; text-align: center; font-weight: 700; }
+.tline { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); gap: 8px; }
+.banner { background: #fde8e8; color: var(--bad); padding: 10px 14px; border-radius: 12px; font-size: .88rem; margin-bottom: 12px; }
+
+footer { text-align: center; padding: 26px 16px 40px; color: var(--muted); font-size: .85rem; }
+footer button { background: none; border: 0; text-decoration: underline; color: var(--muted); font-size: .8rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="bunting" id="bunting" aria-hidden="true"></div>
+
+<header class="hero wrap">
+  <h1>Navratri <b>at VoloFin</b></h1>
+  <div class="ribbon">9 DAYS • 9 COLOURS • 1 TEAM</div>
+  <p class="tagline">Good food · Great vibes · Festive spirits ♡</p>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap" role="tablist" id="tabs">
+    <button role="tab" data-tab="today">🪔 Today</button>
+    <button role="tab" data-tab="board">🏆 Leaderboard</button>
+    <button role="tab" data-tab="teams">👥 My Team</button>
+    <button role="tab" data-tab="schedule">🎨 9 Colours</button>
+    <button role="tab" data-tab="rules">📜 Rules</button>
+    <button role="tab" data-tab="bingo">🎯 Bingo</button>
+    <button role="tab" data-tab="admin" id="tab-admin" class="hidden">🔐 Scorekeeper</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <div id="offline" class="banner hidden">Live scores couldn’t be loaded right now — showing the last scores we had. Retrying automatically…</div>
+
+  <!-- TODAY -->
+  <section class="panel" data-panel="today">
+    <div class="grid two">
+      <div class="card today" id="today-card"></div>
+      <div class="grid">
+        <div class="card">
+          <h3>🏆 Top of the table</h3>
+          <div id="mini-board"></div>
+          <button class="btn alt small" data-goto="board" style="margin-top:10px">Full leaderboard →</button>
+        </div>
+        <div class="card">
+          <h3>📣 Latest from the judges</h3>
+          <ul class="feed" id="mini-feed"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>✨ Today’s little ritual</h3>
+      <p id="ritual" class="muted"></p>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="panel hidden" data-panel="board">
+    <h2>Leaderboard</h2>
+    <div class="card">
+      <div id="board"></div>
+      <p class="muted" style="margin-top:10px">Tap a team to see where their points came from. Cheers are just for love — they don’t change the score. <span id="updated"></span></p>
+    </div>
+    <div class="grid two" style="margin-top:14px">
+      <div class="card">
+        <h3>📣 Every point, as it happened</h3>
+        <ul class="feed" id="feed"></ul>
+      </div>
+      <div class="card">
+        <h3>🔎 Transparency log</h3>
+        <p class="muted">Every change the scorekeepers make is recorded here — including removals and failed logins. Nothing is hidden.</p>
+        <ul class="feed" id="audit"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAMS -->
+  <section class="panel hidden" data-panel="teams">
+    <h2>Find my team</h2>
+    <input class="search" id="search" placeholder="Type your name… e.g. Dhruv" autocomplete="off" aria-label="Search your name">
+    <div id="found" class="found"></div>
+    <div class="grid three" id="teams" style="margin-top:14px"></div>
+    <p class="muted" style="margin-top:12px">Mumbai office · 42 Navratri warriors · 6 teams of 7.</p>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section class="panel hidden" data-panel="schedule">
+    <h2>9 Days · 9 Colours</h2>
+    <div class="sched" id="sched"></div>
+    <p class="muted" style="margin-top:12px">🍿 Snack time is 5 PM every office day. Weekend colours are just for the joy of it — post your look in the group!</p>
+  </section>
+
+  <!-- RULES -->
+  <section class="panel hidden" data-panel="rules">
+    <h2>How scoring works</h2>
+    <div class="grid two">
+      <div class="card rules">
+        <h3>🎨 Colour of the day — every team, every office day</h3>
+        <table>
+          <tr><td>Each member wearing the day’s colour</td><td>+1</td></tr>
+          <tr><td>Full-team bonus — all 7 in colour</td><td>+5</td></tr>
+          <tr><td>Extra effort — accessories, props, matching desk, coordinated look</td><td>up to +5</td></tr>
+        </table>
+        <h3 style="margin-top:16px">🍿 Snack hosting — host team only</h3>
+        <table>
+          <tr><td>Presentation (how it looks, how it’s served)</td><td>0 – 10</td></tr>
+          <tr><td>Creativity (something different, themed to the colour)</td><td>0 – 5</td></tr>
+        </table>
+        <h3 style="margin-top:16px">⛔ Minus points</h3>
+        <table>
+          <tr><td>Hosting team doesn’t arrange snacks by 5 PM</td><td>−10</td></tr>
+          <tr><td>Snacks very late / task half-done</td><td>−3 to −5</td></tr>
+          <tr><td>Other rule-breaking (judges decide, reason shown publicly)</td><td>up to −15</td></tr>
+        </table>
+      </div>
+      <div class="grid">
+        <div class="callout">
+          <h3>👗 Friday 16th Oct — Traditional Day (clarified)</h3>
+          <p style="font-size:.92rem">It’s <b>Green</b> day <i>and</i> Traditional Indian Wear day. Wear any traditional outfit — saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti — all count.</p>
+          <ul style="font-size:.92rem;margin:8px 0 0 18px">
+            <li><b>+2</b> per member in traditional wear</li>
+            <li>Traditional <b>in green</b>? You also earn the colour point (+1) — so it stacks to +3 each</li>
+            <li>Bingo in the evening: 🥇 +10 · 🥈 +6 · 🥉 +3 to the winner’s team</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>⚖️ Fair play</h3>
+          <ul class="muted" style="margin-left:18px">
+            <li>Points are given only by the cultural team, after the day happens — no advance scoring.</li>
+            <li>The system blocks double-scoring, out-of-range points and snack points for a non-host team.</li>
+            <li>Every award and every removal appears in the public Transparency log with time and reason.</li>
+            <li>Counts are taken at 5 PM snack time. Be there to be counted!</li>
+            <li>Day 1, 7 and 8 are holidays/weekend — wear the colour for fun, no points.</li>
+            <li>Judges’ decision is final — but bribes in the form of jalebi are always welcome 😄</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BINGO -->
+  <section class="panel hidden" data-panel="bingo">
+    <h2>Festive Find-Someone Bingo</h2>
+    <div class="card">
+      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Show your screen to the cultural team to claim points for your team.</p>
+      <div class="row" style="margin-top:12px">
+        <div><label for="bingo-name">Your name</label><input class="input" id="bingo-name" placeholder="Your full name" autocomplete="off"></div>
+        <div style="flex:0 0 auto"><button class="btn" id="bingo-go">Get my card</button></div>
+      </div>
+      <div id="bingo-who" class="muted" style="margin-top:10px"></div>
+      <div class="bingo" id="bingo"></div>
+      <div class="row" style="margin-top:10px" id="bingo-tools"></div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section class="panel hidden" data-panel="admin">
+    <h2>Scorekeeper desk</h2>
+
+    <div class="card" id="login-card">
+      <h3>🔐 Cultural team sign-in</h3>
+      <p class="muted">Only the cultural team has these credentials. Wrong attempts are counted and shown in the public log; 5 wrong tries locks login for 15 minutes.</p>
+      <form id="login-form" class="row" style="margin-top:10px" autocomplete="off">
+        <div><label for="lg-user">Username</label><input class="input" id="lg-user" autocomplete="username" required></div>
+        <div><label for="lg-pass">Password</label><input class="input" id="lg-pass" type="password" autocomplete="current-password" required></div>
+        <div style="flex:0 0 auto"><button class="btn" id="lg-btn">Sign in</button></div>
+      </form>
+      <div class="msg err" id="lg-msg"></div>
+    </div>
+
+    <div id="desk" class="hidden">
+      <div class="card" style="margin-bottom:14px">
+        <div class="row">
+          <div style="flex:1 1 100%"><label for="ad-day">Scoring for</label><select class="input" id="ad-day"></select></div>
+          <div class="row">
+            <button class="btn alt small" id="ad-export">⬇ Backup</button>
+            <button class="btn alt small" id="ad-logout-all" title="Signs out every device that is logged in">Sign out all devices</button>
+            <button class="btn alt small" id="ad-logout">Sign out</button>
+          </div>
+        </div>
+        <p class="muted" id="ad-session" style="margin-top:6px"></p>
+      </div>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>🎨 Colour roll-call</h3>
+          <p class="muted">How many members of each team are wearing <b id="ad-colour"></b>? 7/7 adds the +5 full-team bonus automatically.</p>
+          <div id="ad-roll"></div>
+          <button class="btn" id="ad-roll-save" style="margin-top:10px">Save roll-call</button>
+          <div class="msg" id="ad-roll-msg"></div>
+        </div>
+
+        <div class="grid">
+          <div class="card" id="ad-snack-card">
+            <h3>🍿 Snack — <span id="ad-host"></span></h3>
+            <div class="row">
+              <div><label for="ad-pres">Presentation (0–10)</label><input class="input" id="ad-pres" type="number" min="0" max="10" step="1" inputmode="numeric"></div>
+              <div><label for="ad-crea">Creativity (0–5)</label><input class="input" id="ad-crea" type="number" min="0" max="5" step="1" inputmode="numeric"></div>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <div><label for="ad-snack-note">What did they serve?</label><input class="input" id="ad-snack-note" maxlength="120" placeholder="e.g. Sabudana vada & chai"></div>
+            </div>
+            <button class="btn" id="ad-snack-save" style="margin-top:10px">Save snack score</button>
+            <div class="msg" id="ad-snack-msg"></div>
+          </div>
+
+          <div class="card">
+            <h3>✨ Extra effort / penalty / special</h3>
+            <div class="row">
+              <div><label for="ad-x-team">Team</label><select class="input" id="ad-x-team"></select></div>
+              <div><label for="ad-x-cat">Type</label>
+                <select class="input" id="ad-x-cat">
+                  <option value="extra_effort">Extra colour effort (+1…+5)</option>
+                  <option value="penalty">Task not done (−1…−15)</option>
+                  <option value="other">Judges’ special (−5…+5)</option>
+                </select></div>
+              <div><label for="ad-x-pts">Points</label><input class="input" id="ad-x-pts" type="number" step="1" inputmode="numeric"></div>
+            </div>
+            <div style="margin-top:8px"><label for="ad-x-note">Reason (shown publicly)</label><input class="input" id="ad-x-note" maxlength="120"></div>
+            <button class="btn" id="ad-x-save" style="margin-top:10px">Save</button>
+            <div class="msg" id="ad-x-msg"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="ad-friday" style="margin-top:14px">
+        <h3>👗 Friday: traditional wear & bingo</h3>
+        <p class="muted">Members in traditional wear (×2 points each). Give green outfits their colour point in the roll-call too.</p>
+        <div id="ad-trad"></div>
+        <div class="row" style="margin-top:12px">
+          <div><label for="ad-b1">🥇 Bingo 1st (+10)</label><select class="input" id="ad-b1"></select></div>
+          <div><label for="ad-b2">🥈 2nd (+6)</label><select class="input" id="ad-b2"></select></div>
+          <div><label for="ad-b3">🥉 3rd (+3)</label><select class="input" id="ad-b3"></select></div>
+        </div>
+        <button class="btn" id="ad-fri-save" style="margin-top:10px">Save Friday scores</button>
+        <div class="msg" id="ad-fri-msg"></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3>🧾 Entries for this day</h3>
+        <p class="muted">Made a mistake? Remove the entry (with a reason — it’s logged publicly) and add it again.</p>
+        <div id="ad-entries"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Made with ❤️ by the VoloFin Cultural Team · Shubh Navratri! 🙏
+  <br><button id="open-admin">Scorekeeper login</button>
+</footer>
+
+<script>
+/* ================================================================
+ * Data from the Navratri poster + team sheet
+ * ================================================================ */
+const API = '/api/navratri';
+const DAYS = [
+  { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
+  { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
+  { n: 3, date: '2026-10-13', wd: 'Tuesday',   colour: 'Red',           hex: '#e02424', ink: '#fff', host: 2, goddess: 'Maa Chandraghanta', blessing: 'courage and grace' },
+  { n: 4, date: '2026-10-14', wd: 'Wednesday', colour: 'Royal Blue',    hex: '#2557d6', ink: '#fff', host: 3, goddess: 'Maa Kushmanda',     blessing: 'energy and warmth' },
+  { n: 5, date: '2026-10-15', wd: 'Thursday',  colour: 'Yellow',        hex: '#f5c518', ink: '#2b1a3d', host: 4, goddess: 'Maa Skandamata',    blessing: 'love and care' },
+  { n: 6, date: '2026-10-16', wd: 'Friday',    colour: 'Green',         hex: '#2e9e4f', ink: '#fff', host: 5, goddess: 'Maa Katyayani',     blessing: 'victory over obstacles' },
+  { n: 7, date: '2026-10-17', wd: 'Saturday',  colour: 'Grey',          hex: '#7a7f8c', ink: '#fff', host: 0, goddess: 'Maa Kalaratri',     blessing: 'fearlessness' },
+  { n: 8, date: '2026-10-18', wd: 'Sunday',    colour: 'Purple',        hex: '#7b2cbf', ink: '#fff', host: 0, goddess: 'Maa Mahagauri',     blessing: 'peace and purity' },
+  { n: 9, date: '2026-10-19', wd: 'Monday',    colour: 'Peacock Green', hex: '#0f7c7a', ink: '#fff', host: 6, goddess: 'Maa Siddhidatri',   blessing: 'wisdom and fulfilment' },
+];
+const OFFICE_DAYS = [2, 3, 4, 5, 6, 9];
+const RITUALS = {
+  1: 'Navratri begins! Wear orange this weekend and share a photo in the group.',
+  2: 'We begin with a small Aarti and Prasad, seeking Maa Durga’s blessings. Team 1 opens the snack season at 5 PM!',
+  3: 'Red is the colour of courage. Compliment someone’s outfit today — it costs nothing and makes their day.',
+  4: 'Royal Blue Wednesday: midweek energy! Grab a team photo at snack time.',
+  5: 'Yellow brings sunshine. Bring someone from another team to the snack table and say hello.',
+  6: 'Big Friday! Green + traditional wear. Team photos, Bingo in the evening — come dressed in your festive best.',
+  7: 'Weekend! Grey day — garba night anyone? Share your dandiya moments.',
+  8: 'Purple Sunday. Rest your feet for the grand finale tomorrow.',
+  9: 'Grand finale in Peacock Green. Team 6 closes the snack season — winners announced!',
+};
+const TEAMS = {
+  1: ['Jagjit Singh Vasir', 'Gautam Pandurang Murkunde', 'Nikunj Kapri', 'Shobha Das', 'Soniya Singh', 'Jayashree Khade', 'Chrisann Fernandes'],
+  2: ['Jatin Chugh', 'Jyoti Dattatraya Nanaware', 'Vaishnavi Dattatray Devgire', 'Kuriakose T Babu', 'Varsha Bagul', 'Ramjeet Yadav', 'Divya Ghatkar'],
+  3: ['Siddhesh Kishor Patel', 'Sagar Belose', 'Shubham Gaonkar', 'Dipesh Dalvi', 'Pragati Bohra', 'Saloni Jethva', 'Dhruv Atul Parekh'],
+  4: ['Pravin Diwale', 'Sachi Pasari', 'Sakshi Devidas Bhapkar', 'Eliya Patole', 'Gaurav Sattegeri', 'Akash Yadav', 'Vinod Sharma'],
+  5: ['Pranav Dongare', 'Nishant Mehta', 'Sujata Gupta', 'Chinmay Joshi', 'Sejal Jadiyar', 'Dheeraj Mishra', 'Shubham Laxman Gaikwad'],
+  6: ['Sahil Deepak Gupta', 'Clarissa Fernandes', 'Prerak Dedhia', 'Pravin Balkrushna Ambre', 'Krutika Ashok Sawant', 'Sejal Indrapalsingh Yadav', 'Machindra Padmaker Mhatre'],
+};
+// Each team gets a festive identity colour (independent of the day colours)
+const TEAM_COLOURS = { 1: '#e8590c', 2: '#d6336c', 3: '#1c7ed6', 4: '#f59f00', 5: '#2b8a3e', 6: '#0c8599' };
+const CAT_LABEL = {
+  colour: 'wore the colour', full_team: 'full-team bonus', extra_effort: 'extra colour effort',
+  snack: 'snack presentation', creativity: 'snack creativity', traditional: 'traditional wear',
+  bingo: 'Bingo winner', penalty: 'task not done', other: 'judges’ special',
+};
+
+/* ================================================================
+ * Helpers
+ * ================================================================ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const istNow = () => new Date(Date.now() + 5.5 * 3600e3);       // fields read with getUTC*
+const todayStr = () => istNow().toISOString().slice(0, 10);
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const session = {
+  get() { try { const s = JSON.parse(sessionStorage.getItem('nv_admin')); return s && s.exp > Date.now() ? s : null; } catch { return null; } },
+  set(s) { try { sessionStorage.setItem('nv_admin', JSON.stringify(s)); } catch {} },
+  clear() { try { sessionStorage.removeItem('nv_admin'); } catch {} },
+};
+function currentDay() {
+  const t = todayStr();
+  if (t < DAYS[0].date) return { before: true, day: DAYS[0] };
+  if (t > DAYS[8].date) return { after: true, day: DAYS[8] };
+  return { day: DAYS.find(d => d.date === t) };
+}
+function firstName(n) { return n.split(' ')[0]; }
+function teamOf(name) { return +Object.keys(TEAMS).find(k => TEAMS[k].includes(name)); }
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+function celebrate(colors) {
+  if (window.confetti && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    confetti({ particleCount: 120, spread: 80, origin: { y: .7 }, colors });
+  }
+}
+
+/* ================================================================
+ * Theme from today's colour
+ * ================================================================ */
+const cur = currentDay();
+document.documentElement.style.setProperty('--day', cur.day.hex === '#ffffff' ? '#d81b60' : cur.day.hex);
+document.documentElement.style.setProperty('--day-ink', cur.day.hex === '#ffffff' ? '#fff' : cur.day.ink);
+$('bunting').innerHTML = Array.from({ length: 36 }, (_, i) => `<span style="background:${DAYS[i % 9].hex === '#ffffff' ? '#f0e2cf' : DAYS[i % 9].hex}"></span>`).join('');
+
+/* ================================================================
+ * Tabs
+ * ================================================================ */
+function showTab(name) {
+  document.querySelectorAll('[data-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === name));
+  if (name === 'admin') $('tab-admin').classList.remove('hidden');
+  if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+}
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { showTab(g.dataset.goto); scrollTo({ top: 0 }); } });
+$('open-admin').onclick = () => { showTab('admin'); scrollTo({ top: 0 }); };
+
+/* ================================================================
+ * Live data
+ * ================================================================ */
+let data = store.get('nv_cache') || { entries: [], cheers: {}, audit: [], updated: null };
+let leaderBefore = null;
+
+async function load() {
+  try {
+    const r = await fetch(API, { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    data = await r.json();
+    store.set('nv_cache', data);
+    $('offline').classList.add('hidden');
+  } catch {
+    $('offline').classList.remove('hidden');
+  }
+  renderAll();
+}
+
+function totals() {
+  const t = {};
+  for (const k of [1, 2, 3, 4, 5, 6]) t[k] = { total: 0, by: {} };
+  for (const e of data.entries) {
+    if (e.deleted) continue;
+    t[e.team].total += e.points;
+    t[e.team].by[e.category] = (t[e.team].by[e.category] || 0) + e.points;
+  }
+  return Object.entries(t).map(([team, v]) => ({ team: +team, ...v })).sort((a, b) => b.total - a.total || a.team - b.team);
+}
+
+/* ================================================================
+ * Render: Today
+ * ================================================================ */
+function renderToday() {
+  const d = cur.day;
+  const card = $('today-card');
+  card.classList.toggle('light', d.ink !== '#fff');
+  card.style.background = d.hex === '#ffffff' ? 'linear-gradient(135deg,#ffffff,#f7f1ff)' : d.hex;
+  card.style.border = d.hex === '#ffffff' ? '1px solid var(--line)' : '0';
+  let head, hostHtml = '';
+  if (cur.before) head = `Starts ${d.wd}, 11th October`;
+  else if (cur.after) head = 'Navratri 2026 is complete 🙏';
+  else head = `Day ${d.n} · ${d.wd}`;
+  if (!cur.after && d.host) {
+    const members = TEAMS[d.host].map(firstName).join(', ');
+    hostHtml = `<div class="host">🍿 <b>Team ${d.host}</b> is hosting snacks today at 5 PM<br><small>${esc(members)}</small></div>`;
+  } else if (!cur.after) {
+    hostHtml = `<div class="host">🏖️ No office snacks today — wear ${esc(d.colour.toLowerCase())} anyway and share a picture!</div>`;
+  }
+  card.innerHTML = `
+    <div class="daynum">${head}</div>
+    <div class="colour">${cur.after ? 'Thank you, VoloFin!' : esc(d.colour)}</div>
+    <div class="goddess">${cur.after ? 'See you at Diwali ✨' : `Celebrating <b>${esc(d.goddess)}</b> — for ${esc(d.blessing)}`}</div>
+    ${hostHtml}
+    <div class="countdown" id="countdown"></div>`;
+  $('ritual').textContent = cur.after ? 'Thank you for nine days of colour, snacks and smiles. Final standings are on the leaderboard.' : RITUALS[d.n];
+  tickCountdown();
+}
+function tickCountdown() {
+  const el = $('countdown');
+  if (!el) return;
+  const d = cur.day;
+  if (cur.after || cur.before || !OFFICE_DAYS.includes(d.n)) { el.innerHTML = ''; return; }
+  const now = istNow();
+  const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 17, 0, 0));
+  let diff = Math.floor((target - now) / 1000);
+  if (diff <= 0 && diff > -3600) { el.innerHTML = '<div style="min-width:auto;padding:8px 14px"><b>🍿 It’s snack time!</b></div>'; return; }
+  if (diff <= -3600) { el.innerHTML = '<div style="min-width:auto;padding:8px 14px">Snacks done for today — see you tomorrow!</div>'; return; }
+  const h = Math.floor(diff / 3600), m = Math.floor(diff % 3600 / 60), s = diff % 60;
+  el.innerHTML = `<div><b>${h}</b><small>hrs</small></div><div><b>${String(m).padStart(2, '0')}</b><small>min</small></div><div><b>${String(s).padStart(2, '0')}</b><small>sec</small></div><div style="min-width:auto;display:flex;align-items:center"><small>to snack time</small></div>`;
+}
+setInterval(tickCountdown, 1000);
+
+/* ================================================================
+ * Render: leaderboard, feeds
+ * ================================================================ */
+const medals = ['🥇', '🥈', '🥉'];
+function renderBoard() {
+  const rows = totals();
+  const max = Math.max(1, ...rows.map(r => Math.abs(r.total)));
+  const anyPoints = data.entries.some(e => !e.deleted);
+  let lastScore = null, lastRank = 0;
+  const ranked = rows.map((r, i) => { const rank = r.total === lastScore ? lastRank : i + 1; lastScore = r.total; lastRank = rank; return { ...r, rank }; });
+
+  $('board').innerHTML = ranked.map(r => `
+    <div class="lb-row" data-team="${r.team}">
+      <div class="rank">${anyPoints && r.rank <= 3 && r.total > 0 ? medals[r.rank - 1] : r.rank}</div>
+      <div>
+        <div class="lb-name"><span class="swatch" style="background:${TEAM_COLOURS[r.team]}"></span>Team ${r.team}
+          <button class="cheer" data-cheer="${r.team}" aria-label="Cheer for Team ${r.team}">👏 ${data.cheers[r.team] || 0}</button></div>
+        <div class="bar"><i style="width:${Math.max(0, r.total) / max * 100}%;background:${TEAM_COLOURS[r.team]}"></i></div>
+        <div class="details hidden">${Object.entries(r.by).map(([c, p]) => `${esc(CAT_LABEL[c])}: <b>${p > 0 ? '+' : ''}${p}</b>`).join(' · ') || 'No points yet'}
+          <br>${TEAMS[r.team].map(firstName).join(', ')}</div>
+      </div>
+      <div class="score">${r.total}<small>pts</small></div>
+    </div>`).join('');
+
+  $('mini-board').innerHTML = anyPoints
+    ? ranked.slice(0, 3).map(r => `<div class="tline"><span>${r.total > 0 ? medals[r.rank - 1] : r.rank} Team ${r.team}</span><b>${r.total} pts</b></div>`).join('')
+    : '<p class="muted">No points yet — the race begins at 5 PM! 🏁</p>';
+  $('updated').textContent = data.updated ? `Last update: ${fmtTime(data.updated)}.` : '';
+
+  const leader = anyPoints ? ranked[0].team : null;
+  if (leaderBefore !== null && leader && leader !== leaderBefore) celebrate([TEAM_COLOURS[leader], '#f5b400', '#d81b60']);
+  leaderBefore = leader;
+}
+$('board').addEventListener('click', e => {
+  const c = e.target.closest('[data-cheer]');
+  if (c) { cheer(+c.dataset.cheer, c); return; }
+  const row = e.target.closest('.lb-row');
+  if (row) row.querySelector('.details').classList.toggle('hidden');
+});
+
+async function cheer(team, btn) {
+  btn.disabled = true;
+  celebrate([TEAM_COLOURS[team], '#ffffff']);
+  try {
+    const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'cheer', team }) });
+    const j = await r.json();
+    if (r.ok) { data.cheers[team] = j.count; btn.textContent = `👏 ${j.count}`; }
+    else alert(j.error);
+  } catch {}
+  setTimeout(() => { btn.disabled = false; }, 1500);
+}
+
+function feedItem(e) {
+  const d = DAYS[e.day - 1];
+  const cls = e.points >= 0 ? 'plus' : 'minus';
+  return `<li class="${e.deleted ? 'struck' : ''}"><span><span class="swatch" style="background:${d.hex};width:12px;height:12px"></span>
+    <b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category])}${e.note ? ` — <i>${esc(e.note)}</i>` : ''}
+    <br><small class="muted">Day ${e.day} · ${fmtTime(e.at)}${e.deleted ? ` · removed: ${esc(e.deleted.reason)}` : ''}</small></span>
+    <span class="pts ${cls}">${e.points > 0 ? '+' : ''}${e.points}</span></li>`;
+}
+function renderFeeds() {
+  const list = [...data.entries].reverse();
+  $('feed').innerHTML = list.length ? list.map(feedItem).join('') : '<li class="muted">Nothing yet.</li>';
+  const live = list.filter(e => !e.deleted).slice(0, 4);
+  $('mini-feed').innerHTML = live.length ? live.map(feedItem).join('') : '<li class="muted">Judges are warming up… 🧐</li>';
+  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒' };
+  $('audit').innerHTML = data.audit.length
+    ? [...data.audit].reverse().slice(0, 30).map(a => `<li><span>${icon[a.action] || '•'} ${esc(a.detail)}<br><small class="muted">${fmtTime(a.at)}</small></span></li>`).join('')
+    : '<li class="muted">No activity yet.</li>';
+}
+
+/* ================================================================
+ * Render: teams + search
+ * ================================================================ */
+function hostDay(team) { return DAYS.find(d => d.host === team); }
+function renderTeams(highlight) {
+  $('teams').innerHTML = Object.entries(TEAMS).map(([t, members]) => {
+    const hd = hostDay(+t);
+    return `<div class="card team" style="--tc:${TEAM_COLOURS[t]}">
+      <h3>Team ${t}</h3>
+      <span class="pill"><span class="swatch" style="background:${hd.hex}"></span>Snacks: ${hd.wd} ${+hd.date.slice(8)} Oct · ${hd.colour}</span>
+      <ul>${members.map(m => `<li class="${m === highlight ? 'me' : ''}">${esc(m)}</li>`).join('')}</ul>
+    </div>`;
+  }).join('');
+}
+function search(q) {
+  q = q.trim().toLowerCase();
+  if (q.length < 2) { $('found').innerHTML = ''; renderTeams(); return; }
+  const all = Object.values(TEAMS).flat();
+  const hits = all.filter(n => n.toLowerCase().split(' ').some(w => w.startsWith(q)) || n.toLowerCase().includes(q));
+  if (!hits.length) { $('found').innerHTML = '<p class="muted">No one by that name — try your first name.</p>'; renderTeams(); return; }
+  if (hits.length > 1) {
+    $('found').innerHTML = `<p class="muted">Did you mean: ${hits.map(h => `<button class="btn alt small" data-pick="${esc(h)}">${esc(h)}</button>`).join(' ')}</p>`;
+    renderTeams(); return;
+  }
+  const name = hits[0], t = teamOf(name), hd = hostDay(t);
+  const mates = TEAMS[t].filter(m => m !== name).map(firstName).join(', ');
+  $('found').innerHTML = `<div class="card" style="border-left:6px solid ${TEAM_COLOURS[t]}">
+    <h3>🎉 ${esc(firstName(name))}, you’re in Team ${t}!</h3>
+    <p>Your team hosts snacks on <b>${hd.wd}, ${+hd.date.slice(8)} Oct</b> — colour <b>${hd.colour}</b> <span class="swatch" style="background:${hd.hex};vertical-align:middle"></span></p>
+    <p class="muted">Your teammates: ${esc(mates)}</p></div>`;
+  renderTeams(name);
+  store.set('nv_me', name);
+}
+$('search').addEventListener('input', e => search(e.target.value));
+$('found').addEventListener('click', e => { const p = e.target.closest('[data-pick]'); if (p) { $('search').value = p.dataset.pick; search(p.dataset.pick); } });
+
+/* ================================================================
+ * Render: schedule
+ * ================================================================ */
+function renderSchedule() {
+  const t = todayStr();
+  $('sched').innerHTML = DAYS.map(d => `
+    <div class="sday ${d.date === t ? 'now' : d.date < t ? 'past' : ''}">
+      <div class="dot" style="background:${d.hex};color:${d.ink}">Day ${d.n}</div>
+      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 2 ? ' · 🪔 Aarti & Prasad' : ''}</small></div>
+      <div>${d.host ? `<span class="pill">🍿 Team ${d.host}</span>` : '<span class="pill">🏖️ Off</span>'}</div>
+    </div>`).join('');
+}
+
+/* ================================================================
+ * Bingo — card is seeded by name so it's stable and unique
+ * ================================================================ */
+const BINGO_ITEMS = [
+  'Wearing today’s colour head-to-toe', 'Owns their own dandiya sticks', 'Wearing mirror work', 'Did garba this week',
+  'Wearing a bindi', 'Wearing jhumkas', 'Wearing kolhapuris or mojaris', 'Fasting this Navratri',
+  'Can name all 9 forms of Durga', 'Has mehendi on', 'Wearing a Nehru jacket', 'Wearing bandhani print',
+  'Can hum a garba song right now', 'Brought homemade sweets', 'Knows the Aarti by heart', 'Is from a different team than you',
+  'Has a rangoli at home this week', 'Wearing bangles that jingle', 'Twinning with a colleague', 'Wearing a gajra / flowers',
+  'Has been to a big garba night', 'Can do a dandiya step for you', 'Wearing a dupatta', 'Took a team selfie today',
+  'Has a diya at their desk', 'Wearing a kurta with pockets', 'Planning Diwali shopping already', 'Visited a pandal this year',
+  'Can say “Shubh Navratri” in 3 languages', 'Ate the snack of the day twice',
+];
+function seeded(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; };
+}
+let bingoName = null;
+function bingoCard(name) {
+  const rnd = seeded(name.toLowerCase().trim() + '|navratri2026');
+  const items = [...BINGO_ITEMS];
+  for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+  const cells = items.slice(0, 24);
+  cells.splice(12, 0, 'FREE · Jai Mata Di 🙏');
+  return cells;
+}
+const LINES = [
+  ...[0, 1, 2, 3, 4].map(r => [0, 1, 2, 3, 4].map(c => r * 5 + c)),
+  ...[0, 1, 2, 3, 4].map(c => [0, 1, 2, 3, 4].map(r => r * 5 + c)),
+  [0, 6, 12, 18, 24], [4, 8, 12, 16, 20],
+];
+function renderBingo() {
+  if (!bingoName) { $('bingo').innerHTML = ''; $('bingo-tools').innerHTML = ''; return; }
+  const key = 'nv_bingo_' + bingoName.toLowerCase();
+  const marks = new Set(store.get(key) || [12]);
+  marks.add(12);
+  const cells = bingoCard(bingoName);
+  const wins = LINES.filter(l => l.every(i => marks.has(i)));  // marks always includes the free centre
+  const winCells = new Set(wins.flat());
+  const t = teamOf(Object.values(TEAMS).flat().find(n => n.toLowerCase() === bingoName.toLowerCase()) || '');
+  $('bingo-who').innerHTML = `Card for <b>${esc(bingoName)}</b>${t ? ` · Team ${t}` : ''} — ${marks.size - 1}/24 found${wins.length ? ` · <b style="color:var(--pink)">BINGO ×${wins.length}! 🎉 Show this to the cultural team.</b>` : ''}`;
+  $('bingo').innerHTML = cells.map((c, i) => `<button class="${i === 12 ? 'free on' : marks.has(i) ? 'on' : ''} ${winCells.has(i) ? 'win' : ''}" data-cell="${i}" aria-pressed="${marks.has(i)}">${esc(c)}</button>`).join('');
+  $('bingo-tools').innerHTML = `<div style="flex:0 0 auto"><button class="btn alt small" id="bingo-reset">Clear my marks</button></div>`;
+  $('bingo-reset').onclick = () => { if (confirm('Clear all marks on your card?')) { store.set(key, [12]); renderBingo(); } };
+  return wins.length;
+}
+$('bingo').addEventListener('click', e => {
+  const b = e.target.closest('[data-cell]');
+  if (!b || b.dataset.cell === '12') return;
+  const key = 'nv_bingo_' + bingoName.toLowerCase();
+  const marks = new Set(store.get(key) || [12]);
+  const countWins = (m) => LINES.filter(l => l.every(x => x === 12 || m.has(x))).length;
+  const before = countWins(marks);
+  const i = +b.dataset.cell;
+  marks.has(i) ? marks.delete(i) : marks.add(i);
+  store.set(key, [...marks]);
+  const after = renderBingo();
+  if (after > before) celebrate(['#d81b60', '#f5b400', cur.day.hex]);
+});
+function startBingo() {
+  const n = $('bingo-name').value.trim();
+  if (n.length < 2) { $('bingo-name').focus(); return; }
+  bingoName = n; store.set('nv_bingo_name', n); renderBingo();
+}
+$('bingo-go').onclick = startBingo;
+$('bingo-name').addEventListener('keydown', e => { if (e.key === 'Enter') startBingo(); });
+
+/* ================================================================
+ * Scorekeeper desk
+ * ================================================================ */
+async function api(body) {
+  const s = session.get();
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(s ? { authorization: 'Bearer ' + s.token } : {}) },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json().catch(() => ({ error: 'Server error' }));
+  if (r.status === 401 && body.action !== 'login') { session.clear(); renderDesk(); }
+  if (!r.ok) throw new Error(j.error || 'Something went wrong');
+  return j;
+}
+function setMsg(id, text, ok) { const el = $(id); el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
+async function busy(btn, fn) { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } }
+
+$('login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  busy($('lg-btn'), async () => {
+    setMsg('lg-msg', '');
+    try {
+      const j = await api({ action: 'login', user: $('lg-user').value, password: $('lg-pass').value });
+      session.set({ token: j.token, exp: j.exp });
+      $('lg-pass').value = '';
+      await load(); renderDesk();
+    } catch (err) { setMsg('lg-msg', err.message); $('lg-pass').value = ''; }
+  });
+});
+$('ad-logout').onclick = () => { session.clear(); renderDesk(); };
+$('ad-logout-all').onclick = () => busy($('ad-logout-all'), async () => {
+  if (!confirm('Sign out every device that is logged in as scorekeeper (including this one)?')) return;
+  try { await api({ action: 'logout_all' }); } catch {}
+  session.clear(); renderDesk(); load();
+});
+$('ad-export').onclick = () => busy($('ad-export'), async () => {
+  try {
+    const j = await api({ action: 'export' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(j.state, null, 2)], { type: 'application/json' }));
+    a.download = `navratri-scores-${todayStr()}.json`; a.click();
+  } catch (err) { alert(err.message); }
+});
+
+const teamOpts = (blank) => (blank ? `<option value="">— none —</option>` : '') + [1, 2, 3, 4, 5, 6].map(t => `<option value="${t}">Team ${t}</option>`).join('');
+$('ad-x-team').innerHTML = teamOpts();
+['ad-b1', 'ad-b2', 'ad-b3'].forEach(id => $(id).innerHTML = teamOpts(true));
+
+function scorableDays() { const t = todayStr(); return DAYS.filter(d => OFFICE_DAYS.includes(d.n) && d.date <= t); }
+function adDay() { return DAYS[+$('ad-day').value - 1]; }
+const counts = { roll: {}, trad: {} };
+
+function stepperRows(target, kind, max) {
+  $(target).innerHTML = [1, 2, 3, 4, 5, 6].map(t => `
+    <div class="tline"><span><span class="swatch" style="background:${TEAM_COLOURS[t]};vertical-align:middle"></span> Team ${t}</span>
+      <div class="stepper"><button type="button" data-k="${kind}" data-t="${t}" data-d="-1" aria-label="fewer">−</button>
+      <output id="${kind}-${t}">${counts[kind][t] || 0}</output>
+      <button type="button" data-k="${kind}" data-t="${t}" data-d="1" aria-label="more">+</button><small class="muted">/ ${max}</small></div></div>`).join('');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.stepper button[data-k]');
+  if (!b) return;
+  const { k, t, d } = b.dataset;
+  counts[k][t] = Math.min(7, Math.max(0, (counts[k][t] || 0) + +d));
+  $(`${k}-${t}`).textContent = counts[k][t];
+});
+
+function renderDesk() {
+  const s = session.get();
+  $('login-card').classList.toggle('hidden', !!s);
+  $('desk').classList.toggle('hidden', !s);
+  if (data.adminEnabled === false) setMsg('lg-msg', 'Scorekeeper login isn’t set up on the server yet.');
+  if (!s) return;
+  $('tab-admin').classList.remove('hidden');
+  $('ad-session').textContent = `Signed in until ${new Date(s.exp).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}. Session lives only in this tab.`;
+  const days = scorableDays();
+  const sel = $('ad-day'), prev = sel.value;
+  sel.innerHTML = days.length ? days.map(d => `<option value="${d.n}">Day ${d.n} · ${d.wd} ${+d.date.slice(8)} Oct · ${d.colour}</option>`).join('') : '<option value="">No office day has happened yet</option>';
+  if (prev && days.some(d => String(d.n) === prev)) sel.value = prev;
+  else if (days.length) sel.value = days[days.length - 1].n;
+  renderDeskDay();
+}
+function renderDeskDay() {
+  const d = adDay();
+  ['ad-roll-save', 'ad-snack-save', 'ad-x-save', 'ad-fri-save'].forEach(id => $(id).disabled = !d);
+  if (!d) return;
+  const live = data.entries.filter(e => !e.deleted && e.day === d.n);
+  counts.roll = {}; counts.trad = {};
+  live.forEach(e => { if (e.category === 'colour') counts.roll[e.team] = e.points; if (e.category === 'traditional') counts.trad[e.team] = e.points / 2; });
+  $('ad-colour').textContent = d.colour;
+  stepperRows('ad-roll', 'roll', 7);
+  stepperRows('ad-trad', 'trad', 7);
+  $('ad-host').textContent = d.host ? `Team ${d.host} hosting` : 'no host today';
+  $('ad-snack-card').classList.toggle('hidden', !d.host);
+  $('ad-friday').classList.toggle('hidden', d.n !== 6);
+  renderDeskEntries();
+}
+// Refreshes only the entry list, so polling never wipes half-entered counts.
+function renderDeskEntries() {
+  const d = adDay();
+  if (!d) return;
+  const list = data.entries.filter(e => e.day === d.n && !e.deleted);
+  $('ad-entries').innerHTML = list.length
+    ? list.map(e => `
+      <div class="tline"><span><b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category])} <b class="pts ${e.points >= 0 ? 'plus' : 'minus'}">${e.points > 0 ? '+' : ''}${e.points}</b>${e.note ? ` · <i>${esc(e.note)}</i>` : ''}<br><small class="muted">${fmtTime(e.at)}</small></span>
+      <button class="btn alt small" data-remove="${esc(e.id)}">Remove</button></div>`).join('')
+    : '<p class="muted">No entries for this day yet.</p>';
+}
+$('ad-day').onchange = renderDeskDay;
+
+async function addAwards(awards, msgId, btn) {
+  await busy(btn, async () => {
+    if (!awards.length) { setMsg(msgId, 'Nothing new to save.'); return; }
+    try {
+      await api({ action: 'add', awards });
+      setMsg(msgId, `Saved ${awards.length} entr${awards.length === 1 ? 'y' : 'ies'} ✓`, true);
+      await load(); renderDeskDay();
+    } catch (err) { setMsg(msgId, err.message); }
+  });
+}
+$('ad-roll-save').onclick = () => {
+  const d = adDay(), live = data.entries.filter(e => !e.deleted && e.day === d.n);
+  const awards = [];
+  for (const t of [1, 2, 3, 4, 5, 6]) {
+    const n = counts.roll[t] || 0;
+    const existing = live.find(e => e.team === t && e.category === 'colour');
+    if (existing && existing.points !== n) { setMsg('ad-roll-msg', `Team ${t} already has ${existing.points} for colour — remove that entry below first to change it.`); return; }
+    if (!existing && n > 0) awards.push({ day: d.n, team: t, category: 'colour', points: n, note: `${n}/7 in ${d.colour}` });
+    if (n === 7 && !live.some(e => e.team === t && e.category === 'full_team')) awards.push({ day: d.n, team: t, category: 'full_team', points: 5, note: 'All 7 in colour!' });
+  }
+  addAwards(awards, 'ad-roll-msg', $('ad-roll-save'));
+};
+$('ad-snack-save').onclick = () => {
+  const d = adDay(), awards = [], note = $('ad-snack-note').value.trim();
+  const p = $('ad-pres').value, c = $('ad-crea').value;
+  if (p !== '') awards.push({ day: d.n, team: d.host, category: 'snack', points: +p, note });
+  if (c !== '') awards.push({ day: d.n, team: d.host, category: 'creativity', points: +c, note });
+  addAwards(awards, 'ad-snack-msg', $('ad-snack-save')).then(() => { $('ad-pres').value = ''; $('ad-crea').value = ''; });
+};
+$('ad-x-save').onclick = () => {
+  const d = adDay(), pts = $('ad-x-pts').value;
+  if (pts === '') { setMsg('ad-x-msg', 'Enter points.'); return; }
+  addAwards([{ day: d.n, team: +$('ad-x-team').value, category: $('ad-x-cat').value, points: +pts, note: $('ad-x-note').value.trim() }], 'ad-x-msg', $('ad-x-save'))
+    .then(() => { $('ad-x-pts').value = ''; $('ad-x-note').value = ''; });
+};
+$('ad-fri-save').onclick = () => {
+  const d = adDay(), live = data.entries.filter(e => !e.deleted && e.day === d.n), awards = [];
+  for (const t of [1, 2, 3, 4, 5, 6]) {
+    const n = counts.trad[t] || 0;
+    if (n > 0 && !live.some(e => e.team === t && e.category === 'traditional')) awards.push({ day: d.n, team: t, category: 'traditional', points: n * 2, note: `${n}/7 in traditional` });
+  }
+  [['ad-b1', 10, '1st'], ['ad-b2', 6, '2nd'], ['ad-b3', 3, '3rd']].forEach(([id, pts, place]) => {
+    const t = $(id).value;
+    if (t && !live.some(e => e.category === 'bingo' && e.points === pts)) awards.push({ day: d.n, team: +t, category: 'bingo', points: pts, note: `Bingo ${place} place` });
+  });
+  addAwards(awards, 'ad-fri-msg', $('ad-fri-save'));
+};
+$('ad-entries').addEventListener('click', e => {
+  const b = e.target.closest('[data-remove]');
+  if (!b) return;
+  const reason = prompt('Why remove this entry? (shown publicly in the Transparency log)');
+  if (!reason || reason.trim().length < 3) return;
+  busy(b, async () => {
+    try { await api({ action: 'remove', id: b.dataset.remove, reason: reason.trim() }); await load(); renderDeskDay(); }
+    catch (err) { alert(err.message); }
+  });
+});
+
+/* ================================================================
+ * Boot
+ * ================================================================ */
+function renderAll() {
+  renderBoard(); renderFeeds();
+  if (session.get() && !$('desk').classList.contains('hidden')) renderDeskEntries();
+}
+renderToday(); renderSchedule(); renderTeams();
+const me = store.get('nv_me'); if (me) { $('search').value = me; search(me); }
+const bn = store.get('nv_bingo_name'); if (bn) { $('bingo-name').value = bn; bingoName = bn; renderBingo(); }
+const TAB_NAMES = ['today', 'board', 'teams', 'schedule', 'rules', 'bingo', 'admin'];
+const tabFromHash = () => { const h = location.hash.slice(1); showTab(TAB_NAMES.includes(h) ? h : 'today'); };
+tabFromHash();
+addEventListener('hashchange', tabFromHash);
+renderDesk();
+load().then(renderDesk);
+setInterval(() => { if (!document.hidden) load(); }, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+</script>
+</body>
+</html>

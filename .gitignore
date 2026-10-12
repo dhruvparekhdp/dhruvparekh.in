@@ -2,3 +2,6 @@
 !robots.txt
 !**/robots.txt
 resume/preview.png
+
+node_modules/
+.netlify/
