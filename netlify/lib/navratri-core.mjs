@@ -35,22 +35,21 @@ const teamOfName = (n) => +(Object.keys(ROSTER).find(t => ROSTER[t].includes(n))
 // Fun, office-safe forfeits for people who skipped the colour of the day.
 // The server picks one at random so nobody can choose a friend's forfeit.
 export const PUNISHMENTS = [
-  'Do 30 seconds of garba in front of everyone 💃',
-  'Sing one line of any Navratri or Bollywood song 🎤',
-  'Serve the snacks to everyone at 5 PM 🍽️',
-  'Say “Shubh Navratri” in 3 different languages 🗣️',
-  'Wear tomorrow’s colour head-to-toe (selfie proof!) 📸',
-  'Give a genuine compliment to 5 colleagues 💐',
-  'Strike a Maa Durga pose for the group photo 🦁',
-  'Share your funniest festival childhood story 😂',
-  'Act out a movie dialogue the cultural team picks 🎬',
-  'Be the official photographer at snack time 📷',
-  'Name all 9 Navratri colours in order — or sing instead 🎨',
-  'Clean up the snack table after 5 PM 🧹',
-  'Teach everyone one dandiya step 🥢',
-  'Speak only in rhymes for the next 2 minutes 📝',
-  'Lead a loud “Jai Mata Di!” cheer 🙏',
-  'Bring a small sweet treat for your team tomorrow 🍬',
+  'Do Garba like a robot for 20 seconds 🤖',
+  'Propose marriage to your office chair 💍',
+  'Give a motivational speech to the office water bottle 🎤',
+  'Act like your salary just got doubled 💸',
+  'Walk like a fashion model wearing an imaginary Navratri outfit 👑',
+  'Imitate your favourite Bollywood actor for 15 seconds 🎬',
+  'Sing the company name in a romantic song tune 🎶',
+  'Act like you have seen your appraisal letter 😱',
+  'Do a dramatic slow-motion entry into the room 🕺',
+  'Make everyone laugh without saying a word 😂',
+  'Give a fake resignation speech and then ask for a promotion 😜',
+  'Perform Garba while pretending you are on a conference call 📞',
+  'Deliver a weather report about the office AC 🌨️',
+  'Give a 20-second speech thanking your chai/coffee ☕',
+  'Act like a celebrity being interviewed about office life 🎥',
 ];
 export const TEAM_SIZE = 7;
 
