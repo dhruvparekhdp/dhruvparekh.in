@@ -116,6 +116,7 @@ h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .star-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; font-size: .88rem; }
 .dots { display: flex; gap: 3px; flex: none; }
 .dots i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #e2d5c3; display: grid; place-items: center; font-size: 8px; font-style: normal; color: var(--bad); }
+.formula { background: #f6efe6; border-radius: 12px; padding: 10px 12px; margin-top: 8px; font-size: .9rem; }
 .struck { text-decoration: line-through; opacity: .55; }
 
 /* teams */
@@ -256,10 +257,10 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
     </div>
     <div class="card" id="lb-team">
       <div id="board"></div>
-      <p class="muted" style="margin-top:10px">Team score = dress code + snacks + extra bonus − penalties. Tap a team to see the breakdown. <span id="updated"></span></p>
+      <p class="muted" style="margin-top:10px">Team score = dress code + snacks + extra bonus − not in colour − penalties. Green = earned, red = negative marking. Tap a team to see the breakdown. <span id="updated"></span></p>
     </div>
     <div class="card hidden" id="lb-person">
-      <p class="muted" style="margin-bottom:6px">1 point for every office day you wore the colour — 6 to collect. Dots are the 6 days: filled = wore it, ✗ = didn’t (Colour Police), empty = absent or not yet.</p>
+      <p class="muted" style="margin-bottom:6px">+1 for every office day you wore the colour (6 to collect), −1 for every day you didn’t. Absent = 0. Dots are the 6 days: filled = wore it, ✗ = didn’t (Colour Police), empty = absent or not yet.</p>
       <input class="search" id="lb-filter" placeholder="Find a name…" autocomplete="off" aria-label="Filter names" style="margin-bottom:6px">
       <div id="people"></div>
     </div>
@@ -297,20 +298,24 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
     <h2>How scoring works</h2>
     <div class="grid two">
       <div class="card rules">
-        <h3>🏆 Team score — max 62 points</h3>
+        <h3>👤 Individual score</h3>
         <table>
-          <tr><td>👗 <b>Dress code</b> — 1 point per person per office day.<br><small class="muted">6 office days × 7 people</small></td><td>42</td></tr>
-          <tr><td>🍿 <b>Snacks</b> — host team, judged on the day</td><td>10</td></tr>
-          <tr><td>🌟 <b>Extra bonus</b> — for something truly extraordinary (whole festival)</td><td>10</td></tr>
+          <tr><td>✓ Wore the day’s colour (marked at 5 PM attendance)</td><td>+1</td></tr>
+          <tr><td>✗ In office but not in the colour</td><td>−1</td></tr>
+          <tr><td>· Absent / on leave</td><td>0</td></tr>
         </table>
-        <h3 style="margin-top:16px">👤 Your own score — max 6</h3>
-        <p class="muted">Every day you wear the colour you earn 1 point for yourself <i>and</i> your team. Check the Dress-code stars on the leaderboard!</p>
-        <h3 style="margin-top:16px">⛔ Minus points & forfeits</h3>
+        <p class="formula"><b>Individual = (days wore ✓) − (days not in colour ✗)</b><br>6 scoring days → range −6 to +6. Wore all 6 = 🌟</p>
+
+        <h3 style="margin-top:16px">👥 Team score</h3>
         <table>
-          <tr><td>Hosting team doesn’t arrange snacks by 5 PM</td><td>−10</td></tr>
-          <tr><td>Other task not done (judges decide, reason shown publicly)</td><td>up to −15</td></tr>
-          <tr><td>Not in the colour? No point — and a random forfeit from the 🎡 wheel</td><td>🎡</td></tr>
+          <tr><td>👗 Dress code — sum of the 7 members’ ✓ (7 × 6 days)</td><td>up to +42</td></tr>
+          <tr><td>🍿 Snacks — host team only, on its day, judged 0–10</td><td>up to +10</td></tr>
+          <tr><td>🌟 Extra bonus — for something extraordinary, reason shown publicly (whole festival)</td><td>up to +10</td></tr>
+          <tr><td>✗ Not in colour — −1 for every ✗ of a member</td><td>−1 each</td></tr>
+          <tr><td>⛔ Task not done — e.g. no snacks by 5 PM (−10), other misses; reason shown publicly</td><td>−1 to −15</td></tr>
         </table>
+        <p class="formula"><b>Team = Σ members’ ✓ + Snacks + Extra bonus − Σ members’ ✗ − Penalties</b><br>Best possible: 42 + 10 + 10 = <b>62</b>. Leaderboard shows <span class="pts plus">+earned</span> and <span class="pts minus">−negative</span> separately.</p>
+        <p class="muted" style="margin-top:8px">Ties share the same rank. Scoring days: Mon 12, Tue 13, Wed 14, Thu 15, Fri 16, Mon 19 Oct. Sun 11, Sat 17, Sun 18 = no points.</p>
       </div>
       <div class="grid">
         <div class="callout">
@@ -378,7 +383,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
       <div class="card">
         <h3>🚨 Colour Police · Daily attendance — <span id="ad-colour"></span></h3>
-        <p class="muted">Take attendance at 5 PM. Tap each person: <b>✓</b> wore the colour (+1 for them and their team) → <b>✗</b> didn’t (forfeit wheel 🎡) → <b>·</b> absent / on leave. Saved people are locked; to fix one, remove the entry below.</p>
+        <p class="muted">Take attendance at 5 PM. Tap each person: <b>✓</b> wore the colour (+1 for them and their team) → <b>✗</b> didn’t (−1 for them and their team + forfeit wheel 🎡) → <b>·</b> absent / on leave. Saved people are locked; to fix one, remove the entry below.</p>
         <div id="ad-roll"></div>
         <button class="btn" id="ad-roll-save" style="margin-top:12px">Save attendance</button>
         <div class="msg" id="ad-roll-msg"></div>
@@ -438,7 +443,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 4; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 5; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -473,7 +478,7 @@ const TEAMS = {
 // Each team gets a festive identity colour (independent of the day colours)
 const TEAM_COLOURS = { 1: '#e8590c', 2: '#d6336c', 3: '#1c7ed6', 4: '#f59f00', 5: '#2b8a3e', 6: '#0c8599' };
 const CAT_LABEL = {
-  colour: 'dress code', snack: 'snacks', extra_bonus: 'extra bonus', penalty: 'task not done',
+  colour: 'dress code', not_in_colour: 'not in colour', snack: 'snacks', extra_bonus: 'extra bonus', penalty: 'task not done',
   // earlier categories, kept so any old entries still read well
   full_team: 'full-team bonus', extra_effort: 'extra colour effort', creativity: 'snack creativity',
   traditional: 'traditional wear', bingo: 'Bingo winner', other: 'judges’ special',
@@ -559,14 +564,18 @@ async function load() {
   renderAll();
 }
 
+// Negative marking: every ✗ in daily attendance costs the person and their team 1 point.
+const MISS_POINTS = -1;
 function totals() {
   const t = {};
-  for (const k of [1, 2, 3, 4, 5, 6]) t[k] = { total: 0, by: {} };
-  for (const e of data.entries) {
-    if (e.deleted) continue;
-    t[e.team].total += e.points;
-    t[e.team].by[e.category] = (t[e.team].by[e.category] || 0) + e.points;
-  }
+  for (const k of [1, 2, 3, 4, 5, 6]) t[k] = { total: 0, plus: 0, minus: 0, by: {} };
+  const add = (team, cat, pts) => {
+    t[team].total += pts;
+    t[team][pts >= 0 ? 'plus' : 'minus'] += pts;
+    t[team].by[cat] = (t[team].by[cat] || 0) + pts;
+  };
+  for (const e of data.entries) if (!e.deleted) add(e.team, e.category, e.points);
+  for (const x of data.defaulters || []) if (t[x.team]) add(x.team, 'not_in_colour', MISS_POINTS);
   return Object.entries(t).map(([team, v]) => ({ team: +team, ...v })).sort((a, b) => b.total - a.total || a.team - b.team);
 }
 
@@ -633,7 +642,7 @@ function renderBoard() {
         <div class="details hidden">${Object.entries(r.by).map(([c, p]) => `${esc(CAT_LABEL[c] || c)}: <b>${p > 0 ? '+' : ''}${p}</b>`).join(' · ') || 'No points yet'}
           <br>${TEAMS[r.team].map(firstName).join(', ')}</div>
       </div>
-      <div class="score">${r.total}<small>pts</small></div>
+      <div class="score">${r.total}<small><span class="pts plus">+${r.plus}</span>${r.minus ? ` <span class="pts minus">${r.minus}</span>` : ''}</small></div>
     </div>`).join('');
 
   $('mini-board').innerHTML = anyPoints
@@ -642,7 +651,7 @@ function renderBoard() {
   const tally = dressTally(), best = Math.max(0, ...Object.values(tally).map(x => x.pts));
   if (best > 0) {
     const stars = Object.keys(tally).filter(n => tally[n].pts === best).map(shortName);
-    $('mini-board').innerHTML += `<p class="muted" style="margin-top:8px">🌟 Top individuals (${best}/6): ${esc(stars.slice(0, 8).join(', '))}${stars.length > 8 ? ` +${stars.length - 8} more` : ''}</p>`;
+    $('mini-board').innerHTML += `<p class="muted" style="margin-top:8px">🌟 Top individuals (${best} pts): ${esc(stars.slice(0, 8).join(', '))}${stars.length > 8 ? ` +${stars.length - 8} more` : ''}</p>`;
   }
   $('updated').textContent = data.updated ? `Last update: ${fmtTime(data.updated)}.` : '';
 
@@ -658,9 +667,9 @@ $('board').addEventListener('click', e => {
 // person -> { pts, days: {dayNum: 'wore' | 'missed'} }
 function dressTally() {
   const t = {};
-  for (const n of Object.values(TEAMS).flat()) t[n] = { pts: 0, days: {} };
-  for (const e of data.entries) if (!e.deleted && e.category === 'colour' && e.name && t[e.name]) { t[e.name].pts += e.points; t[e.name].days[e.day] = 'wore'; }
-  for (const x of data.defaulters || []) if (t[x.name] && !t[x.name].days[x.day]) t[x.name].days[x.day] = 'missed';
+  for (const n of Object.values(TEAMS).flat()) t[n] = { pts: 0, wore: 0, missed: 0, days: {} };
+  for (const e of data.entries) if (!e.deleted && e.category === 'colour' && e.name && t[e.name]) { t[e.name].pts += e.points; t[e.name].wore++; t[e.name].days[e.day] = 'wore'; }
+  for (const x of data.defaulters || []) if (t[x.name] && !t[x.name].days[x.day]) { t[x.name].pts += MISS_POINTS; t[x.name].missed++; t[x.name].days[x.day] = 'missed'; }
   return t;
 }
 function dotsHtml(days) {
@@ -672,7 +681,7 @@ function dotsHtml(days) {
 }
 function renderPeople() {
   const t = dressTally();
-  const anyPts = Object.values(t).some(x => x.pts > 0);
+  const anyPts = Object.values(t).some(x => x.pts !== 0);
   const rows = Object.keys(t).map(n => ({ name: n, team: teamOf(n), ...t[n] }))
     .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
   let last = null, lastRank = 0;
@@ -682,9 +691,9 @@ function renderPeople() {
   $('people').innerHTML = rows.filter(r => !q || r.name.toLowerCase().includes(q)).map(r => `
     <div class="p-row ${r.name === me ? 'me' : ''}">
       <div class="rank">${anyPts && r.pts > 0 && r.rank <= 3 ? medals[r.rank - 1] : r.rank}</div>
-      <div><b>${esc(r.name)}</b>${r.pts === 6 ? ' 🌟' : ''}<br><small class="muted"><span class="swatch" style="background:${TEAM_COLOURS[r.team]};width:10px;height:10px;vertical-align:middle"></span> Team ${r.team}</small></div>
+      <div><b>${esc(r.name)}</b>${r.wore === 6 ? ' 🌟' : ''}<br><small class="muted"><span class="swatch" style="background:${TEAM_COLOURS[r.team]};width:10px;height:10px;vertical-align:middle"></span> Team ${r.team}</small></div>
       ${dotsHtml(r.days)}
-      <div class="score" style="font-size:1.15rem">${r.pts}<small>/ 6</small></div>
+      <div class="score" style="font-size:1.15rem">${r.pts}<small><span class="pts plus">+${r.wore}</span>${r.missed ? ` <span class="pts minus">−${r.missed}</span>` : ''}</small></div>
     </div>`).join('') || '<p class="muted">No one by that name.</p>';
 }
 $('lb-filter').addEventListener('input', renderPeople);
@@ -759,7 +768,7 @@ function search(q) {
   $('found').innerHTML = `<div class="card" style="border-left:6px solid ${TEAM_COLOURS[t]}">
     <h3>🎉 ${esc(firstName(name))}, you’re in Team ${t}!</h3>
     <p>Your team hosts snacks on <b>${hd.wd}, ${+hd.date.slice(8)} Oct</b> — colour <b>${hd.colour}</b> <span class="swatch" style="background:${hd.hex};vertical-align:middle"></span></p>
-    <p>👗 Your dress-code points: <b>${dressTally()[name].pts}/6</b> ${dotsHtml(dressTally()[name].days)}</p>
+    <p>👗 Your points: <b>${dressTally()[name].pts}</b> <small class="muted">(+${dressTally()[name].wore} wore · −${dressTally()[name].missed} missed)</small> ${dotsHtml(dressTally()[name].days)}</p>
     <p class="muted">Your teammates: ${esc(mates)}</p></div>`;
   renderTeams(name);
   store.set('nv_me', name);
