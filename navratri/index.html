@@ -443,7 +443,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 5; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 6; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -458,14 +458,14 @@ const DAYS = [
 const OFFICE_DAYS = [2, 3, 4, 5, 6, 9];
 const RITUALS = {
   1: 'Navratri begins! Wear orange this weekend and share a photo in the group.',
-  2: 'We begin with a small Aarti and Prasad, seeking Maa Durga’s blessings. Team 1 opens the snack season at 5 PM!',
+  2: 'White is for peace and purity. Team 1 opens the snack season at 5 PM — come hungry!',
   3: 'Red is the colour of courage. Compliment someone’s outfit today — it costs nothing and makes their day.',
   4: 'Royal Blue Wednesday: midweek energy! Grab a team photo at snack time.',
   5: 'Yellow brings sunshine. Bring someone from another team to the snack table and say hello.',
   6: 'Big Friday! Green + traditional wear. Team photos, Bingo in the evening — come dressed in your festive best.',
   7: 'Weekend! Grey day — garba night anyone? Share your dandiya moments.',
   8: 'Purple Sunday. Rest your feet for the grand finale tomorrow.',
-  9: 'Grand finale in Peacock Green. Team 6 closes the snack season — winners announced!',
+  9: 'Grand finale in Peacock Green! We seek Maa Durga’s blessings with a small Aarti and Prasad. Team 6 closes the snack season and the winners are announced 🏆',
 };
 const TEAMS = {
   1: ['Jagjit Singh Vasir', 'Gautam Pandurang Murkunde', 'Nikunj Kapri', 'Shobha Das', 'Soniya Singh', 'Jayashree Khade', 'Chrisann Fernandes'],
@@ -784,7 +784,7 @@ function renderSchedule() {
   $('sched').innerHTML = DAYS.map(d => `
     <div class="sday ${d.date === t ? 'now' : d.date < t ? 'past' : ''}">
       <div class="dot" style="background:${d.hex};color:${d.ink}">Day ${d.n}</div>
-      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 2 ? ' · 🪔 Aarti & Prasad' : ''}</small></div>
+      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 9 ? ' · 🪔 Aarti & Prasad' : ''}</small></div>
       <div>${d.host ? `<span class="pill">🍿 Team ${d.host}</span>` : '<span class="pill">🏖️ Off</span>'}</div>
     </div>`).join('');
 }
