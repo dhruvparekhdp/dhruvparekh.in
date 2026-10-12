@@ -415,7 +415,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
       <div class="card" style="margin-top:14px">
         <h3>🎡 Forfeit wheel</h3>
-        <p class="muted">Everyone marked ✗ in attendance lands here. The server picks the forfeit at random, and it can’t be re-spun.</p>
+        <p class="muted">Everyone marked ✗ in attendance lands here. The server picks the forfeit at random. Made a mistake or were testing? Press ↩ Undo (with a reason — it’s logged publicly) and spin again.</p>
         <ul class="police" id="ad-police" style="margin-top:6px"></ul>
       </div>
 
@@ -438,7 +438,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 3; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 4; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -724,7 +724,7 @@ function renderFeeds() {
   $('feed').innerHTML = list.length ? list.map(feedItem).join('') : '<li class="muted">Nothing yet.</li>';
   const live = list.filter(e => !e.deleted).slice(0, 4);
   $('mini-feed').innerHTML = live.length ? live.map(feedItem).join('') : '<li class="muted">Judges are warming up… 🧐</li>';
-  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒', defaulter: '🚨', spin: '🎡' };
+  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒', defaulter: '🚨', spin: '🎡', unspin: '↩️' };
   $('audit').innerHTML = data.audit.length
     ? [...data.audit].reverse().slice(0, 30).map(a => `<li><span>${icon[a.action] || '•'} ${esc(a.detail)}<br><small class="muted">${fmtTime(a.at)}</small></span></li>`).join('')
     : '<li class="muted">No activity yet.</li>';
@@ -1051,7 +1051,7 @@ const PUNISHMENTS = [
 ];
 function policeItem(x, admin) {
   const action = x.punishment
-    ? `<span class="forfeit">🎡 ${esc(x.punishment)}</span>`
+    ? `<span class="forfeit">🎡 ${esc(x.punishment)}</span>${admin ? ` <button class="btn alt small" data-unspin="${esc(x.id)}" title="Undo this spin so it can be spun again">↩ Undo</button>` : ''}`
     : admin ? `<button class="btn small" data-spin="${esc(x.id)}">🎡 Spin</button>` : '<span class="muted">wheel pending… 🎡</span>';
   return `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
     <span style="text-align:right">${action}${admin ? ` <button class="btn alt small" data-unpolice="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">✕</button>` : ''}</span></li>`;
@@ -1096,6 +1096,14 @@ function renderAdPolice() {
   $('ad-police').innerHTML = list.length ? list.map(x => policeItem(x, true)).join('') : '<li class="muted">No defaulters recorded for this day.</li>';
 }
 $('ad-police').addEventListener('click', async e => {
+  const un = e.target.closest('[data-unspin]');
+  if (un) {
+    const reason = prompt('Why undo this spin? (shown publicly, e.g. "was a test")');
+    if (!reason || reason.trim().length < 3) return;
+    try { await api({ action: 'unspin', id: un.dataset.unspin, reason: reason.trim() }); await load(); renderDeskDay(); }
+    catch (err) { alert(err.message); }
+    return;
+  }
   const rm = e.target.closest('[data-unpolice]');
   if (rm) {
     const reason = prompt('Why remove this person from the list? (shown publicly)');

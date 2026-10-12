@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 3;
+export const APP_VERSION = 4;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
@@ -377,9 +377,26 @@ export function createHandler({ store, env, now = () => Date.now() }) {
         // one spin per person, no re-rolls
         if (d.punishment) return { abort: true, punishment: d.punishment, already: true };
         d.punishment = PUNISHMENTS[crypto.randomInt(PUNISHMENTS.length)];
-        pushAudit(s, t, 'spin', `🎡 ${d.name} (Day ${d.day}) got: ${d.punishment}`);
+        pushAudit(s, t, 'spin', `${d.name} (Day ${d.day}) got: ${d.punishment}`);
         s.updated = new Date(t).toISOString();
         return { punishment: d.punishment };
+      });
+      if (out.error) return json(422, { error: out.error });
+      return json(200, out);
+    }
+
+    // Undo a spin (e.g. a test or a mistake) so the person can be spun again. Logged publicly.
+    if (body.action === 'unspin') {
+      const reason = cleanNote(body.reason);
+      if (!reason || reason.length < 3) return json(422, { error: 'Say why you are undoing it' });
+      const out = await mutate(store, 'state', emptyState, (s) => {
+        const d = (s.defaulters || []).find(x => x.id === body.id && !x.deleted);
+        if (!d) return { abort: true, error: 'Not found' };
+        if (!d.punishment) return { abort: true, error: 'Nothing to undo — not spun yet' };
+        pushAudit(s, t, 'unspin', `Undid ${d.name}’s forfeit (Day ${d.day}: ${d.punishment}) — ${reason}`);
+        d.punishment = null;
+        s.updated = new Date(t).toISOString();
+        return { ok: true };
       });
       if (out.error) return json(422, { error: out.error });
       return json(200, out);
