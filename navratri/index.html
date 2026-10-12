@@ -109,6 +109,9 @@ h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .seg button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-weight: 600; color: var(--muted); }
 .pen { flex-wrap: wrap; border-radius: 16px; }
 .pen button[aria-checked="true"][data-pen="missed"] { background: #fde8e8; color: var(--bad); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.pen button[aria-checked="true"][data-pen="absent"] { background: #ece7f3; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.mark.absent { background: #f3eff8; border-color: #d8cfe6; color: var(--muted); }
+.mark.auto { background: #f2fbf4; border-style: dashed; border-color: #a9dcb7; color: #145c2a; }
 .pen button[aria-checked="true"][data-pen="wore"] { background: #e3f6e8; color: #145c2a; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 .pen button[aria-checked="true"][data-pen=""] { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 .seg button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
@@ -271,7 +274,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
       <p class="muted" style="margin-top:10px">Team score = dress code + snacks + extra bonus − penalties (if any). Tap ⓘ (or the team) to see its members and breakdown. <span id="updated"></span></p>
     </div>
     <div class="card hidden" id="lb-person">
-      <p class="muted" style="margin-bottom:6px">+1 for every office day you wore the colour — 6 to collect. Dots are the 6 days: filled = wore it, ✗ = didn’t (Colour Police, no point), empty = absent or not yet.</p>
+      <p class="muted" style="margin-bottom:6px">+1 for every office day you wore the colour — 6 to collect. Everyone is ✓ by default from 5 PM unless the Colour Police mark them. Dots are the 6 days: filled = wore it, ✗ = didn’t, · = absent, empty = not yet.</p>
       <input class="search" id="lb-filter" placeholder="Find a name…" autocomplete="off" aria-label="Filter names" style="margin-bottom:6px">
       <div id="people"></div>
     </div>
@@ -310,11 +313,11 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
       <div class="card rules">
         <h3>👤 Individual score</h3>
         <table>
-          <tr><td>✓ Wore the day’s colour (marked at 5 PM attendance)</td><td>+1</td></tr>
+          <tr><td>✓ Wore the day’s colour — automatic for everyone from 5 PM, unless marked ✗ or absent</td><td>+1</td></tr>
           <tr><td>✗ In office but not in the colour (Colour Police)</td><td>0</td></tr>
           <tr><td>· Absent / on leave</td><td>0</td></tr>
         </table>
-        <p class="formula"><b>Individual = (days wore ✓) − (days not in colour ✗)</b><br>6 scoring days → range −6 to +6. Wore all 6 = 🌟</p>
+        <p class="formula"><b>Individual = number of days ✓</b><br>6 scoring days → 0 to 6. No minus points. Wore all 6 = 🌟</p>
 
         <h3 style="margin-top:16px">👥 Team score</h3>
         <table>
@@ -393,14 +396,14 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
       <div class="card">
         <h3>🚨 Colour Police · Daily attendance — <span id="ad-colour"></span></h3>
-        <p class="muted">Take attendance at 5 PM. First pick what a tap does, then tap names. Absent / on leave = leave as <b>·</b>. Saved people are locked; to fix one, remove the entry below.</p>
+        <p class="muted">Everyone is <b>✓ by default</b> and gets +1 automatically from 5 PM. Only mark the exceptions: pick ✗ or Absent, tap their names, then save. Saved marks are locked; to undo one, press ✕ in the list below.</p>
         <div class="seg pen" role="radiogroup" aria-label="Tap marks as" style="margin-top:10px">
           <button type="button" data-pen="missed" aria-checked="true" role="radio">✗ Not in colour (0)</button>
-          <button type="button" data-pen="wore" aria-checked="false" role="radio">✓ Wore colour (+1)</button>
-          <button type="button" data-pen="" aria-checked="false" role="radio">· Clear</button>
+          <button type="button" data-pen="absent" aria-checked="false" role="radio">· Absent / leave (0)</button>
+          <button type="button" data-pen="" aria-checked="false" role="radio">↺ Back to ✓</button>
         </div>
         <div id="ad-roll"></div>
-        <button class="btn" id="ad-roll-save" style="margin-top:12px">Save attendance</button>
+        <button class="btn" id="ad-roll-save" style="margin-top:12px">Save ✗ / absent</button>
         <div class="msg" id="ad-roll-msg"></div>
       </div>
 
@@ -458,7 +461,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 17;
+const APP_VERSION = 18;
 // The forfeit wheel is run offline in the office for now. Flip to true to bring it back;
 // the server side (spin / unspin) and any saved results are untouched.
 const SHOW_FORFEIT_WHEEL = false; // must match netlify/lib/navratri-core.mjs
@@ -571,7 +574,7 @@ $('open-admin').onclick = () => { showTab('admin'); scrollTo({ top: 0 }); };
 /* ================================================================
  * Live data
  * ================================================================ */
-let data = { entries: [], defaulters: [], audit: [], updated: null, ...(store.get('nv_cache') || {}) };
+let data = { entries: [], defaulters: [], absentees: [], audit: [], updated: null, ...(store.get('nv_cache') || {}) };
 let leaderBefore = null;
 
 async function load() {
@@ -592,8 +595,25 @@ async function load() {
   renderAll();
 }
 
-// Colour Police ✗ scores nothing (no negative marking); kept as a constant in case that changes.
-const MISS_POINTS = 0;
+// ── Attendance model ──────────────────────────────────────────────
+// Only exceptions are stored: ✗ not in colour (defaulters) and absent (absentees).
+// From 5 PM IST on each office day everyone else automatically counts as ✓ (+1).
+// Explicit ✓ entries from before this change still count (never twice).
+function dayOpen(n) {
+  const d = DAYS[n - 1];
+  return OFFICE_DAYS.includes(n) && istNow().toISOString().slice(0, 16) >= `${d.date}T17:00`;
+}
+// name -> status for one day: 'wore' | 'auto' | 'missed' | 'absent' | ''
+function dayStatus(n) {
+  const st = {};
+  for (const x of data.defaulters || []) if (x.day === n) st[x.name] = 'missed';
+  for (const x of data.absentees || []) if (x.day === n && !st[x.name]) st[x.name] = 'absent';
+  for (const e of data.entries) if (!e.deleted && e.day === n && e.category === 'colour' && e.name && !st[e.name]) st[e.name] = 'wore';
+  if (dayOpen(n)) for (const m of Object.values(TEAMS).flat()) if (!st[m]) st[m] = 'auto';
+  return st;
+}
+const gotPoint = (s) => s === 'wore' || s === 'auto';
+
 function totals() {
   const t = {};
   for (const k of [1, 2, 3, 4, 5, 6]) t[k] = { total: 0, plus: 0, minus: 0, by: {} };
@@ -602,8 +622,12 @@ function totals() {
     t[team][pts >= 0 ? 'plus' : 'minus'] += pts;
     t[team].by[cat] = (t[team].by[cat] || 0) + pts;
   };
-  for (const e of data.entries) if (!e.deleted) add(e.team, e.category, e.points);
-  if (MISS_POINTS) for (const x of data.defaulters || []) if (t[x.team]) add(x.team, 'not_in_colour', MISS_POINTS);
+  // dress code comes from attendance, so stored per-person entries are not added twice
+  for (const e of data.entries) if (!e.deleted && !(e.category === 'colour' && e.name)) add(e.team, e.category, e.points);
+  for (const n of OFFICE_DAYS) {
+    const st = dayStatus(n);
+    for (const m in st) if (gotPoint(st[m])) add(teamOf(m), 'colour', 1);
+  }
   return Object.entries(t).map(([team, v]) => ({ team: +team, ...v })).sort((a, b) => b.total - a.total || a.team - b.team);
 }
 
@@ -711,15 +735,22 @@ $('board').addEventListener('click', e => {
 function dressTally() {
   const t = {};
   for (const n of Object.values(TEAMS).flat()) t[n] = { pts: 0, wore: 0, missed: 0, days: {} };
-  for (const e of data.entries) if (!e.deleted && e.category === 'colour' && e.name && t[e.name]) { t[e.name].pts += e.points; t[e.name].wore++; t[e.name].days[e.day] = 'wore'; }
-  for (const x of data.defaulters || []) if (t[x.name] && !t[x.name].days[x.day]) { t[x.name].pts += MISS_POINTS; t[x.name].missed++; t[x.name].days[x.day] = 'missed'; }
+  for (const n of OFFICE_DAYS) {
+    const st = dayStatus(n);
+    for (const m in st) {
+      if (!t[m]) continue;
+      if (gotPoint(st[m])) { t[m].pts++; t[m].wore++; t[m].days[n] = 'wore'; }
+      else if (st[m] === 'missed') { t[m].missed++; t[m].days[n] = 'missed'; }
+      else if (st[m] === 'absent') t[m].days[n] = 'absent';
+    }
+  }
   return t;
 }
 function dotsHtml(days) {
   return `<span class="dots">${OFFICE_DAYS.map(n => {
     const d = DAYS[n - 1], st = days[n];
     const bg = st === 'wore' ? `background:${d.hex};border-color:${d.hex === '#ffffff' ? '#c9bba8' : d.hex}` : '';
-    return `<i style="${bg}" title="Day ${n} · ${d.colour}${st ? ' · ' + (st === 'wore' ? 'wore it' : 'missed') : ''}">${st === 'missed' ? '✗' : ''}</i>`;
+    return `<i style="${bg}" title="Day ${n} · ${d.colour}${st ? ' · ' + ({ wore: 'wore it', missed: 'not in colour', absent: 'absent' })[st] : ''}">${st === 'missed' ? '✗' : st === 'absent' ? '·' : ''}</i>`;
   }).join('')}</span>`;
 }
 function renderPeople() {
@@ -751,6 +782,11 @@ document.querySelector('.seg').addEventListener('click', e => {
 function feedItem(e) {
   const d = DAYS[e.day - 1];
   const cls = e.points >= 0 ? 'plus' : 'minus';
+  if (e.auto) {
+    return `<li><span><span class="swatch" style="background:${d.hex};width:12px;height:12px"></span>
+      <b>👗 Dress code</b> — ${e.names.length} of 42 in ${esc(d.colour)}
+      <br><small class="muted">Day ${e.day} · from 5 PM · +1 each</small></span><span class="pts plus">+${e.points}</span></li>`;
+  }
   if (e.group && e.names.length > 1) {
     return `<li><span><span class="swatch" style="background:${d.hex};width:12px;height:12px"></span>
       <b>👗 Dress code</b> — ${e.names.length} people in ${esc(d.colour)}: ${esc(e.names.map(shortName).join(', '))}
@@ -771,12 +807,20 @@ function groupFeed(entries) {
   }
   return out;
 }
+// One line per office day for the automatic ✓ points (they aren't stored as entries).
+function dressFeed() {
+  return OFFICE_DAYS.filter(dayOpen).map(n => {
+    const st = dayStatus(n), names = Object.keys(st).filter(m => gotPoint(st[m]));
+    return { day: n, at: `${DAYS[n - 1].date}T17:00:00+05:30`, group: true, names, points: names.length, team: 0, category: 'colour', auto: true };
+  }).filter(x => x.names.length);
+}
 function renderFeeds() {
-  const list = groupFeed([...data.entries].reverse());
+  const stored = data.entries.filter(e => !(e.category === 'colour' && e.name));
+  const list = groupFeed([...stored, ...dressFeed()].sort((a, b) => new Date(a.at) - new Date(b.at)).reverse());
   $('feed').innerHTML = list.length ? list.map(feedItem).join('') : '<li class="muted">Nothing yet.</li>';
   const live = list.filter(e => !e.deleted).slice(0, 4);
   $('mini-feed').innerHTML = live.length ? live.map(feedItem).join('') : '<li class="muted">Judges are warming up… 🧐</li>';
-  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒', defaulter: '🚨', spin: '🎡', unspin: '↩️' };
+  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒', defaulter: '🚨', absent: '🏖️', spin: '🎡', unspin: '↩️' };
   const audit = data.audit.filter(a => SHOW_FORFEIT_WHEEL || (a.action !== 'spin' && a.action !== 'unspin'));
   $('audit').innerHTML = audit.length
     ? [...audit].reverse().slice(0, 30).map(a => `<li><span>${icon[a.action] || '•'} ${esc(a.detail)}<br><small class="muted">${fmtTime(a.at)}</small></span></li>`).join('')
@@ -963,10 +1007,10 @@ document.querySelector('.pen').addEventListener('click', e => {
   pen = b.dataset.pen;
   document.querySelectorAll('.pen [data-pen]').forEach(x => x.setAttribute('aria-checked', x === b));
 });
-function savedStatus(day) {
-  const st = {};
-  for (const e of data.entries) if (!e.deleted && e.day === day && e.category === 'colour' && e.name) st[e.name] = 'wore';
-  for (const x of data.defaulters || []) if (x.day === day) st[x.name] = 'missed';
+// Stored marks only (what the scorekeeper has saved) for the desk
+function savedStatus(n) {
+  const st = dayStatus(n);
+  for (const m in st) if (st[m] === 'auto') delete st[m];
   return st;
 }
 function renderRoll() {
@@ -974,25 +1018,19 @@ function renderRoll() {
   if (!d) return;
   const saved = savedStatus(d.n);
   $('ad-roll').innerHTML = Object.entries(TEAMS).map(([t, members]) => `
-    <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}
-      <button type="button" class="btn alt small" data-allwore="${t}" style="margin-left:auto">All ✓</button></h4>
+    <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}</h4>
     <div class="chips">${members.map(m => {
-      const st = saved[m] || rollMarks[m] || '';
-      const icon = st === 'wore' ? '✓' : st === 'missed' ? '✗' : '·';
-      return `<button type="button" class="mark ${st}${saved[m] ? ' locked' : ''}" data-mark="${esc(m)}" ${saved[m] ? 'disabled' : ''} aria-label="${esc(m)}: ${st || 'not marked'}">${icon} ${esc(shortName(m))}</button>`;
+      const st = saved[m] || rollMarks[m] || 'auto';
+      const icon = st === 'missed' ? '✗' : st === 'absent' ? '·' : '✓';
+      const label = { missed: 'not in colour', absent: 'absent', wore: 'wore it', auto: 'wore it (default)' }[st];
+      return `<button type="button" class="mark ${st}${saved[m] ? ' locked' : ''}" data-mark="${esc(m)}" ${saved[m] ? 'disabled' : ''} aria-label="${esc(m)}: ${label}">${icon} ${esc(shortName(m))}</button>`;
     }).join('')}</div></div>`).join('');
 }
 $('ad-roll').addEventListener('click', e => {
-  const all = e.target.closest('[data-allwore]');
-  if (all) {
-    const saved = savedStatus(adDay().n);
-    TEAMS[all.dataset.allwore].forEach(m => { if (!saved[m]) rollMarks[m] = 'wore'; });
-    renderRoll(); return;
-  }
   const b = e.target.closest('[data-mark]');
   if (!b || b.disabled) return;
   const m = b.dataset.mark;
-  rollMarks[m] = pen;
+  if (pen) rollMarks[m] = pen; else delete rollMarks[m];
   renderRoll();
 });
 
@@ -1057,19 +1095,20 @@ async function addAwards(awards, msgId, btn) {
 }
 $('ad-roll-save').onclick = () => busy($('ad-roll-save'), async () => {
   const d = adDay(), saved = savedStatus(d.n);
-  const wore = Object.keys(rollMarks).filter(m => rollMarks[m] === 'wore' && !saved[m]);
   const missed = Object.keys(rollMarks).filter(m => rollMarks[m] === 'missed' && !saved[m]);
-  if (!wore.length && !missed.length) { setMsg('ad-roll-msg', 'Tap names to mark them first.'); return; }
+  const absent = Object.keys(rollMarks).filter(m => rollMarks[m] === 'absent' && !saved[m]);
+  if (!missed.length && !absent.length) { setMsg('ad-roll-msg', 'Everyone is ✓ by default — tap only the people who were ✗ or absent.'); return; }
   const list = (names) => names.map(shortName).join(', ');
-  const summary = `Day ${d.n} attendance:\n\n` +
-    (wore.length ? `✓ WORE colour (+1 each): ${list(wore)}\n\n` : '') +
-    (missed.length ? `✗ NOT in colour (no point): ${list(missed)}\n\n` : '') + 'Save this?';
+  const summary = `Day ${d.n} exceptions:\n\n` +
+    (missed.length ? `✗ NOT in colour (no point): ${list(missed)}\n\n` : '') +
+    (absent.length ? `· ABSENT (no point): ${list(absent)}\n\n` : '') +
+    'Everyone else gets ✓ +1 automatically from 5 PM. Save this?';
   if (!confirm(summary)) return;
   try {
-    if (wore.length) await api({ action: 'add', awards: wore.map(name => ({ day: d.n, team: teamOf(name), category: 'colour', points: 1, name })) });
     if (missed.length) await api({ action: 'defaulters_add', day: d.n, names: missed });
+    if (absent.length) await api({ action: 'absent_add', day: d.n, names: absent });
     rollMarks = {};
-    setMsg('ad-roll-msg', `Saved ✓ ${wore.length} in colour, ${missed.length} not in colour${missed.length && SHOW_FORFEIT_WHEEL ? ' — spin the forfeit wheel below!' : ''}`, true);
+    setMsg('ad-roll-msg', `Saved ✓ ${missed.length} not in colour, ${absent.length} absent. Everyone else is ✓.`, true);
     await load(); renderDeskDay();
   } catch (err) { setMsg('ad-roll-msg', err.message); await load(); renderDeskDay(); }
 });
@@ -1125,16 +1164,12 @@ function policeItem(x, admin) {
     <span style="text-align:right">${action}${admin ? ` <button class="btn alt small" data-unpolice="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">✕</button>` : ''}</span></li>`;
 }
 // Today's attendance if taken, otherwise the most recent day that has any.
+// Today's attendance once it has started (5 PM) or has marks; otherwise the latest office day that has.
 function attendanceDay() {
   const t = todayStr();
-  const days = new Set([
-    ...data.entries.filter(e => !e.deleted && e.category === 'colour' && e.name).map(e => e.day),
-    ...(data.defaulters || []).map(x => x.day),
-  ]);
-  const todayDay = DAYS.find(d => d.date === t);
-  if (todayDay && days.has(todayDay.n)) return todayDay;
-  const latest = Math.max(0, ...days);
-  return latest ? DAYS[latest - 1] : null;
+  const marked = new Set([...(data.defaulters || []), ...(data.absentees || [])].map(x => x.day));
+  const candidates = DAYS.filter(d => OFFICE_DAYS.includes(d.n) && d.date <= t && (dayOpen(d.n) || marked.has(d.n)));
+  return candidates.length ? candidates[candidates.length - 1] : null;
 }
 function renderPolice() {
   const d = attendanceDay();
@@ -1144,14 +1179,18 @@ function renderPolice() {
     $('police').innerHTML = '';
     return;
   }
-  const st = savedStatus(d.n);
+  const st = dayStatus(d.n);
   const all = Object.values(TEAMS).flat();
-  const wore = all.filter(n => st[n] === 'wore').length, missed = all.filter(n => st[n] === 'missed').length;
-  $('police-sub').innerHTML = `<b>${esc(d.colour)}</b> · Day ${d.n} — ✓ ${wore} wore it · ✗ ${missed} didn’t · ${all.length - wore - missed} absent`;
+  const wore = all.filter(n => gotPoint(st[n])).length, missed = all.filter(n => st[n] === 'missed').length, absent = all.filter(n => st[n] === 'absent').length;
+  const pending = dayOpen(d.n) ? '' : ' · ✓ points switch on at 5 PM';
+  $('police-sub').innerHTML = `<b>${esc(d.colour)}</b> · Day ${d.n} — ✓ ${dayOpen(d.n) ? wore : '—'} wore it · ✗ ${missed} didn’t · ${absent} absent${pending}`;
   $('attendance').innerHTML = Object.entries(TEAMS).map(([t, members]) => `
     <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}
-      <small class="muted" style="margin-left:auto">${members.filter(m => st[m] === 'wore').length}/7</small></h4>
-    <div class="chips">${members.map(m => `<span class="mark ${st[m] || ''}">${st[m] === 'wore' ? '✓' : st[m] === 'missed' ? '✗' : '·'} ${esc(shortName(m))}</span>`).join('')}</div></div>`).join('');
+      <small class="muted" style="margin-left:auto">${members.filter(m => gotPoint(st[m])).length}/7</small></h4>
+    <div class="chips">${members.map(m => {
+      const s = gotPoint(st[m]) ? 'wore' : st[m] || '';
+      return `<span class="mark ${s}">${s === 'wore' ? '✓' : s === 'missed' ? '✗' : '·'} ${esc(shortName(m))}</span>`;
+    }).join('')}</div></div>`).join('');
   const forfeits = (data.defaulters || []).filter(x => x.day === d.n);
   if (!SHOW_FORFEIT_WHEEL) { $('police').innerHTML = ''; return; }
   $('police').innerHTML = forfeits.length
@@ -1162,11 +1201,14 @@ function renderAdPolice() {
   const d = adDay();
   if (!d) return;
   const list = (data.defaulters || []).filter(x => x.day === d.n);
+  const away = (data.absentees || []).filter(x => x.day === d.n);
   if (!SHOW_FORFEIT_WHEEL) {
-    $('ad-wheel').querySelector('h3').textContent = '✗ Not in colour';
-    $('ad-wheel').querySelector('p').textContent = 'Everyone marked ✗ in attendance (no point). Marked someone by mistake? Press ✕ (with a reason — logged publicly) and mark them again above.';
+    $('ad-wheel').querySelector('h3').textContent = '✗ Not in colour · Absent';
+    $('ad-wheel').querySelector('p').textContent = 'Saved exceptions for this day (no point). Marked someone by mistake? Press ✕ (with a reason — logged publicly); they go back to ✓.';
   }
-  $('ad-police').innerHTML = list.length ? list.map(x => policeItem(x, true)).join('') : '<li class="muted">No one marked ✗ for this day.</li>';
+  const awayHtml = away.map(x => `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
+    <span><span class="muted">· absent</span> <button class="btn alt small" data-unabsent="${esc(x.id)}" aria-label="Remove ${esc(x.name)} from absent">✕</button></span></li>`).join('');
+  $('ad-police').innerHTML = (list.map(x => policeItem(x, true)).join('') + awayHtml) || '<li class="muted">No exceptions for this day — everyone is ✓.</li>';
 }
 $('ad-police').addEventListener('click', async e => {
   const un = e.target.closest('[data-unspin]');
@@ -1174,6 +1216,14 @@ $('ad-police').addEventListener('click', async e => {
     const reason = prompt('Why undo this spin? (shown publicly, e.g. "was a test")');
     if (!reason || reason.trim().length < 3) return;
     try { await api({ action: 'unspin', id: un.dataset.unspin, reason: reason.trim() }); await load(); renderDeskDay(); }
+    catch (err) { alert(err.message); }
+    return;
+  }
+  const ua = e.target.closest('[data-unabsent]');
+  if (ua) {
+    const reason = prompt('Why remove this absent mark? (shown publicly)');
+    if (!reason || reason.trim().length < 3) return;
+    try { await api({ action: 'absent_remove', id: ua.dataset.unabsent, reason: reason.trim() }); await load(); renderDeskDay(); }
     catch (err) { alert(err.message); }
     return;
   }

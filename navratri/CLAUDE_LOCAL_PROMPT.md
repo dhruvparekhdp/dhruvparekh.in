@@ -24,14 +24,15 @@ scoreboard that lives in this repo. It is LIVE at https://dhruvparekh.in/navratr
   Snack hosts: Day 2 Team 1, Day 3 Team 2, Day 4 Team 3, Day 5 Team 4, Day 6 Team 5, Day 9 Team 6.
 
 ## Scoring rules (agreed by the cultural team — do not change unless I ask)
-- Dress code: 1 point per PERSON per office day (max 6 per person, 42 per team). Stored as one
-  entry per person (`category: 'colour'`, `name`, `points: 1`).
+- Dress code: 1 point per PERSON per office day (max 6 per person, 42 per team). NOT stored: from
+  5 PM IST each office day everyone not marked ✗ (`defaulters`) or absent (`absentees`) counts as ✓
+  automatically (`dayStatus()` / `dayOpen()` in the page). Old explicit `colour` entries still count once.
 - Snacks: 0–10, only for that day's host team, once per day.
 - Extra bonus: 1–8, reason required, capped at 8 per team for the whole festival.
 - Penalty ("task not done"): −1 to −15, reason required.
 - Two leaderboards: team total, and individual dress points out of 6.
-- Colour Police = daily attendance: each person ✓ wore (+1) / ✗ didn't (0, NO negative marking —
-  `MISS_POINTS = 0`) / · absent (0). The forfeit wheel is hidden (`SHOW_FORFEIT_WHEEL = false`,
+- Colour Police = daily attendance: ✓ by default (+1), scorekeeper marks only ✗ didn't (0, NO
+  negative marking) / · absent (0). The forfeit wheel is hidden (`SHOW_FORFEIT_WHEEL = false`,
   run offline in the office). When enabled, ✗ people go on the
   forfeit wheel; the SERVER picks the forfeit at random (`PUNISHMENTS` in the core lib; the page has a
   copy only for the spin animation — keep both lists identical). A spin can be undone with a public

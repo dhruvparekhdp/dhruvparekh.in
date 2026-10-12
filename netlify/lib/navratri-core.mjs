@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 17;
+export const APP_VERSION = 18;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
@@ -95,7 +95,7 @@ export function todayIST(now = Date.now()) {
 }
 
 function emptyState() {
-  return { entries: [], defaulters: [], audit: [], epoch: 1, updated: null };
+  return { entries: [], defaulters: [], absentees: [], audit: [], epoch: 1, updated: null };
 }
 
 const ADMIN_USER = 'dhruv';
@@ -169,6 +169,8 @@ function publicView(state, now) {
     defaulters: (state.defaulters || []).filter(d => !d.deleted).map(d => ({
       id: d.id, day: d.day, name: d.name, team: d.team, punishment: d.punishment || null, at: d.at,
     })),
+    absentees: (state.absentees || []).filter(d => !d.deleted).map(d => ({ id: d.id, day: d.day, name: d.name, team: d.team, at: d.at })),
+    now: new Date(now).toISOString(),
     audit: state.audit.slice(-60).map(a => ({ at: a.at, action: a.action, detail: a.detail })),
     updated: state.updated,
     today: todayIST(now),
@@ -341,6 +343,8 @@ export function createHandler({ store, env, now = () => Date.now() }) {
         s.defaulters = s.defaulters || [];
         const scored = names.find(n => s.entries.some(e => !e.deleted && e.day === day && e.category === 'colour' && e.name === n));
         if (scored) return { abort: true, error: `${scored} already has the Day ${day} dress-code point — remove it first` };
+        const away = names.find(n => (s.absentees || []).some(a => !a.deleted && a.day === day && a.name === n));
+        if (away) return { abort: true, error: `${away} is marked absent on Day ${day} — remove that first` };
         const added = [];
         for (const name of new Set(names)) {
           if (s.defaulters.some(d => !d.deleted && d.day === day && d.name === name)) continue;
@@ -355,6 +359,50 @@ export function createHandler({ store, env, now = () => Date.now() }) {
       return json(200, out);
     }
 
+    // ── absent / on leave: no dress point, no ✗ ──
+    // Everyone not marked ✗ or absent gets the dress point automatically from 5 PM.
+    if (body.action === 'absent_add') {
+      const day = body.day;
+      if (!Number.isInteger(day) || !OFFICE_DAYS.includes(day)) return json(422, { error: 'Pick an office day' });
+      if (DAY_DATES[day] > today) return json(422, { error: 'That day hasn’t happened yet' });
+      const names = Array.isArray(body.names) ? body.names : [];
+      if (!names.length || names.length > 42) return json(422, { error: 'Pick at least one person' });
+      if (names.some(n => typeof n !== 'string' || !teamOfName(n))) return json(422, { error: 'Only names from the team list are allowed' });
+      const out = await mutate(store, 'state', emptyState, (s) => {
+        s.absentees = s.absentees || [];
+        const scored = names.find(n => s.entries.some(e => !e.deleted && e.day === day && e.category === 'colour' && e.name === n));
+        if (scored) return { abort: true, error: `${scored} already has the Day ${day} dress-code point — remove it first` };
+        const policed = names.find(n => (s.defaulters || []).some(d => !d.deleted && d.day === day && d.name === n));
+        if (policed) return { abort: true, error: `${policed} is marked ✗ on Day ${day} — remove that first` };
+        const added = [];
+        for (const name of new Set(names)) {
+          if (s.absentees.some(a => !a.deleted && a.day === day && a.name === name)) continue;
+          const a = { id: b64u(crypto.randomBytes(8)), day, name, team: teamOfName(name), at: new Date(t).toISOString() };
+          s.absentees.push(a); added.push(a);
+        }
+        if (added.length) pushAudit(s, t, 'absent', `Day ${day} · absent: ${added.map(a => a.name).join(', ')}`);
+        s.updated = new Date(t).toISOString();
+        return { added: added.length };
+      });
+      if (out.error) return json(422, { error: out.error });
+      return json(200, out);
+    }
+
+    if (body.action === 'absent_remove') {
+      const reason = cleanNote(body.reason);
+      if (!reason || reason.length < 3) return json(422, { error: 'Say why you are removing it' });
+      const out = await mutate(store, 'state', emptyState, (s) => {
+        const a = (s.absentees || []).find(x => x.id === body.id && !x.deleted);
+        if (!a) return { abort: true, error: 'Not found' };
+        a.deleted = { at: new Date(t).toISOString(), reason };
+        s.updated = a.deleted.at;
+        pushAudit(s, t, 'remove', `Removed ${a.name} from Day ${a.day} absent list — ${reason}`);
+        return { ok: true };
+      });
+      if (out.error) return json(422, { error: out.error });
+      return json(200, out);
+    }
+
     if (body.action === 'defaulter_remove') {
       const reason = cleanNote(body.reason);
       if (!reason || reason.length < 3) return json(422, { error: 'Say why you are removing it' });
@@ -362,6 +410,7 @@ export function createHandler({ store, env, now = () => Date.now() }) {
         const d = (s.defaulters || []).find(x => x.id === body.id && !x.deleted);
         if (!d) return { abort: true, error: 'Not found' };
         d.deleted = { at: new Date(t).toISOString(), reason };
+        s.updated = d.deleted.at;
         pushAudit(s, t, 'remove', `Removed ${d.name} from Day ${d.day} colour defaulters — ${reason}`);
         return { ok: true };
       });

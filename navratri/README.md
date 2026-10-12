@@ -15,7 +15,10 @@ the server and kept in Blobs. To change the password without a code change, set 
 
 ## Scoring
 
-**Individual** = days wore the colour (+1 each). Not in colour (✗) or absent = 0. Max 6.
+**Individual** = days ✓ (+1 each). Not in colour (✗) or absent = 0. Max 6.
+
+Only exceptions are stored. From 5 PM IST on each office day everyone who is not marked ✗ or absent
+automatically counts as ✓ (+1 for them and their team).
 
 **Team** = Σ members' ✓ + Snacks + Extra bonus − Penalties. Best possible 60.
 
@@ -29,9 +32,10 @@ the server and kept in Blobs. To change the password without a code change, set 
 
 ## Colour Police · daily attendance
 
-At 5 PM the scorekeeper marks every person ✓ wore the colour / ✗ didn't / · absent. ✓ gives the
-dress-code point; ✗ puts them on the forfeit wheel. The server picks each forfeit at random, it
-can't be re-spun, and the day's attendance and forfeits are public on the Today tab.
+Everyone is ✓ by default. At 5 PM the scorekeeper marks only the exceptions: ✗ not in colour or
+· absent / on leave (stored as `defaulters` and `absentees`). Both score 0; there is no negative
+marking. Mistakes are removed with ✕ and a public reason. The forfeit wheel is hidden
+(`SHOW_FORFEIT_WHEEL = false`) and run offline in the office.
 
 ## Anti-cheating checks (all enforced on the server)
 

@@ -110,3 +110,22 @@ test('attendance, forfeit spin and undo', { skip: needsPassword }, async () => {
   assert.ok((await call({ action: 'spin', id }, { token })).body.punishment);
   assert.ok((await get()).audit.some(a => a.action === 'unspin'));
 });
+
+test('absent marks: exclusive with ✗ and ✓, removable with a reason', { skip: needsPassword }, async () => {
+  const { call, get, login } = setup();
+  const token = await login();
+  assert.equal((await call({ action: 'absent_add', day: 3, names: ['Varsha Bagul', 'Divya Ghatkar'] }, { token })).status, 200);
+  assert.match((await call({ action: 'defaulters_add', day: 3, names: ['Varsha Bagul'] }, { token })).body.error, /absent/);
+  assert.equal((await call({ action: 'defaulters_add', day: 3, names: ['Jatin Chugh'] }, { token })).status, 200);
+  assert.match((await call({ action: 'absent_add', day: 3, names: ['Jatin Chugh'] }, { token })).body.error, /✗/);
+  assert.match((await call({ action: 'absent_add', day: 4, names: ['Jatin Chugh'] }, { token })).body.error, /hasn’t happened/);
+  assert.match((await call({ action: 'absent_add', day: 3, names: ['Not A Person'] }, { token })).body.error, /team list/);
+  assert.equal((await call({ action: 'absent_add', day: 3, names: ['Varsha Bagul'] })).status, 401);
+  const g = await get();
+  assert.deepEqual(g.absentees.map(a => a.name).sort(), ['Divya Ghatkar', 'Varsha Bagul']);
+  assert.ok(g.now);
+  const id = g.absentees.find(a => a.name === 'Divya Ghatkar').id;
+  assert.match((await call({ action: 'absent_remove', id }, { token })).body.error, /why/);
+  assert.equal((await call({ action: 'absent_remove', id, reason: 'she came in late' }, { token })).status, 200);
+  assert.deepEqual((await get()).absentees.map(a => a.name), ['Varsha Bagul']);
+});
