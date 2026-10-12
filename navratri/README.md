@@ -15,15 +15,14 @@ the server and kept in Blobs. To change the password without a code change, set 
 
 ## Scoring
 
-**Individual** = days wore the colour (+1 each) − days in office but not in colour (−1 each). Absent = 0.
-Range −6 to +6 over the 6 scoring days.
+**Individual** = days wore the colour (+1 each). Not in colour (✗) or absent = 0. Max 6.
 
-**Team** = Σ members' ✓ + Snacks + Extra bonus − Σ members' ✗ − Penalties. Best possible 60.
+**Team** = Σ members' ✓ + Snacks + Extra bonus − Penalties. Best possible 60.
 
 | | Points |
 | --- | --- |
 | Dress code ✓ | +1 per person per office day (max 42 per team) |
-| Not in colour ✗ | −1 per person per day, for the person and the team |
+| Not in colour ✗ | 0 (no negative marking) |
 | Snacks | 0–10, host team on its day |
 | Extra bonus | up to 8 per team for the whole festival, reason required |
 | Penalty | −1 to −15, reason required |

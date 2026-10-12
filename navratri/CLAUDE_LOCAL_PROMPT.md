@@ -30,7 +30,9 @@ scoreboard that lives in this repo. It is LIVE at https://dhruvparekh.in/navratr
 - Extra bonus: 1–8, reason required, capped at 8 per team for the whole festival.
 - Penalty ("task not done"): −1 to −15, reason required.
 - Two leaderboards: team total, and individual dress points out of 6.
-- Colour Police = daily attendance: each person ✓ wore / ✗ didn't / · absent. ✗ people go on the
+- Colour Police = daily attendance: each person ✓ wore (+1) / ✗ didn't (0, NO negative marking —
+  `MISS_POINTS = 0`) / · absent (0). The forfeit wheel is hidden (`SHOW_FORFEIT_WHEEL = false`,
+  run offline in the office). When enabled, ✗ people go on the
   forfeit wheel; the SERVER picks the forfeit at random (`PUNISHMENTS` in the core lib; the page has a
   copy only for the spin animation — keep both lists identical). A spin can be undone with a public
   reason (`unspin`) and spun again.
