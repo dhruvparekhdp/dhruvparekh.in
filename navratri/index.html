@@ -323,6 +323,11 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
           <p style="font-size:.92rem">It’s <b>Green</b> day <i>and</i> Traditional Indian Wear day. Wear a traditional outfit — saree, kurta, lehenga, chaniya choli, salwar, sherwani, Nehru jacket, dhoti — <b>in green</b> to earn your dress-code point.</p>
           <p style="font-size:.92rem;margin-top:6px">Bingo in the evening is for fun 🎯 — a stand-out performance can earn the team an extra bonus.</p>
         </div>
+        <div class="callout">
+          <h3>🪔 Monday 19th Oct — Traditional Day finale</h3>
+          <p style="font-size:.92rem">No colour this day — wear <b>any traditional Indian outfit, in any colour</b>, to earn your dress-code point. Not in traditional = ✗ (−1 and the forfeit wheel).</p>
+          <p style="font-size:.92rem;margin-top:6px">Aarti & Prasad, Bingo 🎯 and fun activities in the office, then the winners are announced 🏆</p>
+        </div>
         <div class="card">
           <h3>⚖️ Fair play</h3>
           <ul class="muted" style="margin-left:18px">
@@ -342,7 +347,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
   <section class="panel hidden" data-panel="bingo">
     <h2>Festive Find-Someone Bingo</h2>
     <div class="card">
-      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Show your screen to the cultural team for bragging rights — a stand-out win may earn your team an extra bonus!</p>
+      <p class="muted">Every card is unique to your name. Walk around, find a colleague who matches a square, and tap it. Five in a row (any direction) = Bingo! Play it on Friday 16th and at the Monday 19th finale. Show your screen to the cultural team for bragging rights — a stand-out win may earn your team an extra bonus!</p>
       <div class="row" style="margin-top:12px">
         <div><label for="bingo-name">Your name</label><input class="input" id="bingo-name" placeholder="Your full name" autocomplete="off"></div>
         <div style="flex:0 0 auto"><button class="btn" id="bingo-go">Get my card</button></div>
@@ -443,7 +448,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 7; // must match netlify/lib/navratri-core.mjs
+const APP_VERSION = 8; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -453,7 +458,7 @@ const DAYS = [
   { n: 6, date: '2026-10-16', wd: 'Friday',    colour: 'Green',         hex: '#2e9e4f', ink: '#fff', host: 5, goddess: 'Maa Katyayani',     blessing: 'victory over obstacles' },
   { n: 7, date: '2026-10-17', wd: 'Saturday',  colour: 'Grey',          hex: '#7a7f8c', ink: '#fff', host: 0, goddess: 'Maa Kalaratri',     blessing: 'fearlessness' },
   { n: 8, date: '2026-10-18', wd: 'Sunday',    colour: 'Purple',        hex: '#7b2cbf', ink: '#fff', host: 0, goddess: 'Maa Mahagauri',     blessing: 'peace and purity' },
-  { n: 9, date: '2026-10-19', wd: 'Monday',    colour: 'Peacock Green', hex: '#0f7c7a', ink: '#fff', host: 6, goddess: 'Maa Siddhidatri',   blessing: 'wisdom and fulfilment' },
+  { n: 9, date: '2026-10-19', wd: 'Monday',    colour: 'Traditional Wear', hex: '#a4133c', ink: '#fff', host: 6, goddess: 'Maa Siddhidatri',   blessing: 'wisdom and fulfilment' },
 ];
 const OFFICE_DAYS = [2, 3, 4, 5, 6, 9];
 const RITUALS = {
@@ -465,7 +470,7 @@ const RITUALS = {
   6: 'Big Friday! Green + traditional wear. Team photos, Bingo in the evening — come dressed in your festive best.',
   7: 'Weekend! Grey day — garba night anyone? Share your dandiya moments.',
   8: 'Purple Sunday. Rest your feet for the grand finale tomorrow.',
-  9: 'Grand finale in Peacock Green! We seek Maa Durga’s blessings with a small Aarti and Prasad. Team 6 closes the snack season and the winners are announced 🏆',
+  9: 'Grand finale — Traditional Day! Come in your best traditional outfit. We seek Maa Durga’s blessings with a small Aarti and Prasad, then Bingo 🎯 and fun activities in the office. Team 6 closes the snack season and the winners are announced 🏆',
 };
 const TEAMS = {
   1: ['Jagjit Singh Vasir', 'Gautam Pandurang Murkunde', 'Nikunj Kapri', 'Shobha Das', 'Soniya Singh', 'Jayashree Khade', 'Chrisann Fernandes'],
@@ -784,7 +789,7 @@ function renderSchedule() {
   $('sched').innerHTML = DAYS.map(d => `
     <div class="sday ${d.date === t ? 'now' : d.date < t ? 'past' : ''}">
       <div class="dot" style="background:${d.hex};color:${d.ink}">Day ${d.n}</div>
-      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 9 ? ' · 🪔 Aarti & Prasad' : ''}</small></div>
+      <div><b>${d.wd}, ${+d.date.slice(8)} Oct · ${d.colour}</b><br><small class="muted">${esc(d.goddess)}${d.n === 6 ? ' · 👗 Traditional wear + Bingo' : ''}${d.n === 9 ? ' · 👗 Traditional Day · 🪔 Aarti & Prasad · 🎯 Bingo & fun activities' : ''}</small></div>
       <div>${d.host ? `<span class="pill">🍿 Team ${d.host}</span>` : '<span class="pill">🏖️ Off</span>'}</div>
     </div>`).join('');
 }
