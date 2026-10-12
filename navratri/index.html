@@ -107,6 +107,10 @@ h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .pts.plus { color: var(--ok); } .pts.minus { color: var(--bad); }
 .seg { display: inline-flex; background: #f3e9dc; border-radius: 999px; padding: 4px; margin-bottom: 12px; }
 .seg button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-weight: 600; color: var(--muted); }
+.pen { flex-wrap: wrap; border-radius: 16px; }
+.pen button[aria-checked="true"][data-pen="missed"] { background: #fde8e8; color: var(--bad); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.pen button[aria-checked="true"][data-pen="wore"] { background: #e3f6e8; color: #145c2a; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.pen button[aria-checked="true"][data-pen=""] { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 .seg button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 .p-row { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .92rem; }
 .p-row:last-child { border-bottom: 0; }
@@ -384,7 +388,12 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
       <div class="card">
         <h3>🚨 Colour Police · Daily attendance — <span id="ad-colour"></span></h3>
-        <p class="muted">Take attendance at 5 PM. Tap each person: <b>✓</b> wore the colour (+1 for them and their team) → <b>✗</b> didn’t (−1 for them and their team) → <b>·</b> absent / on leave. Saved people are locked; to fix one, remove the entry below.</p>
+        <p class="muted">Take attendance at 5 PM. First pick what a tap does, then tap names. Absent / on leave = leave as <b>·</b>. Saved people are locked; to fix one, remove the entry below.</p>
+        <div class="seg pen" role="radiogroup" aria-label="Tap marks as" style="margin-top:10px">
+          <button type="button" data-pen="missed" aria-checked="true" role="radio">✗ Not in colour (−1)</button>
+          <button type="button" data-pen="wore" aria-checked="false" role="radio">✓ Wore colour (+1)</button>
+          <button type="button" data-pen="" aria-checked="false" role="radio">· Clear</button>
+        </div>
         <div id="ad-roll"></div>
         <button class="btn" id="ad-roll-save" style="margin-top:12px">Save attendance</button>
         <div class="msg" id="ad-roll-msg"></div>
@@ -444,7 +453,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
-const APP_VERSION = 14;
+const APP_VERSION = 15;
 // The forfeit wheel is run offline in the office for now. Flip to true to bring it back;
 // the server side (spin / unspin) and any saved results are untouched.
 const SHOW_FORFEIT_WHEEL = false; // must match netlify/lib/navratri-core.mjs
@@ -928,6 +937,14 @@ function adDay() { return DAYS[+$('ad-day').value - 1]; }
 
 // Roll-call marks not yet saved: name -> 'wore' | 'missed'
 let rollMarks = {};
+// What a tap on a name does; starts on ✗ because Colour Police is about catching who skipped it.
+let pen = 'missed';
+document.querySelector('.pen').addEventListener('click', e => {
+  const b = e.target.closest('[data-pen]');
+  if (!b) return;
+  pen = b.dataset.pen;
+  document.querySelectorAll('.pen [data-pen]').forEach(x => x.setAttribute('aria-checked', x === b));
+});
 function savedStatus(day) {
   const st = {};
   for (const e of data.entries) if (!e.deleted && e.day === day && e.category === 'colour' && e.name) st[e.name] = 'wore';
@@ -957,7 +974,7 @@ $('ad-roll').addEventListener('click', e => {
   const b = e.target.closest('[data-mark]');
   if (!b || b.disabled) return;
   const m = b.dataset.mark;
-  rollMarks[m] = rollMarks[m] === 'wore' ? 'missed' : rollMarks[m] === 'missed' ? '' : 'wore';
+  rollMarks[m] = pen;
   renderRoll();
 });
 
@@ -1025,6 +1042,11 @@ $('ad-roll-save').onclick = () => busy($('ad-roll-save'), async () => {
   const wore = Object.keys(rollMarks).filter(m => rollMarks[m] === 'wore' && !saved[m]);
   const missed = Object.keys(rollMarks).filter(m => rollMarks[m] === 'missed' && !saved[m]);
   if (!wore.length && !missed.length) { setMsg('ad-roll-msg', 'Tap names to mark them first.'); return; }
+  const list = (names) => names.map(shortName).join(', ');
+  const summary = `Day ${d.n} attendance:\n\n` +
+    (wore.length ? `✓ WORE colour (+1 each): ${list(wore)}\n\n` : '') +
+    (missed.length ? `✗ NOT in colour (−1 each): ${list(missed)}\n\n` : '') + 'Save this?';
+  if (!confirm(summary)) return;
   try {
     if (wore.length) await api({ action: 'add', awards: wore.map(name => ({ day: d.n, team: teamOf(name), category: 'colour', points: 1, name })) });
     if (missed.length) await api({ action: 'defaulters_add', day: d.n, names: missed });

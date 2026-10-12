@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 14;
+export const APP_VERSION = 15;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
