@@ -5,11 +5,11 @@
 // request is re-checked against the rules below. Storage is a single
 // JSON "file" in Netlify Blobs; a second blob tracks login failures.
 //
-// Required environment variables (Netlify → Site settings → Env):
-//   NAVRATRI_ADMIN_USER       scorekeeper username
-//   NAVRATRI_ADMIN_PASSWORD   at least 12 characters
-//   NAVRATRI_SESSION_SECRET   at least 32 random characters
-// Without them the scoreboard is read-only.
+// Scorekeeper login is fixed (user "dhruv"). The repo is public, so only a
+// slow scrypt hash of the password lives here, never the password itself.
+// The session-signing secret is generated on first use and kept only in
+// Blobs, so nobody can forge a session from the source code.
+// Optional overrides (Netlify env): NAVRATRI_ADMIN_USER, NAVRATRI_ADMIN_PASSWORD.
 
 import crypto from 'node:crypto';
 
@@ -22,6 +22,36 @@ export const DAY_DATES = {
   6: '2026-10-16', 7: '2026-10-17', 8: '2026-10-18', 9: '2026-10-19',
 };
 export const TRADITIONAL_DAY = 6;
+export const ROSTER = {
+  1: ['Jagjit Singh Vasir', 'Gautam Pandurang Murkunde', 'Nikunj Kapri', 'Shobha Das', 'Soniya Singh', 'Jayashree Khade', 'Chrisann Fernandes'],
+  2: ['Jatin Chugh', 'Jyoti Dattatraya Nanaware', 'Vaishnavi Dattatray Devgire', 'Kuriakose T Babu', 'Varsha Bagul', 'Ramjeet Yadav', 'Divya Ghatkar'],
+  3: ['Siddhesh Kishor Patel', 'Sagar Belose', 'Shubham Gaonkar', 'Dipesh Dalvi', 'Pragati Bohra', 'Saloni Jethva', 'Dhruv Atul Parekh'],
+  4: ['Pravin Diwale', 'Sachi Pasari', 'Sakshi Devidas Bhapkar', 'Eliya Patole', 'Gaurav Sattegeri', 'Akash Yadav', 'Vinod Sharma'],
+  5: ['Pranav Dongare', 'Nishant Mehta', 'Sujata Gupta', 'Chinmay Joshi', 'Sejal Jadiyar', 'Dheeraj Mishra', 'Shubham Laxman Gaikwad'],
+  6: ['Sahil Deepak Gupta', 'Clarissa Fernandes', 'Prerak Dedhia', 'Pravin Balkrushna Ambre', 'Krutika Ashok Sawant', 'Sejal Indrapalsingh Yadav', 'Machindra Padmaker Mhatre'],
+};
+const teamOfName = (n) => +(Object.keys(ROSTER).find(t => ROSTER[t].includes(n)) || 0);
+
+// Fun, office-safe forfeits for people who skipped the colour of the day.
+// The server picks one at random so nobody can choose a friend's forfeit.
+export const PUNISHMENTS = [
+  'Do 30 seconds of garba in front of everyone 💃',
+  'Sing one line of any Navratri or Bollywood song 🎤',
+  'Serve the snacks to everyone at 5 PM 🍽️',
+  'Say “Shubh Navratri” in 3 different languages 🗣️',
+  'Wear tomorrow’s colour head-to-toe (selfie proof!) 📸',
+  'Give a genuine compliment to 5 colleagues 💐',
+  'Strike a Maa Durga pose for the group photo 🦁',
+  'Share your funniest festival childhood story 😂',
+  'Act out a movie dialogue the cultural team picks 🎬',
+  'Be the official photographer at snack time 📷',
+  'Name all 9 Navratri colours in order — or sing instead 🎨',
+  'Clean up the snack table after 5 PM 🧹',
+  'Teach everyone one dandiya step 🥢',
+  'Speak only in rhymes for the next 2 minutes 📝',
+  'Lead a loud “Jai Mata Di!” cheer 🙏',
+  'Bring a small sweet treat for your team tomorrow 🍬',
+];
 export const TEAM_SIZE = 7;
 
 // Allowed points per category. `once` = at most one live entry per team per day.
@@ -37,7 +67,7 @@ export const RULES = {
   other:        { label: 'Judges’ special',            min: -5,  max: 5,  noteRequired: true },
 };
 
-const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000;
 const FAIL_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILS_PER_IP = 5;
 const MAX_FAILS_GLOBAL = 30;
@@ -60,15 +90,28 @@ export function todayIST(now = Date.now()) {
 }
 
 function emptyState() {
-  return { entries: [], cheers: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }, audit: [], epoch: 1, cheerLimits: {}, updated: null };
+  return { entries: [], defaulters: [], cheers: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }, audit: [], epoch: 1, cheerLimits: {}, updated: null };
 }
 
-function config(env) {
-  const user = env.NAVRATRI_ADMIN_USER || '';
-  const pass = env.NAVRATRI_ADMIN_PASSWORD || '';
-  const secret = env.NAVRATRI_SESSION_SECRET || '';
-  const ok = user.length >= 3 && pass.length >= 12 && secret.length >= 32;
-  return { ok, user, pass, secret };
+const ADMIN_USER = 'dhruv';
+// scrypt(N=2^15, r=8, p=1) of the scorekeeper password — salt:hash
+const ADMIN_PASS_SCRYPT = 'c9bf60d6fa26864be59fa42458b64368:1fcf150db916648950d834cd86068c8fc3b3e3ec65ec275d448cfdce58972838';
+const SCRYPT_OPTS = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
+
+function passwordMatches(env, given) {
+  if (typeof given !== 'string' || given.length > 200) return false;
+  if (env.NAVRATRI_ADMIN_PASSWORD) return safeEqual(given, env.NAVRATRI_ADMIN_PASSWORD);
+  const [salt, hash] = ADMIN_PASS_SCRYPT.split(':');
+  const got = crypto.scryptSync(given, salt, 32, SCRYPT_OPTS);
+  return crypto.timingSafeEqual(got, Buffer.from(hash, 'hex'));
+}
+
+// Random signing secret, created once and kept only in Blobs.
+async function sessionSecret(store) {
+  const existing = await store.get('secret', { type: 'text' });
+  if (existing) return existing;
+  await store.set('secret', crypto.randomBytes(32).toString('hex'), { onlyIfNew: true });
+  return store.get('secret', { type: 'text' });
 }
 
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest();
@@ -117,6 +160,9 @@ function publicView(state, now) {
     entries: state.entries.map(e => ({
       id: e.id, day: e.day, team: e.team, category: e.category, points: e.points,
       note: e.note || '', at: e.at, deleted: e.deleted ? { at: e.deleted.at, reason: e.deleted.reason } : null,
+    })),
+    defaulters: (state.defaulters || []).filter(d => !d.deleted).map(d => ({
+      id: d.id, day: d.day, name: d.name, team: d.team, punishment: d.punishment || null, at: d.at,
     })),
     cheers: state.cheers,
     audit: state.audit.slice(-60).map(a => ({ at: a.at, action: a.action, detail: a.detail })),
@@ -167,15 +213,16 @@ export function validateAward(state, a, today) {
 }
 
 export function createHandler({ store, env, now = () => Date.now() }) {
-  const cfg = config(env);
+  const adminUser = env.NAVRATRI_ADMIN_USER || ADMIN_USER;
 
   return async function handle(req, ip = '0.0.0.0') {
     const t = now();
-    const ipId = ipTag(cfg.secret, ip);
+    const secret = await sessionSecret(store);
+    const ipId = ipTag(secret, ip);
 
     if (req.method === 'GET') {
       const state = (await store.get('state', { type: 'json' })) || emptyState();
-      return json(200, { ...publicView(state, t), adminEnabled: cfg.ok });
+      return json(200, publicView(state, t));
     }
     if (req.method !== 'POST') return json(405, { error: 'Method not allowed' });
 
@@ -209,8 +256,6 @@ export function createHandler({ store, env, now = () => Date.now() }) {
       return json(200, out);
     }
 
-    if (!cfg.ok) return json(503, { error: 'Scorekeeper login is not set up on the server yet' });
-
     // ── login: brute-force protected ──
     if (body.action === 'login') {
       const auth = (await store.get('auth', { type: 'json' })) || { ips: {}, global: [] };
@@ -220,8 +265,8 @@ export function createHandler({ store, env, now = () => Date.now() }) {
       if (mine.length >= MAX_FAILS_PER_IP || auth.global.length >= MAX_FAILS_GLOBAL) {
         return json(429, { error: 'Too many wrong attempts. Login is locked for 15 minutes.' });
       }
-      const userOk = safeEqual(typeof body.user === 'string' ? body.user.trim() : '', cfg.user);
-      const passOk = safeEqual(typeof body.password === 'string' ? body.password : '', cfg.pass);
+      const userOk = safeEqual(typeof body.user === 'string' ? body.user.trim().toLowerCase() : '', adminUser);
+      const passOk = passwordMatches(env, body.password);
       if (!(userOk && passOk)) {
         mine.push(t); auth.global.push(t); auth.ips[ipId] = mine;
         for (const k of Object.keys(auth.ips)) if (!recent(auth.ips[k]).length) delete auth.ips[k];
@@ -235,13 +280,13 @@ export function createHandler({ store, env, now = () => Date.now() }) {
       await store.setJSON('auth', auth);
       const epoch = await mutate(store, 'state', emptyState, (s) => { pushAudit(s, t, 'login', 'Scorekeeper signed in'); return s.epoch; });
       const exp = t + SESSION_TTL_MS;
-      return json(200, { token: signToken(cfg.secret, { exp, epoch, n: b64u(crypto.randomBytes(9)) }), exp });
+      return json(200, { token: signToken(secret, { exp, epoch, n: b64u(crypto.randomBytes(9)) }), exp });
     }
 
     // ── everything below needs a valid session ──
     const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
     const current = (await store.get('state', { type: 'json' })) || emptyState();
-    if (!verifyToken(cfg.secret, token, current.epoch, t)) return json(401, { error: 'Session expired — please sign in again' });
+    if (!verifyToken(secret, token, current.epoch, t)) return json(401, { error: 'Session expired — please sign in again' });
     const today = todayIST(t);
 
     if (body.action === 'add') {
@@ -282,6 +327,58 @@ export function createHandler({ store, env, now = () => Date.now() }) {
           }
         }
         return { ok: true };
+      });
+      if (out.error) return json(422, { error: out.error });
+      return json(200, out);
+    }
+
+    // ── colour defaulters + random forfeit ──
+    if (body.action === 'defaulters_add') {
+      const day = body.day;
+      if (!Number.isInteger(day) || !OFFICE_DAYS.includes(day)) return json(422, { error: 'Pick an office day' });
+      if (DAY_DATES[day] > today) return json(422, { error: 'That day hasn’t happened yet' });
+      const names = Array.isArray(body.names) ? body.names : [];
+      if (!names.length || names.length > 42) return json(422, { error: 'Pick at least one person' });
+      if (names.some(n => typeof n !== 'string' || !teamOfName(n))) return json(422, { error: 'Only names from the team list are allowed' });
+      const out = await mutate(store, 'state', emptyState, (s) => {
+        s.defaulters = s.defaulters || [];
+        const added = [];
+        for (const name of new Set(names)) {
+          if (s.defaulters.some(d => !d.deleted && d.day === day && d.name === name)) continue;
+          const d = { id: b64u(crypto.randomBytes(8)), day, name, team: teamOfName(name), punishment: null, at: new Date(t).toISOString() };
+          s.defaulters.push(d); added.push(d);
+        }
+        if (added.length) pushAudit(s, t, 'defaulter', `Day ${day} · not in colour: ${added.map(d => d.name).join(', ')}`);
+        s.updated = new Date(t).toISOString();
+        return { added: added.length };
+      });
+      return json(200, out);
+    }
+
+    if (body.action === 'defaulter_remove') {
+      const reason = cleanNote(body.reason);
+      if (!reason || reason.length < 3) return json(422, { error: 'Say why you are removing it' });
+      const out = await mutate(store, 'state', emptyState, (s) => {
+        const d = (s.defaulters || []).find(x => x.id === body.id && !x.deleted);
+        if (!d) return { abort: true, error: 'Not found' };
+        d.deleted = { at: new Date(t).toISOString(), reason };
+        pushAudit(s, t, 'remove', `Removed ${d.name} from Day ${d.day} colour defaulters — ${reason}`);
+        return { ok: true };
+      });
+      if (out.error) return json(422, { error: out.error });
+      return json(200, out);
+    }
+
+    if (body.action === 'spin') {
+      const out = await mutate(store, 'state', emptyState, (s) => {
+        const d = (s.defaulters || []).find(x => x.id === body.id && !x.deleted);
+        if (!d) return { abort: true, error: 'Not found' };
+        // one spin per person, no re-rolls
+        if (d.punishment) return { abort: true, punishment: d.punishment, already: true };
+        d.punishment = PUNISHMENTS[crypto.randomInt(PUNISHMENTS.length)];
+        pushAudit(s, t, 'spin', `🎡 ${d.name} (Day ${d.day}) got: ${d.punishment}`);
+        s.updated = new Date(t).toISOString();
+        return { punishment: d.punishment };
       });
       if (out.error) return json(422, { error: out.error });
       return json(200, out);

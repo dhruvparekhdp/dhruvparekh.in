@@ -156,6 +156,25 @@ label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted)
 .tline { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); gap: 8px; }
 .banner { background: #fde8e8; color: var(--bad); padding: 10px 14px; border-radius: 12px; font-size: .88rem; margin-bottom: 12px; }
 
+/* colour police + spinner */
+.police li { list-style: none; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9rem; }
+.police li:last-child { border-bottom: 0; }
+.police li > span:last-child { margin-left: auto; }
+.forfeit { font-size: .85rem; color: var(--pink); font-weight: 600; }
+.pick-team { margin-top: 10px; }
+.pick-team h4 { font-size: .85rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips label { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 10px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-size: .82rem; font-weight: 500; color: var(--ink); cursor: pointer; }
+.chips input { accent-color: var(--bad); }
+.chips label:has(input:checked) { background: #fde8e8; border-color: #f5b5b5; }
+.chips label:has(input:disabled) { opacity: .6; cursor: default; }
+.spin-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(43, 26, 61, .75); display: grid; place-items: center; padding: 16px; }
+.spin-box { background: #fff; border-radius: 22px; padding: 26px 20px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.spin-box .who { font-family: 'Yatra One', serif; font-size: 1.5rem; color: var(--navy); }
+.spin-slot { margin: 18px 0; min-height: 96px; display: grid; place-items: center; border-radius: 16px; background: #fff3c4; padding: 14px; font-size: 1.1rem; font-weight: 600; }
+.spin-slot.done { background: var(--day); color: var(--day-ink); animation: pop .4s ease; }
+@keyframes pop { 50% { transform: scale(1.06); } }
+
 footer { text-align: center; padding: 26px 16px 40px; color: var(--muted); font-size: .85rem; }
 footer button { background: none; border: 0; text-decoration: underline; color: var(--muted); font-size: .8rem; margin-top: 8px; }
 </style>
@@ -201,6 +220,11 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
           <ul class="feed" id="mini-feed"></ul>
         </div>
       </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>🚨 Colour Police</h3>
+      <p class="muted" id="police-sub">Didn’t wear the colour? The forfeit wheel decides your fate 🎡</p>
+      <ul class="police" id="police"></ul>
     </div>
     <div class="card" style="margin-top:14px">
       <h3>✨ Today’s little ritual</h3>
@@ -263,6 +287,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
         <h3 style="margin-top:16px">⛔ Minus points</h3>
         <table>
           <tr><td>Hosting team doesn’t arrange snacks by 5 PM</td><td>−10</td></tr>
+          <tr><td>Not in the colour of the day? No point for the team <i>and</i> a random forfeit from the 🎡 wheel (sing, dance, serve snacks…)</td><td>🎡</td></tr>
           <tr><td>Snacks very late / task half-done</td><td>−3 to −5</td></tr>
           <tr><td>Other rule-breaking (judges decide, reason shown publicly)</td><td>up to −15</td></tr>
         </table>
@@ -313,7 +338,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
 
     <div class="card" id="login-card">
       <h3>🔐 Cultural team sign-in</h3>
-      <p class="muted">Only the cultural team has these credentials. Wrong attempts are counted and shown in the public log; 5 wrong tries locks login for 15 minutes.</p>
+      <p class="muted">Only the cultural team has these credentials. Wrong attempts are counted and shown in the public log; 5 wrong tries locks login for 15 minutes. Sessions end automatically after 4 hours.</p>
       <form id="login-form" class="row" style="margin-top:10px" autocomplete="off">
         <div><label for="lg-user">Username</label><input class="input" id="lg-user" autocomplete="username" required></div>
         <div><label for="lg-pass">Password</label><input class="input" id="lg-pass" type="password" autocomplete="current-password" required></div>
@@ -375,6 +400,15 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
             <div class="msg" id="ad-x-msg"></div>
           </div>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3>🚨 Colour Police — who didn’t wear <span id="ad-colour2"></span>?</h3>
+        <p class="muted">Tick everyone who isn’t in the colour and save. The roll-call above fills in automatically (7 minus defaulters). Then spin the forfeit wheel for each person — the server picks at random and it can’t be re-spun.</p>
+        <div id="ad-pick"></div>
+        <button class="btn" id="ad-pick-save" style="margin-top:12px">Save defaulters</button>
+        <div class="msg" id="ad-pick-msg"></div>
+        <ul class="police" id="ad-police" style="margin-top:10px"></ul>
       </div>
 
       <div class="card" id="ad-friday" style="margin-top:14px">
@@ -471,6 +505,7 @@ function currentDay() {
   return { day: DAYS.find(d => d.date === t) };
 }
 function firstName(n) { return n.split(' ')[0]; }
+function shortName(n) { const p = n.split(' '); return p.length > 1 ? `${p[0]} ${p[p.length - 1][0]}.` : n; }
 function teamOf(name) { return +Object.keys(TEAMS).find(k => TEAMS[k].includes(name)); }
 function fmtTime(iso) {
   const d = new Date(iso);
@@ -506,7 +541,7 @@ $('open-admin').onclick = () => { showTab('admin'); scrollTo({ top: 0 }); };
 /* ================================================================
  * Live data
  * ================================================================ */
-let data = store.get('nv_cache') || { entries: [], cheers: {}, audit: [], updated: null };
+let data = store.get('nv_cache') || { entries: [], defaulters: [], cheers: {}, audit: [], updated: null };
 let leaderBefore = null;
 
 async function load() {
@@ -641,7 +676,7 @@ function renderFeeds() {
   $('feed').innerHTML = list.length ? list.map(feedItem).join('') : '<li class="muted">Nothing yet.</li>';
   const live = list.filter(e => !e.deleted).slice(0, 4);
   $('mini-feed').innerHTML = live.length ? live.map(feedItem).join('') : '<li class="muted">Judges are warming up… 🧐</li>';
-  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒' };
+  const icon = { add: '➕', remove: '🗑️', login: '🔓', login_failed: '🚫', logout_all: '🔒', defaulter: '🚨', spin: '🎡' };
   $('audit').innerHTML = data.audit.length
     ? [...data.audit].reverse().slice(0, 30).map(a => `<li><span>${icon[a.action] || '•'} ${esc(a.detail)}<br><small class="muted">${fmtTime(a.at)}</small></span></li>`).join('')
     : '<li class="muted">No activity yet.</li>';
@@ -836,7 +871,6 @@ function renderDesk() {
   const s = session.get();
   $('login-card').classList.toggle('hidden', !!s);
   $('desk').classList.toggle('hidden', !s);
-  if (data.adminEnabled === false) setMsg('lg-msg', 'Scorekeeper login isn’t set up on the server yet.');
   if (!s) return;
   $('tab-admin').classList.remove('hidden');
   $('ad-session').textContent = `Signed in until ${new Date(s.exp).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}. Session lives only in this tab.`;
@@ -853,8 +887,12 @@ function renderDeskDay() {
   if (!d) return;
   const live = data.entries.filter(e => !e.deleted && e.day === d.n);
   counts.roll = {}; counts.trad = {};
+  const dayDefaulters = (data.defaulters || []).filter(x => x.day === d.n);
+  if (dayDefaulters.length) for (const t of [1, 2, 3, 4, 5, 6]) counts.roll[t] = 7 - dayDefaulters.filter(x => x.team === t).length;
   live.forEach(e => { if (e.category === 'colour') counts.roll[e.team] = e.points; if (e.category === 'traditional') counts.trad[e.team] = e.points / 2; });
   $('ad-colour').textContent = d.colour;
+  $('ad-colour2').textContent = d.colour;
+  renderPick();
   stepperRows('ad-roll', 'roll', 7);
   stepperRows('ad-trad', 'trad', 7);
   $('ad-host').textContent = d.host ? `Team ${d.host} hosting` : 'no host today';
@@ -872,6 +910,7 @@ function renderDeskEntries() {
       <div class="tline"><span><b>Team ${e.team}</b> · ${esc(CAT_LABEL[e.category])} <b class="pts ${e.points >= 0 ? 'plus' : 'minus'}">${e.points > 0 ? '+' : ''}${e.points}</b>${e.note ? ` · <i>${esc(e.note)}</i>` : ''}<br><small class="muted">${fmtTime(e.at)}</small></span>
       <button class="btn alt small" data-remove="${esc(e.id)}">Remove</button></div>`).join('')
     : '<p class="muted">No entries for this day yet.</p>';
+  renderAdPolice();
 }
 $('ad-day').onchange = renderDeskDay;
 
@@ -934,10 +973,109 @@ $('ad-entries').addEventListener('click', e => {
 });
 
 /* ================================================================
+ * Colour Police + forfeit wheel
+ * ================================================================ */
+// Same list as the server; used only for the spinning animation.
+const PUNISHMENTS = [
+  'Do 30 seconds of garba in front of everyone 💃', 'Sing one line of any Navratri or Bollywood song 🎤',
+  'Serve the snacks to everyone at 5 PM 🍽️', 'Say “Shubh Navratri” in 3 different languages 🗣️',
+  'Wear tomorrow’s colour head-to-toe (selfie proof!) 📸', 'Give a genuine compliment to 5 colleagues 💐',
+  'Strike a Maa Durga pose for the group photo 🦁', 'Share your funniest festival childhood story 😂',
+  'Act out a movie dialogue the cultural team picks 🎬', 'Be the official photographer at snack time 📷',
+  'Name all 9 Navratri colours in order — or sing instead 🎨', 'Clean up the snack table after 5 PM 🧹',
+  'Teach everyone one dandiya step 🥢', 'Speak only in rhymes for the next 2 minutes 📝',
+  'Lead a loud “Jai Mata Di!” cheer 🙏', 'Bring a small sweet treat for your team tomorrow 🍬',
+];
+function policeItem(x, admin) {
+  const action = x.punishment
+    ? `<span class="forfeit">🎡 ${esc(x.punishment)}</span>`
+    : admin ? `<button class="btn small" data-spin="${esc(x.id)}">🎡 Spin</button>` : '<span class="muted">wheel pending… 🎡</span>';
+  return `<li><span><b>${esc(x.name)}</b> <small class="muted">Team ${x.team}</small></span>
+    <span style="text-align:right">${action}${admin ? ` <button class="btn alt small" data-unpolice="${esc(x.id)}" aria-label="Remove ${esc(x.name)}">✕</button>` : ''}</span></li>`;
+}
+function renderPolice() {
+  const list = data.defaulters || [];
+  // show today if it's an office day, otherwise the latest day that has defaulters
+  const t = todayStr();
+  const todays = list.filter(x => DAYS[x.day - 1].date === t);
+  const shown = todays.length ? todays : list.filter(x => x.day === Math.max(0, ...list.map(y => y.day)));
+  if (!shown.length) {
+    $('police-sub').textContent = 'Didn’t wear the colour? The forfeit wheel decides your fate 🎡';
+    $('police').innerHTML = '<li class="muted">Everyone’s in colour so far — love to see it! 🌈</li>';
+    return;
+  }
+  const d = DAYS[shown[0].day - 1];
+  $('police-sub').innerHTML = `Not in <b>${esc(d.colour)}</b> on Day ${d.n} — and the wheel has spoken:`;
+  $('police').innerHTML = shown.map(x => policeItem(x, false)).join('');
+}
+function renderPick() {
+  const d = adDay();
+  if (!d) return;
+  const marked = new Set((data.defaulters || []).filter(x => x.day === d.n).map(x => x.name));
+  $('ad-pick').innerHTML = Object.entries(TEAMS).map(([t, members]) => `
+    <div class="pick-team"><h4><span class="swatch" style="background:${TEAM_COLOURS[t]}"></span>Team ${t}</h4>
+    <div class="chips">${members.map(m => `<label><input type="checkbox" value="${esc(m)}" ${marked.has(m) ? 'checked disabled' : ''}>${esc(shortName(m))}</label>`).join('')}</div></div>`).join('');
+}
+function renderAdPolice() {
+  const d = adDay();
+  if (!d) return;
+  const list = (data.defaulters || []).filter(x => x.day === d.n);
+  $('ad-police').innerHTML = list.length ? list.map(x => policeItem(x, true)).join('') : '<li class="muted">No defaulters recorded for this day.</li>';
+}
+$('ad-pick-save').onclick = () => busy($('ad-pick-save'), async () => {
+  const d = adDay();
+  const names = [...document.querySelectorAll('#ad-pick input:checked:not(:disabled)')].map(i => i.value);
+  if (!names.length) { setMsg('ad-pick-msg', 'Tick at least one new person.'); return; }
+  try {
+    const j = await api({ action: 'defaulters_add', day: d.n, names });
+    setMsg('ad-pick-msg', `Saved ${j.added} ✓ — now spin the wheel for each!`, true);
+    await load(); renderDeskDay();
+  } catch (err) { setMsg('ad-pick-msg', err.message); }
+});
+$('ad-police').addEventListener('click', async e => {
+  const rm = e.target.closest('[data-unpolice]');
+  if (rm) {
+    const reason = prompt('Why remove this person from the list? (shown publicly)');
+    if (!reason || reason.trim().length < 3) return;
+    try { await api({ action: 'defaulter_remove', id: rm.dataset.unpolice, reason: reason.trim() }); await load(); renderDeskDay(); }
+    catch (err) { alert(err.message); }
+    return;
+  }
+  const b = e.target.closest('[data-spin]');
+  if (!b) return;
+  const person = (data.defaulters || []).find(x => x.id === b.dataset.spin);
+  b.disabled = true;
+  const overlay = document.createElement('div');
+  overlay.className = 'spin-overlay';
+  overlay.innerHTML = `<div class="spin-box" role="dialog" aria-live="polite"><div class="muted">🎡 Forfeit wheel for</div>
+    <div class="who">${esc(person ? person.name : '')}</div><div class="spin-slot" id="slot"></div>
+    <button class="btn" id="slot-close" disabled>Close</button></div>`;
+  document.body.appendChild(overlay);
+  const slot = overlay.querySelector('#slot');
+  // spin the visible list while the server picks the real result
+  let i = Math.floor(Math.random() * PUNISHMENTS.length), delay = 60, stopped = false, result = null;
+  const tick = () => {
+    if (stopped) return;
+    slot.textContent = PUNISHMENTS[i++ % PUNISHMENTS.length];
+    delay = result ? delay * 1.18 : 60;
+    if (result && delay > 380) { stopped = true; slot.textContent = result; slot.classList.add('done'); overlay.querySelector('#slot-close').disabled = false; celebrate(['#d81b60', '#f5b400', cur.day.hex]); return; }
+    setTimeout(tick, delay);
+  };
+  tick();
+  const started = Date.now();
+  try {
+    const j = await api({ action: 'spin', id: b.dataset.spin });
+    await new Promise(r => setTimeout(r, Math.max(0, 1500 - (Date.now() - started))));
+    result = j.punishment;
+  } catch (err) { stopped = true; slot.textContent = err.message; overlay.querySelector('#slot-close').disabled = false; }
+  overlay.querySelector('#slot-close').onclick = () => { overlay.remove(); load().then(renderDeskDay); };
+});
+
+/* ================================================================
  * Boot
  * ================================================================ */
 function renderAll() {
-  renderBoard(); renderFeeds();
+  renderBoard(); renderFeeds(); renderPolice();
   if (session.get() && !$('desk').classList.contains('hidden')) renderDeskEntries();
 }
 renderToday(); renderSchedule(); renderTeams();
