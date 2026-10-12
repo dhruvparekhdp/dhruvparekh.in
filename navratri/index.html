@@ -438,6 +438,7 @@ footer button { background: none; border: 0; text-decoration: underline; color: 
  * Data from the Navratri poster + team sheet
  * ================================================================ */
 const API = '/api/navratri';
+const APP_VERSION = 3; // must match netlify/lib/navratri-core.mjs
 const DAYS = [
   { n: 1, date: '2026-10-11', wd: 'Sunday',    colour: 'Orange',        hex: '#f26b21', ink: '#fff', host: 0, goddess: 'Maa Shailaputri',   blessing: 'strength and steadiness' },
   { n: 2, date: '2026-10-12', wd: 'Monday',    colour: 'White',         hex: '#ffffff', ink: '#2b1a3d', host: 1, goddess: 'Maa Brahmacharini', blessing: 'devotion and discipline' },
@@ -537,14 +538,19 @@ $('open-admin').onclick = () => { showTab('admin'); scrollTo({ top: 0 }); };
 /* ================================================================
  * Live data
  * ================================================================ */
-let data = store.get('nv_cache') || { entries: [], defaulters: [], audit: [], updated: null };
+let data = { entries: [], defaulters: [], audit: [], updated: null, ...(store.get('nv_cache') || {}) };
 let leaderBefore = null;
 
 async function load() {
   try {
     const r = await fetch(API, { cache: 'no-store' });
     if (!r.ok) throw new Error(r.status);
-    data = await r.json();
+    const fresh = await r.json();
+    // the site was updated while this tab was open — reload to get the new page
+    if (fresh.version !== APP_VERSION) {
+      if (!sessionStorage.getItem('nv_reloaded')) { sessionStorage.setItem('nv_reloaded', '1'); location.reload(); return; }
+    } else sessionStorage.removeItem('nv_reloaded');
+    data = fresh;
     store.set('nv_cache', data);
     $('offline').classList.add('hidden');
   } catch {
