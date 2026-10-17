@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Navratri scoreboard for 42 people who can open DevTools — Dhruv Parekh</title>
+  <meta name="description" content="How I built a live Navratri team scoreboard for my office: one static page, one Netlify Function, one JSON file, and every rule enforced on the server." />
+  <meta name="author" content="Dhruv Parekh" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://dhruvparekh.in/writing/navratri-office-scoreboard/" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://dhruvparekh.in/writing/navratri-office-scoreboard/" />
+  <meta property="og:title" content="A Navratri scoreboard for 42 people who can open DevTools — Dhruv Parekh" />
+  <meta property="og:description" content="How I built a live Navratri team scoreboard for my office: one static page, one Netlify Function, one JSON file, and every rule enforced on the server." />
+  <meta property="og:site_name" content="Dhruv Parekh" />
+  <meta property="og:locale" content="en_IN" />
+  <meta property="og:image" content="https://dhruvparekh.in/img/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="A Navratri scoreboard for 42 people who can open DevTools — Dhruv Parekh" />
+  <meta name="twitter:description" content="How I built a live Navratri team scoreboard for my office: one static page, one Netlify Function, one JSON file, and every rule enforced on the server." />
+  <meta name="twitter:image" content="https://dhruvparekh.in/img/og-image.png" />
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "A Navratri scoreboard for 42 people who can open DevTools",
+  "description": "How I built a live Navratri team scoreboard for my office: one static page, one Netlify Function, one JSON file, and every rule enforced on the server.",
+  "datePublished": "2026-10-17",
+  "dateModified": "2026-10-17",
+  "author": {
+    "@type": "Person",
+    "@id": "https://dhruvparekh.in/#person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in/"
+  },
+  "publisher": {
+    "@type": "Person",
+    "@id": "https://dhruvparekh.in/#person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in/"
+  },
+  "mainEntityOfPage": "https://dhruvparekh.in/writing/navratri-office-scoreboard/",
+  "image": "https://dhruvparekh.in/img/og-image.png",
+  "keywords": [
+    "Navratri",
+    "office event",
+    "Netlify Functions",
+    "Netlify Blobs",
+    "optimistic locking",
+    "Node.js",
+    "web security"
+  ]
+}
+  </script>
+
+  <link rel="icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/touch-icon-iphone.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/article.css" />
+  <script>
+    try { var t = localStorage.getItem('dp-theme'); if (t && t !== 'd') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+</head>
+<body>
+  <nav class="nav" role="navigation" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="Dhruv Parekh — home">DP</a>
+      <div class="nav-right">
+        <a href="/writing/" class="btn-ghost">Writing</a>
+        <a href="/Dhruv_Parekh_Resume.pdf" class="btn-ghost" aria-label="Download Dhruv Parekh's resume">Download CV</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="article-main">
+    <p class="draft-banner">Draft — not published yet. Not linked anywhere and hidden from search engines.</p>
+    <article>
+      <header>
+        <p class="article-eyebrow">// side project · netlify · node.js</p>
+        <h1 class="article-title">A Navratri scoreboard for 42 people who can open DevTools</h1>
+        <p class="article-dek">I'm on the office fun committee. This year I built the scoreboard. Small app, real users, and an audience that includes testers.</p>
+        <p class="article-meta"><span>Dhruv Parekh</span><span>·</span><time datetime="2026-10-17">17 Oct 2026</time><span>·</span><span>4 min read</span></p>
+      </header>
+      <div class="prose">
+
+<p>Navratri at the office is nine days and nine colours. Wear the day's colour and your team scores. A small committee runs it: one person from each department. I'm on it, and I'm the engineer, so the scoreboard was mine.</p>
+
+<p>It's a small app. 42 people, 6 teams of 7, six office days that count. It also has demanding users. The office includes IT people and automation testers. If the score lives in the browser, someone will change it in the browser. Not to cheat. Because it's funny.</p>
+
+<p>So the one rule that shaped everything: <strong>the page is only a view. Every rule lives on the server.</strong></p>
+
+<h2>One page, one function, one JSON file</h2>
+
+<p>The whole thing is a static HTML page with inline CSS and JavaScript. No framework, no build step. It has tabs for today's colour, the leaderboard, finding your team, the nine-colour calendar, the rules, bingo, and a scorekeeper desk that only appears after login.</p>
+
+<p>Behind it sits one Netlify Function at <code>/api/navratri</code>. All state is one JSON document in Netlify Blobs. No database. For 42 people over nine days, a database is more to run than the problem is worth.</p>
+
+<p>One file means one risk: two writes at the same moment, and the second silently overwrites the first. The fix is optimistic locking. Read the document with its ETag, change it, and write it back only if the ETag still matches. If someone else wrote in between, read again and retry.</p>
+
+<pre><code>// Read-modify-write with optimistic locking so two writes never clobber each other.
+async function mutate(store, key, init, fn) {
+  for (let attempt = 0; attempt &lt; 5; attempt++) {
+    const found = await store.getWithMetadata(key, { type: &#x27;json&#x27; });
+    const state = found ? found.data : init();
+    const result = await fn(state);
+    if (result &amp;&amp; result.abort) return result;
+    const res = found
+      ? await store.setJSON(key, state, { onlyIfMatch: found.etag })
+      : await store.setJSON(key, state, { onlyIfNew: true });
+    if (res.modified) return result;
+  }
+  throw new Error(&#x27;Busy — please try again&#x27;);
+}</code></pre>
+
+<p>Five attempts, then a clear error. Nothing is ever lost quietly.</p>
+
+<h2>Score the exceptions, not the rule</h2>
+
+<p>The first version asked the scorekeeper to tick everyone who came in colour. That's 42 ticks a day. Nobody does that properly by day three.</p>
+
+<p>Most people do show up in colour. So now everyone counts as ✓ by default from 5 PM on each office day. The scorekeeper marks only the exceptions: ✗ for not in colour, or absent. Missing the colour scores zero, not a minus. Less to enter, fewer mistakes, and the mistakes left are the visible ones.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>What</th><th>Points</th></tr></thead>
+  <tbody>
+    <tr><td>Dress code ✓, per person per office day</td><td>+1 (max 42 per team)</td></tr>
+    <tr><td>Not in colour ✗, or absent</td><td>0</td></tr>
+    <tr><td>Snacks, for that day's host team</td><td>0 to 10</td></tr>
+    <tr><td>Extra bonus, reason required</td><td>up to 8 per team, whole festival</td></tr>
+    <tr><td>Refused the office forfeit</td><td>−1 to −5</td></tr>
+    <tr><td>Penalty, reason required</td><td>−1 to −15</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The best possible team score is 60, and the leaderboard shows every team out of 60.</p>
+
+<h2>Assume someone will try</h2>
+
+<p>Everything below is enforced on the server. The page can be edited, replayed or scripted, and none of that changes a score.</p>
+
+<ul>
+  <li><strong>No password in the repo.</strong> Only a slow scrypt hash. Comparison is constant-time.</li>
+  <li><strong>Lockouts.</strong> Five wrong logins from one network locks that network out for 15 minutes. Thirty in total locks the login for everyone for 15 minutes. Failed logins show up in the public log.</li>
+  <li><strong>Sessions are signed tokens</strong> that expire after four hours. The signing secret is generated on the server and stored with the data, never in the code. "Sign out all devices" kills every session at once.</li>
+  <li><strong>Same-site JSON only.</strong> A script on another site can't post a score.</li>
+  <li><strong>Every award is validated.</strong> The day must be an office day that has already happened. Points must be in range. Names must be on the roster. One dress-code point per person per day. Snack points only for that day's host team. Extra bonus is capped at 8 per team. Penalties need a reason.</li>
+</ul>
+
+<h2>Nothing gets deleted quietly</h2>
+
+<p>This mattered more than the login. In an office competition the real threat isn't someone hacking the scoreboard. It's someone saying the scorekeeper is biased.</p>
+
+<p>So every change goes into a public transparency log. Mistakes are fixed with soft deletes, and every removal carries a reason anyone can read. If a point disappears, the log says when and why. That answers the question before anyone asks it.</p>
+
+<h2>What I cut</h2>
+
+<p>There was a forfeit wheel. If you weren't in colour, you spun it, and the server picked the forfeit at random so nobody could rig it. It worked. Then we decided forfeits are more fun done in person, in the office. The wheel is switched off behind a flag.</p>
+
+<p>Some early categories didn't survive either. Their old entries still display, but the server rejects new ones.</p>
+
+<h2>Tests</h2>
+
+<p>The server is tested with Node's built-in test runner and an in-memory stand-in for Blobs. The tests cover cross-site and anonymous writes being refused, the lockout after five wrong logins, the scoring rules, attendance, the forfeit spin and its undo, absent marks, and refused forfeits. Two more check the page: that its inline script compiles, and that page and server agree on the app version.</p>
+
+<h2>Same rules as fintech</h2>
+
+<p>My day job is software that handles other people's money. This was a festival scoreboard. The rules were the same: never trust the client, log every change, and make the honest path the easy one.</p>
+
+<p>The live page isn't linked here because it has colleagues' names on it.</p>
+
+      </div>
+      <footer class="article-end">
+        <span>Built for the office, run by the fun committee.</span>
+        <a href="/writing/">More writing →</a>
+      </footer>
+    </article>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <p class="footer-copy">&copy; 2026 Dhruv Parekh. Senior Full-Stack Engineer, Mumbai.</p>
+      <a href="mailto:dhruvparekh.dp@gmail.com?subject=Hello%20from%20dhruvparekh.in" class="footer-email">dhruvparekh.dp@gmail.com</a>
+    </div>
+  </footer>
+</body>
+</html>

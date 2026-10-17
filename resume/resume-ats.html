@@ -122,7 +122,7 @@
     <div class="proj-name">Jarvis — Multi-Agent AI Platform (Python, FastAPI, PostgreSQL)</div>
     <div class="proj-desc">
       AI assistant that takes a goal, splits it into tasks and runs them. Asks for approval before anything
-      destructive. Recovers from a crash and resumes where it stopped. Machines join the fleet by connecting
+      destructive. Saves state at every step, so a crash loses no work. Machines join the fleet by connecting
       outward over WebSocket, so no inbound ports are needed. Includes semantic search over stored data using
       embeddings, and dataset export for Large Language Model (LLM) fine-tuning. 176 automated tests, run
       against both SQLite and PostgreSQL. Open source: github.com/dhruvparekhdp/dhruv-ai

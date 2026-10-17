@@ -24,6 +24,28 @@
     X-Frame-Options = "SAMEORIGIN"
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
 
+# Personal and one-off pages: reachable by link, kept out of search results
+# so a search for "Dhruv Parekh" lands on the portfolio.
+[[headers]]
+  for = "/valentine-surprise/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/lottery/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/navratri/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
 # Friendly URLs for the pages customers are given by hand.
 [[redirects]]
   from = "/shop"

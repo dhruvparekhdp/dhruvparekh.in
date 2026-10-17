@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Why my multi-agent system doesn&#x27;t use LangGraph (yet) — Dhruv Parekh</title>
+  <meta name="description" content="Building Jarvis, a multi-agent AI orchestrator in Python, without LangChain or LangGraph: YAML agents, a single scheduler, tool-level permissions, crash recovery and hybrid search." />
+  <meta name="author" content="Dhruv Parekh" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://dhruvparekh.in/writing/jarvis-multi-agent-without-langgraph/" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://dhruvparekh.in/writing/jarvis-multi-agent-without-langgraph/" />
+  <meta property="og:title" content="Why my multi-agent system doesn&#x27;t use LangGraph (yet) — Dhruv Parekh" />
+  <meta property="og:description" content="Building Jarvis, a multi-agent AI orchestrator in Python, without LangChain or LangGraph: YAML agents, a single scheduler, tool-level permissions, crash recovery and hybrid search." />
+  <meta property="og:site_name" content="Dhruv Parekh" />
+  <meta property="og:locale" content="en_IN" />
+  <meta property="og:image" content="https://dhruvparekh.in/img/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Why my multi-agent system doesn&#x27;t use LangGraph (yet) — Dhruv Parekh" />
+  <meta name="twitter:description" content="Building Jarvis, a multi-agent AI orchestrator in Python, without LangChain or LangGraph: YAML agents, a single scheduler, tool-level permissions, crash recovery and hybrid search." />
+  <meta name="twitter:image" content="https://dhruvparekh.in/img/og-image.png" />
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Why my multi-agent system doesn't use LangGraph (yet)",
+  "description": "Building Jarvis, a multi-agent AI orchestrator in Python, without LangChain or LangGraph: YAML agents, a single scheduler, tool-level permissions, crash recovery and hybrid search.",
+  "datePublished": "2026-10-17",
+  "dateModified": "2026-10-17",
+  "author": {
+    "@type": "Person",
+    "@id": "https://dhruvparekh.in/#person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in/"
+  },
+  "publisher": {
+    "@type": "Person",
+    "@id": "https://dhruvparekh.in/#person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in/"
+  },
+  "mainEntityOfPage": "https://dhruvparekh.in/writing/jarvis-multi-agent-without-langgraph/",
+  "image": "https://dhruvparekh.in/img/og-image.png",
+  "keywords": [
+    "multi-agent systems",
+    "LangGraph",
+    "LangChain",
+    "AI agents",
+    "Python",
+    "FastAPI",
+    "agent orchestration",
+    "RAG",
+    "BM25",
+    "reciprocal rank fusion"
+  ]
+}
+  </script>
+
+  <link rel="icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/touch-icon-iphone.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/article.css" />
+  <script>
+    try { var t = localStorage.getItem('dp-theme'); if (t && t !== 'd') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+</head>
+<body>
+  <nav class="nav" role="navigation" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="Dhruv Parekh — home">DP</a>
+      <div class="nav-right">
+        <a href="/writing/" class="btn-ghost">Writing</a>
+        <a href="/Dhruv_Parekh_Resume.pdf" class="btn-ghost" aria-label="Download Dhruv Parekh's resume">Download CV</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="article-main">
+    <p class="draft-banner">Draft — not published yet. Not linked anywhere and hidden from search engines.</p>
+    <article>
+      <header>
+        <p class="article-eyebrow">// ai agents · python · architecture</p>
+        <h1 class="article-title">Why my multi-agent system doesn&#x27;t use LangGraph (yet)</h1>
+        <p class="article-dek">Jarvis plans its own work, runs across my machines and asks before anything destructive. I wrote the orchestration myself instead of pulling in a framework. Here's the reasoning.</p>
+        <p class="article-meta"><span>Dhruv Parekh</span><span>·</span><time datetime="2026-10-17">17 Oct 2026</time><span>·</span><span>5 min read</span></p>
+      </header>
+      <div class="prose">
+
+<p>Jarvis is the AI assistant I run at home. Give it a goal and a planner breaks it into a graph of tasks. Specialist agents work through that graph under permission and budget limits. Branches that don't depend on each other run at the same time. Other machines in the flat join as worker nodes.</p>
+
+<p>The obvious way to build this in 2026 is LangGraph. I didn't use it, or LangChain. This is why, and what I built instead.</p>
+
+<h2>The decision, in the repo's own words</h2>
+
+<p>Every non-obvious choice in Jarvis is written down in <code>docs/DECISIONS.md</code>. This one is titled <em>"No LangGraph yet"</em>. The "yet" matters.</p>
+
+<blockquote>The scheduler is a dependency-driven loop over a persisted task graph; a graph library would wrap that rather than simplify it, and persistence, leases and budgets are the parts that actually matter.</blockquote>
+
+<p>Put plainly, the hard parts of an agent system aren't drawing the graph. They are what happens when the process dies halfway, when a model loops forever, or when an agent wants to delete something. A framework doesn't solve those for you. You still write them, and then you also maintain the framework.</p>
+
+<p>The repo has a shorter rule for dependencies in general: <strong>write the logic, import the plumbing.</strong> FastAPI, the database driver and the embedding model are imported. The orchestration is written.</p>
+
+<h2>Agents are files, not classes</h2>
+
+<p>Every agent is a YAML file: a prompt, a tool list, a capability grant and a budget. One generic runner executes all of them. There are five today: assistant, planner, research, operator and memory. Adding one means adding a file. Here's the whole assistant:</p>
+
+<pre><code>id: assistant
+name: Assistant
+description: General conversation and anything that needs no specialist.
+
+system_prompt: |
+  You are Jarvis, a personal AI assistant, handling a task directly.
+
+  Style:
+  - Warm, direct, and brief. Two or three sentences unless more is genuinely useful.
+  - Talk like a person, not a manual. Never open with &quot;As an AI&quot;.
+  - If the task needs a capability you do not have, say so plainly rather than
+    pretending to have done it.
+
+tools: [memory.search, memory.read]
+capabilities: [READ]
+
+model_preference: fast
+
+budget:
+  max_tokens: 12000
+  max_seconds: 60
+  max_tool_calls: 4</code></pre>
+
+<p>Definitions are validated at boot, so a typo in a tool name fails at startup instead of halfway through a mission.</p>
+
+<h2>Agents can't start work</h2>
+
+<p>Runaway recursion is the classic multi-agent failure: an agent spawns an agent, which spawns another. In Jarvis it isn't discouraged. It's impossible. The runner only gives a model the schemas of the tools it's allowed. Starting work isn't one of them. Only the scheduler dispatches.</p>
+
+<pre><code>&quot;&quot;&quot;Mission scheduler -- the only thing that dispatches work.
+
+Centralising dispatch here is what makes the spec&#x27;s anti-recursion rule
+structural rather than aspirational: agents have no way to start work, so every
+delegation passes through one audited place that can refuse it.</code></pre>
+
+<p>Every mission also has a hard budget, checked before each dispatch:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Per-mission limit</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>Tasks</td><td>12</td></tr>
+    <tr><td>Tokens</td><td>120,000</td></tr>
+    <tr><td>Wall-clock time</td><td>300 s</td></tr>
+    <tr><td>Tool calls</td><td>40</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Each agent has its own smaller budget on top of that, and the runner stops any single task after eight model round-trips.</p>
+
+<h2>Permissions live at the tool, not in the prompt</h2>
+
+<p>Telling a model "don't delete files" is a suggestion. Jarvis enforces it in code. Every tool carries a capability (<code>READ</code>, <code>WRITE</code>, <code>EXECUTE</code> or <code>FINANCIAL</code>) and a risk level (<code>SAFE</code>, <code>SENSITIVE</code> or <code>DANGEROUS</code>). A call goes through only if the tool is on the agent's list and the agent holds that capability.</p>
+
+<p><code>DANGEROUS</code> tools never run on their own. Today those are <code>memory.forget</code>, <code>fs.delete</code> and <code>shell.exec</code>. The task parks as <em>needs approval</em> and I approve or deny it from the app on my phone. If I don't answer within ten minutes, that counts as no.</p>
+
+<h2>Crashes cost latency, not work</h2>
+
+<p>State is written at every transition. A running task holds a lease of 180 seconds. On boot, any task whose lease has lapsed goes back to ready:</p>
+
+<pre><code>for row in orphans:
+    lease = _parse_ts(row[&quot;lease_expires_at&quot;])
+    # No lease, or one that has already lapsed -&gt; nobody is working on it.
+    if lease is None or lease &lt;= now_dt:
+        execute(
+            conn,
+            &quot;UPDATE tasks SET status = ?, lease_expires_at = NULL, updated_at = ?&quot;
+            &quot; WHERE task_id = ?&quot;,
+            (TaskStatus.READY.value, now, row[&quot;task_id&quot;]),
+        )
+        requeued += 1</code></pre>
+
+<p>Honest gap: tasks are requeued on boot, but a resumed mission doesn't restart by itself yet. The work is ready and nothing kicks the scheduler. It's a small fix I haven't made yet.</p>
+
+<h2>Machines dial out</h2>
+
+<p>Worker machines open an outbound WebSocket to the orchestrator. Nothing listens on an open port, so there's nothing to port-forward and nothing to scan. A node advertises what it can do. The scheduler places work by capability and prefers idle machines with the most memory. It never picks by hostname. Each node also keeps its own file-path jail and shell allowlist.</p>
+
+<h2>Memory without a vector database</h2>
+
+<p>Search mixes two rankings. Keyword ranking is a hand-written BM25. Semantic ranking is cosine similarity over local embeddings from <code>all-MiniLM-L6-v2</code>, 384 dimensions, run on-device. The two lists are merged with reciprocal rank fusion.</p>
+
+<p>The vectors sit in an ordinary text column and are compared by brute force. At personal scale that's fast enough, and it's one less service to run. If the embedding model isn't available, search falls back to keyword-only and says so.</p>
+
+<h2>Tests</h2>
+
+<p>176 tests, all offline. The test setup strips API keys and uses a throwaway SQLite file, so the suite costs nothing to run. The same suite runs against Postgres by setting one environment variable.</p>
+
+<h2>When I'd add LangGraph</h2>
+
+<p>When the problem changes shape. Right now work flows one way: <code>router</code> → <code>runner</code> → <code>scheduler</code>. The coding and device agents on the roadmap will need real cycles. From the same decision record:</p>
+
+<blockquote>The nodes are already separated (router → runner → scheduler), so adopting it when the coding and device subsystems introduce genuine cycles stays a contained change.</blockquote>
+
+<p>The framework question isn't which one. It's whether I need one yet.</p>
+
+      </div>
+      <footer class="article-end">
+        <span>Code: <a href="https://github.com/dhruvparekhdp/dhruv-ai" rel="noopener">github.com/dhruvparekhdp/dhruv-ai</a></span>
+        <a href="/writing/">More writing →</a>
+      </footer>
+    </article>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <p class="footer-copy">&copy; 2026 Dhruv Parekh. Senior Full-Stack Engineer, Mumbai.</p>
+      <a href="mailto:dhruvparekh.dp@gmail.com?subject=Hello%20from%20dhruvparekh.in" class="footer-email">dhruvparekh.dp@gmail.com</a>
+    </div>
+  </footer>
+</body>
+</html>

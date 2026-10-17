@@ -124,6 +124,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
@@ -849,6 +850,17 @@ body::before {
   letter-spacing: 0.3px;
   color: var(--text-subtle);
 }
+
+.proj-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.proj-link:hover { text-decoration: underline; }
+.proj-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
 
 /* ─────────────────────────────────────────────
    Closing CTA band

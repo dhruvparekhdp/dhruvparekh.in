@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading financial PDFs without letting them leave the machine — Dhruv Parekh</title>
+  <meta name="description" content="How I built an offline document classifier for financial PDFs in Node.js: local Tesseract OCR, keyword scoring, config-driven extraction and union-find grouping. No cloud, no LLM." />
+  <meta name="author" content="Dhruv Parekh" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://dhruvparekh.in/writing/offline-ocr-financial-pdfs/" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://dhruvparekh.in/writing/offline-ocr-financial-pdfs/" />
+  <meta property="og:title" content="Reading financial PDFs without letting them leave the machine — Dhruv Parekh" />
+  <meta property="og:description" content="How I built an offline document classifier for financial PDFs in Node.js: local Tesseract OCR, keyword scoring, config-driven extraction and union-find grouping. No cloud, no LLM." />
+  <meta property="og:site_name" content="Dhruv Parekh" />
+  <meta property="og:locale" content="en_IN" />
+  <meta property="og:image" content="https://dhruvparekh.in/img/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Reading financial PDFs without letting them leave the machine — Dhruv Parekh" />
+  <meta name="twitter:description" content="How I built an offline document classifier for financial PDFs in Node.js: local Tesseract OCR, keyword scoring, config-driven extraction and union-find grouping. No cloud, no LLM." />
+  <meta name="twitter:image" content="https://dhruvparekh.in/img/og-image.png" />
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Reading financial PDFs without letting them leave the machine",
+  "description": "How I built an offline document classifier for financial PDFs in Node.js: local Tesseract OCR, keyword scoring, config-driven extraction and union-find grouping. No cloud, no LLM.",
+  "datePublished": "2026-10-17",
+  "dateModified": "2026-10-17",
+  "author": {
+    "@type": "Person",
+    "@id": "https://dhruvparekh.in/#person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in/"
+  },
+  "publisher": {
+    "@type": "Person",
+    "@id": "https://dhruvparekh.in/#person",
+    "name": "Dhruv Parekh",
+    "url": "https://dhruvparekh.in/"
+  },
+  "mainEntityOfPage": "https://dhruvparekh.in/writing/offline-ocr-financial-pdfs/",
+  "image": "https://dhruvparekh.in/img/og-image.png",
+  "keywords": [
+    "OCR",
+    "tesseract.js",
+    "offline OCR",
+    "invoice extraction",
+    "document classification",
+    "Node.js",
+    "union-find",
+    "air-gapped"
+  ]
+}
+  </script>
+
+  <link rel="icon" href="/img/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/img/touch-icon-iphone.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/article.css" />
+  <script>
+    try { var t = localStorage.getItem('dp-theme'); if (t && t !== 'd') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+</head>
+<body>
+  <nav class="nav" role="navigation" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="Dhruv Parekh — home">DP</a>
+      <div class="nav-right">
+        <a href="/writing/" class="btn-ghost">Writing</a>
+        <a href="/Dhruv_Parekh_Resume.pdf" class="btn-ghost" aria-label="Download Dhruv Parekh's resume">Download CV</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="article-main">
+    <p class="draft-banner">Draft — not published yet. Not linked anywhere and hidden from search engines.</p>
+    <article>
+      <header>
+        <p class="article-eyebrow">// side project · node.js · ocr</p>
+        <h1 class="article-title">Reading financial PDFs without letting them leave the machine</h1>
+        <p class="article-dek">An offline document sorter for invoices, POs and receipts. It used to have an LLM. I deleted it.</p>
+        <p class="article-meta"><span>Dhruv Parekh</span><span>·</span><time datetime="2026-10-17">17 Oct 2026</time><span>·</span><span>4 min read</span></p>
+      </header>
+      <div class="prose">
+
+<p>Document Sorter takes a pile of financial PDFs, such as invoices, purchase orders, receipts and transaction records. It works out what each one is and pulls out the company, address, date, amount and reference numbers. Then it groups the documents that belong together.</p>
+
+<p>One rule decided the design: <strong>these are financial documents, so nothing leaves the machine.</strong> No API call, no cloud OCR, no model hosted somewhere else. It has to work with the network cable pulled out.</p>
+
+<h2>I deleted the AI</h2>
+
+<p>An earlier version used a hosted LLM to classify documents. After that came two locally fine-tuned models. At one point several interchangeable backends all read the same schema.</p>
+
+<p>I removed all of them. There were two reasons, and both are written down in the repo's decision log. First, it has to be able to run air-gapped. Second, I wanted a pipeline I can read and reason about, not one whose behaviour is a training artefact. When a classification is wrong, I want to point at the line that made it wrong.</p>
+
+<p>Now the pipeline makes zero API calls and uses no trained model of its own. The one thing that could be called a model is the OCR engine. It's fixed, pre-trained and runs locally.</p>
+
+<h2>The pipeline</h2>
+
+<ol>
+  <li><strong>Text extraction.</strong> <code>pdf-parse</code> pulls the embedded text.</li>
+  <li><strong>OCR fallback.</strong> If a document has fewer than 25 letters and digits, it's treated as scanned. Pages are rendered at 2× and cleaned up: upscaled if narrow, grayscale, a 3×3 median filter, then Otsu thresholding. Then they go to Tesseract.</li>
+  <li><strong>Classification</strong> by weighted keyword scoring.</li>
+  <li><strong>Field extraction</strong> with regex and layout heuristics.</li>
+  <li><strong>Grouping</strong> with union-find.</li>
+</ol>
+
+<p>A war story from step one. I first used a second PDF library to render pages for OCR. Both libraries carry their own copy of pdf.js, and two copies in one process corrupt each other's global state. The fix was to use one library for both text and page images.</p>
+
+<h2>OCR with no network</h2>
+
+<p>Tesseract runs as WebAssembly through <code>tesseract.js</code>. By default it fetches its engine and language data from a CDN the first time it runs, which is exactly what can't happen here. So every path points at files installed with the package and resolved from disk:</p>
+
+<pre><code>workerPromise = createWorker(&#x27;eng&#x27;, 1, {
+  langPath: resolveLangPath(),
+  corePath: resolveCorePath(),
+  workerPath: resolveWorkerPath(),
+  gzip: true,
+  cacheMethod: &#x27;none&#x27;, // don&#x27;t try to write/read a cache dir; the local file is authoritative
+  // No `logger` — keep OCR quiet; progress isn&#x27;t useful in a batch run.
+});</code></pre>
+
+<p><code>cacheMethod: 'none'</code> stops it from writing a cache anywhere. One worker is shared, and all recognition calls run through a single queue.</p>
+
+<h2>Classification is arithmetic</h2>
+
+<p>Every document type has a list of keywords and a weight. A document gets the weight for every keyword it contains, and the highest score wins:</p>
+
+<pre><code>for (const rule of buildClassificationRules()) {
+  const score = rule.keywords.reduce((sum, re) =&gt; (re.test(collapsedText) ? sum + rule.weight : sum), 0);
+  if (score &gt; bestScore) {
+    bestScore = score;
+    best = rule.type;
+  }
+}</code></pre>
+
+<p>A score of zero means "Unknown". Because the comparison is strictly greater-than, a tie goes to whichever type comes first in the config. Not clever, but predictable.</p>
+
+<h2>The config is the product</h2>
+
+<p>Document types, fields, extraction rules and branding all live in one JSON file. A new client with a different mix of documents needs a config change, not a code change. One document type:</p>
+
+<pre><code>{
+  &quot;name&quot;: &quot;Invoice&quot;,
+  &quot;description&quot;: &quot;Commercial invoices, tax invoices, bills — a request for payment from seller to buyer.&quot;,
+  &quot;keywords&quot;: [&quot;Tax Invoice&quot;, &quot;Commercial Invoice&quot;, &quot;Invoice To&quot;, &quot;Bill To&quot;, &quot;Total Due&quot;, &quot;Amount Due&quot;, &quot;Invoice No&quot;, &quot;GSTIN&quot;],
+  &quot;keywordWeight&quot;: 5
+},</code></pre>
+
+<p>And one field. The <code>isBatchKey</code> flag matters later:</p>
+
+<pre><code>{
+  &quot;name&quot;: &quot;documentNumber&quot;,
+  &quot;description&quot;: &quot;The primary identifying number for this document — invoice number, receipt number, transaction ID, etc.&quot;,
+  &quot;extractor&quot;: &quot;labeledId&quot;,
+  &quot;labels&quot;: [&quot;Invoice No&quot;, &quot;Invoice Number&quot;, &quot;Inv No&quot;, &quot;Inv #&quot;, &quot;Receipt No&quot;, &quot;Receipt Number&quot;, &quot;Transaction ID&quot;, &quot;Transaction No&quot;, &quot;Bill No&quot;, &quot;Reference No&quot;, &quot;Ref No&quot;],
+  &quot;appliesTo&quot;: [&quot;Invoice&quot;, &quot;Transaction Record&quot;, &quot;Receipt&quot;],
+  &quot;isBatchKey&quot;: true
+},</code></pre>
+
+<p>Extractors are named in the config and dispatched by name. The amount extractor takes the last number on a line labelled as a total. Failing that, it takes the largest number formatted like money, and bare integers don't count. The company extractor looks for a corporate suffix in the first 15 lines.</p>
+
+<h2>Grouping: union-find</h2>
+
+<p>An invoice, its purchase order and its payment receipt often share a reference number. Any two documents that share a value in a batch-key field are joined. Union-find makes that cheap, and it handles chains. If A shares a number with B, and B with C, all three end up together.</p>
+
+<pre><code>class UnionFind {
+  constructor(size) {
+    this.parent = Array.from({ length: size }, (_, i) =&gt; i);
+  }
+
+  find(i) {
+    if (this.parent[i] !== i) this.parent[i] = this.find(this.parent[i]);
+    return this.parent[i];
+  }
+
+  union(a, b) {
+    const rootA = this.find(a);
+    const rootB = this.find(b);
+    if (rootA !== rootB) this.parent[rootA] = rootB;
+  }
+}</code></pre>
+
+<p>Groups of one go into "unbatched", so nothing silently disappears.</p>
+
+<h2>The web UI</h2>
+
+<p>An Express server takes up to 200 PDFs per upload, 25 MB each, PDFs only. Files are held in memory and never written to disk. Four documents are processed at once, and OCR stays on its single queue.</p>
+
+<h2>Where it breaks</h2>
+
+<p>The README has a whole section on this, and I'd rather lead with it than have someone find out:</p>
+
+<ul>
+  <li>"These are heuristics over messy real-world documents, not a solved problem."</li>
+  <li>Company name and address are the weakest fields.</li>
+  <li>Dates are returned as printed, never normalised.</li>
+  <li>"Classification is keyword scoring, not understanding."</li>
+  <li>OCR is only as good as the scan, and rotated pages aren't handled.</li>
+  <li>English only. No table awareness. No confidence scores.</li>
+  <li>The scanned-or-not decision is made per document, not per page.</li>
+</ul>
+
+<p>That list is where the work is. It's also why the heuristics are plain code. Each fix is a change I can read, test and explain to whoever owns the documents.</p>
+
+      </div>
+      <footer class="article-end">
+        <span>Code: <a href="https://github.com/dhruvparekhdp/ocr" rel="noopener">github.com/dhruvparekhdp/ocr</a></span>
+        <a href="/writing/">More writing →</a>
+      </footer>
+    </article>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <p class="footer-copy">&copy; 2026 Dhruv Parekh. Senior Full-Stack Engineer, Mumbai.</p>
+      <a href="mailto:dhruvparekh.dp@gmail.com?subject=Hello%20from%20dhruvparekh.in" class="footer-email">dhruvparekh.dp@gmail.com</a>
+    </div>
+  </footer>
+</body>
+</html>
