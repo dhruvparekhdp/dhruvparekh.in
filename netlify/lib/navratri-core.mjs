@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 
 // Bump together with APP_VERSION in navratri/index.html; open pages reload when it changes.
-export const APP_VERSION = 19;
+export const APP_VERSION = 20;
 export const TEAMS = [1, 2, 3, 4, 5, 6];
 // day -> hosting team (from the Navratri poster); 0 = no host
 export const HOST = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 0, 8: 0, 9: 6 };
@@ -80,6 +80,10 @@ const FAIL_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILS_PER_IP = 5;
 const MAX_FAILS_GLOBAL = 30;
 const MAX_BODY_BYTES = 16384;
+// View counter: kept in its own blob so page views never contend with scoring writes.
+export const VIEW_TABS = ['today', 'board', 'teams', 'schedule', 'rules', 'bingo'];
+const VIEWS_PER_IP_PER_MIN = 60; // whole office shares one IP; a script hammering it gets ignored
+const VID_RE = /^[A-Za-z0-9_-]{16,32}$/;
 const AUDIT_KEEP = 500;
 
 const json = (status, body, extra = {}) => new Response(JSON.stringify(body), {
@@ -255,6 +259,27 @@ export function createHandler({ store, env, now = () => Date.now() }) {
     let body;
     try { body = JSON.parse(raw); } catch { return json(400, { error: 'Bad JSON' }); }
     if (!body || typeof body !== 'object') return json(400, { error: 'Bad request' });
+
+    // ── page views: public, anonymous, rate limited, never touch scores ──
+    if (body.action === 'view') {
+      const tab = body.tab, vid = body.vid;
+      if (!VIEW_TABS.includes(tab) || typeof vid !== 'string' || !VID_RE.test(vid)) return json(400, { error: 'Bad view' });
+      const day = todayIST(t), hour = new Date(t + 5.5 * 3600e3).getUTCHours(), minute = Math.floor(t / 60000);
+      const visitor = hmac(secret, 'vid:' + vid).slice(0, 16); // store a hash, never the browser id
+      await mutate(store, 'views', () => ({ days: {}, visitors: {}, limits: {} }), (v) => {
+        for (const k of Object.keys(v.limits)) if (v.limits[k].m !== minute) delete v.limits[k];
+        const lim = v.limits[ipId] || (v.limits[ipId] = { m: minute, n: 0 });
+        if (lim.n >= VIEWS_PER_IP_PER_MIN) return { abort: true };
+        lim.n++;
+        const d = v.days[day] || (v.days[day] = { views: 0, visitors: {}, tabs: {}, hours: {} });
+        d.views++;
+        d.visitors[visitor] = 1;
+        d.tabs[tab] = (d.tabs[tab] || 0) + 1;
+        d.hours[hour] = (d.hours[hour] || 0) + 1;
+        v.visitors[visitor] = 1;
+      });
+      return json(200, { ok: true });
+    }
 
     // ── login: brute-force protected ──
     if (body.action === 'login') {
@@ -465,6 +490,19 @@ export function createHandler({ store, env, now = () => Date.now() }) {
     if (body.action === 'logout_all') {
       await mutate(store, 'state', emptyState, (s) => { s.epoch++; pushAudit(s, t, 'logout_all', 'All scorekeeper sessions signed out'); });
       return json(200, { ok: true });
+    }
+
+    if (body.action === 'views') {
+      const v = (await store.get('views', { type: 'json' })) || { days: {}, visitors: {} };
+      const days = Object.keys(v.days).sort().map(date => {
+        const d = v.days[date];
+        return { date, views: d.views, visitors: Object.keys(d.visitors).length, tabs: d.tabs, hours: d.hours };
+      });
+      return json(200, {
+        totalViews: days.reduce((n, d) => n + d.views, 0),
+        uniqueVisitors: Object.keys(v.visitors).length,
+        days,
+      });
     }
 
     if (body.action === 'export') {

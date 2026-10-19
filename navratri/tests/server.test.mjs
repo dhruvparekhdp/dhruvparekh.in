@@ -148,3 +148,25 @@ test('refused punishment: only for ✗ people, minus for person and team, remove
   g = await get();
   assert.ok(g.entries.find(x => x.category === 'refused').deleted, 'refusal removed with the ✗');
 });
+
+test('view counter: anonymous, validated, rate limited, readable only by the scorekeeper', async () => {
+  const { call, login } = setup();
+  const view = (tab, vid, ip) => call({ action: 'view', tab, vid }, { ip });
+  assert.equal((await view('board', 'aaaaaaaaaaaaaaaaaaaa')).status, 200);
+  assert.equal((await view('board', 'aaaaaaaaaaaaaaaaaaaa')).status, 200);
+  assert.equal((await view('today', 'bbbbbbbbbbbbbbbbbbbb')).status, 200);
+  assert.equal((await view('admin', 'bbbbbbbbbbbbbbbbbbbb')).status, 400, 'scorekeeper tab is never counted');
+  assert.equal((await view('board', 'x')).status, 400, 'bad browser id');
+  // 60 per minute per network; the rest are silently ignored
+  for (let i = 0; i < 70; i++) await view('rules', 'cccccccccccccccccccc', '5.5.5.5');
+  assert.equal((await call({ action: 'views' })).status, 401, 'stats need a login');
+  const token = await login();
+  if (!token) return; // logged-in part needs NAVRATRI_TEST_PASSWORD
+  const st = (await call({ action: 'views' }, { token })).body;
+  assert.equal(st.totalViews, 3 + 60);
+  assert.equal(st.uniqueVisitors, 3);
+  assert.equal(st.days.length, 1);
+  assert.equal(st.days[0].tabs.board, 2);
+  assert.equal(st.days[0].tabs.rules, 60);
+  assert.equal(st.days[0].hours[18], 63);
+});
