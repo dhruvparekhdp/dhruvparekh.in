@@ -46,6 +46,13 @@
   [headers.values]
     Cache-Control = "public, max-age=604800"
 
+# Send the Netlify subdomain to the real domain so search sees one site.
+[[redirects]]
+  from = "https://starlit-axolotl-972d37.netlify.app/*"
+  to = "https://dhruvparekh.in/:splat"
+  status = 301
+  force = true
+
 # Friendly URLs for the pages customers are given by hand.
 [[redirects]]
   from = "/shop"
